@@ -63,9 +63,11 @@ def interrogator(corpus,
         query = 'any'
     if search in ['postags', 'wordclasses']:
         query = 'any'
-        show = 'p' if search == 'postags' else 'x'
-        search = 't'
         preserve_case = True
+        show = 'p' if search == 'postags' else 'x'
+        # use tregex if simple because it's faster
+        # but use dependencies otherwise
+        search = 't' if subcorpora else {'w': 'any'}
 
     if not kwargs.get('cql') and isinstance(search, STRINGTYPE) and len(search) > 3:
         raise ValueError('search argument not recognised.')
@@ -797,7 +799,7 @@ def interrogator(corpus,
         from corpkit.process import gettag
         lemtag = gettag(search.get('t'), lemmatag)
 
-    usecols = auto_usecols(search, exclude, show, kwargs.pop('usecols', None))
+    usecols = auto_usecols(search, exclude, show, kwargs.pop('usecols', None), coref=coref)
 
     # print welcome message
     welcome_message = welcome_printer(return_it=in_notebook)

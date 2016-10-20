@@ -1455,7 +1455,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 queryd = query
 
             if selected_option == 'v':
-                queryd = {'v': 'any'}
+                queryd = 'features'
                 doing_concondancing = False
             else:
                 doing_concondancing = True
@@ -1605,12 +1605,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                         timestring('No results found, sorry.')
                         return 
 
-            if selected_option == 'v':
-                #todo: use name func
-                featfile = os.path.join(savedinterro_fullpath.get(), current_corpus.get() + '-' + 'features.p')
-                if not os.path.isfile(featfile):
-                    interrodata.save('features', savedir=savedinterro_fullpath.get())
-            
             # make sure we're redirecting stdout again
             if not debug:
                 sys.stdout = note.redir
@@ -1849,20 +1843,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
             refresh_by_metadata()
 
-            #from corpkit.process import make_savename_for_features
-            #featfile = make_savename_for_features(obj='features',
-            #                              corpname=current_corpus.get(),
-            #                              subcorpora=False)
-
-            #import os
-            #shortname = os.path.splitext(featfile)[0]
-
-            featfile = os.path.join(savedinterro_fullpath.get(), current_corpus.get() + '-' + 'features.p')
-            shortname = current_corpus.get() + '-' + 'features'
-            if os.path.isfile(featfile) and shortname not in all_interrogations.keys():
-                from corpkit.other import load
-                all_interrogations[shortname] = load(featfile)
-
         Label(interro_opt, text='Corpus/subcorpora:').grid(row=0, column=0, sticky=W)
         current_corpus = StringVar()
         current_corpus.set('Corpus')
@@ -1942,7 +1922,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         #all_text_widgets.append(bkbx)
 
         def populate_metavals(evt):
-            from corpkit.build import get_speaker_names_from_parsed_corpus
+            """
+            Add the values for a metadata field to the subcorpus box
+            """
+            from corpkit.process import get_corpus_metadata
             wx = evt.widget
             speaker_listbox.configure(state=NORMAL)
             speaker_listbox.delete(0, END)
@@ -1962,7 +1945,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 elif value == 'none':
                     vals = []
                 else:
-                    vals = get_speaker_names_from_parsed_corpus(corpus_fullpath.get(), value)
+                    meta = get_corpus_metadata(corpus_fullpath.get(), generate=True)
+                    vals = meta['fields'][value]
+                    #vals = get_speaker_names_from_parsed_corpus(corpus_fullpath.get(), value)
                 for v in vals:
                     speaker_listbox.insert(END, v)
 
@@ -1978,12 +1963,13 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
         def refresh_by_metadata(*args):
             """
+            Add metadata for a corpus from dotfile to listbox
             """
-            #todo: store these in settings or dotfile
             import os
             if os.path.isdir(corpus_fullpath.get()):
-                from corpkit.build import get_all_metadata_fields
-                ns = get_all_metadata_fields(corpus_fullpath.get(), include_speakers=True)
+                from corpkit.process import get_corpus_metadata
+                ns = get_corpus_metadata(corpus_fullpath.get(), generate=True)
+                ns = list(ns['fields'].keys())
                 #ns = corpus_names_and_speakers[os.path.basename(corpus_fullpath.get())]
             else:
                 return
@@ -2692,10 +2678,12 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         editor_buttons.grid(row=0, column=0, sticky='NW')
 
         def do_editing():
-            """what happens when you press edit"""
-            import os
+            """
+            What happens when you press edit
+            """
             edbut.config(state=DISABLED)
-            import pandas
+            import os
+            import pandas as pd
             from corpkit.editor import editor
             
             # translate operation into interrogator input
@@ -2713,51 +2701,41 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             if opp.get() == 'rel. dist.':
                 operation_text='a'
 
-            using_dict = False
-            # translate dataframe2 into interrogator input
+            # translate dataframe2
             data2 = data2_pick.get()
-            if data2 == 'None' or data2 == '' or data2 == 'Self':
+            if data2 == 'None' or data2 == '':
                 data2 = False
-            # check if it's a dict
-            elif data2_pick.get() not in list(all_interrogations.keys()):
-                dpath = os.path.join(project_fullpath.get(), 'dictionaries')
-                dfile = os.path.join(dpath, data2_pick.get() + '.p')
-                import pickle
-                data2 = pickle.load(open(dfile, 'rb'))
-                #if type(data2) == list:
-                #    if len(data2) == 1:
-                #        data2 = data2[0]
-                if type(data2) != pandas.core.series.Series:
-                    data2 = pandas.Series(data2)
-                using_dict = True
-
-            if data2 is not False:
-                if not using_dict:
-                    if df2branch.get() == 'results':
-                        try:
-                            data2 = all_interrogations[data2].results
-                        except AttributeError:
-                            timestring('Denominator has no results branch.')
-                            
-                            return
-                    elif df2branch.get() == 'totals':
-                        try:
-                            data2 = all_interrogations[data2].totals
-                        except AttributeError:
-                            timestring('Denominator has no totals branch.')
-                            
-                            return
-                    if transpose.get():
-                        try:
-                            data2 = data2.T
-                        except:
-                            pass
+            elif data2 == 'Self':
+                data2 = 'self'
+            elif data2 in ['features', 'postags', 'wordclasses']:
+                from corpkit.corpus import Corpus
+                corp = Corpus(current_corpus.get())
+                data2 = getattr(corp, data2_pick.get())
+                #todo: populate results/totals with possibilities for features etc
+            elif data2 is not False:
+                if df2branch.get() == 'results':
+                    try:
+                        data2 = getattr(all_interrogations[data2], df2branch.get())
+                    except AttributeError:
+                        timestring('Denominator has no results attribute.')              
+                        return
+                elif df2branch.get() == 'totals':
+                    try:
+                        data2 = getattr(all_interrogations[data2], df2branch.get())
+                    except AttributeError:
+                        timestring('Denominator has no totals attribute.')
+                        return
+                if transpose.get():
+                    try:
+                        data2 = data2.T
+                    except:
+                        pass
 
             the_data = all_interrogations[name_of_o_ed_spread.get()]
 
             if df1branch.get() == 'results':
                 if not hasattr(the_data, 'results'):
-                    timestring('Interrogation has no results branch.')
+                    timestring('Interrogation has no results attribute.')
                     return
 
             elif df1branch.get() == 'totals':
@@ -2767,6 +2745,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 spel = False
             else:
                 spel = (spl_editor.var).get()
+
 
             # editor kwargs
             editor_args = {'operation': operation_text,
@@ -2878,7 +2857,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
             # drop over 1000?
             # results should now always be dataframes, so this if is redundant
-            if type(r.results) == pandas.core.frame.DataFrame:
+            if isinstance(r.results, pd.DataFrame):
                 large = [n for i, n in enumerate(list(r.results.columns)) if i > 9999]
                 r.results.drop(large, axis=1, inplace=True)
 
@@ -2907,7 +2886,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             most_recent = all_interrogations[list(all_interrogations.keys())[-1]]
             if most_recent.results is not None:
                 update_spreadsheet(n_editor_results, most_recent.results, height=140)
-            update_spreadsheet(n_editor_totals, pandas.DataFrame(most_recent.totals, dtype=object), height=10)
+            update_spreadsheet(n_editor_totals, pd.DataFrame(most_recent.totals, dtype=object), height=10)
                         
             # finish up
             refresh()
@@ -4453,7 +4432,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 Checkbutton(poptions, text='POS tag', variable=tokenise_pos, onvalue=True, offvalue=False).grid(sticky=W)
                 Checkbutton(poptions, text='Lemmatise', variable=tokenise_lem, onvalue=True, offvalue=False).grid(sticky=W)
             Checkbutton(poptions, text='Speaker segmentation', variable=speakseg, onvalue=True, offvalue=False).grid(sticky=W)
-            Checkbutton(poptions, text='XML metadata', variable=parse_with_metadata, onvalue=True, offvalue=False).grid(sticky=W)
+            Checkbutton(poptions, texwt='XML metadata', variable=parse_with_metadata, onvalue=True, offvalue=False).grid(sticky=W)
 
             def optionspicked(*args):
                 vals = [i.get() for i in list(butvar.values()) if i.get() is not False and i.get() != 0 and i.get() != '0']
@@ -5061,7 +5040,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             #current_corpus.set('Select corpus')
             update_available_corpora()
 
-        def get_saved_results(kind = 'interrogation', add_to = False):
+        def get_saved_results(kind='interrogation', add_to=False):
             from corpkit.other import load_all_results
             if kind == 'interrogation':
                 datad = savedinterro_fullpath.get()
@@ -5086,7 +5065,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 if r is not None:
                     for name, loaded in list(r.items()):
                         if kind == 'interrogation':
-                            if type(loaded) == dict:
+                            if isinstance(loaded, dict):
                                 for subname, subloaded in list(loaded.items()):
                                     all_interrogations[name + '-' + subname] = subloaded
                             else:

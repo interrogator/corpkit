@@ -239,20 +239,20 @@ class Objects(object):
         if name.startswith('wordlist') or name.startswith('stored'):
             ob, attr = name.split('.', 1) if '.' in name else name.split(':', 1)
             return ob, getattr(self, ob).get(attr)
-        elif name.startswith('features'):
-            attr = name.split('.', 1)[-1]
-            return 'features', objs.features[attr.title()]
-        elif name.startswith('wordclasses'):
-            attr = name.split('.', 1)[-1]
-            return 'wordclasses', objs.wordclasses[attr.title()]
-        elif name.startswith('postags'):
-            attr = name.split('.', 1)[-1]
-            return 'postags', objs.postags[attr.upper()]
-        elif name in self._protected:
+        feats = ['features', 'postags', 'wordclasses']
+        if any(name.startswith(i) for i in feats):
+            corpus = self.corpus
+            attr = name.split('.', 1)
+            if len(attr) == 1:
+                return name, getattr(corpus, name)
+            else:
+                bit = attr[1].upper() if attr[0] == 'postags' else attr[1].title()
+                data = getattr(corpus, attr[0])[bit]
+                return 'series', data
+        if name in self._protected:
             return name, getattr(self, name, None)
         else:
             return self.named.get(name, (None, None))
-
 
 def interpreter(debug=False,
                 fromscript=False,
@@ -417,8 +417,7 @@ def interpreter(debug=False,
             else:
                 print(formatted)
 
-
-    def show_table(obj, objtype):
+    def show_table(obj, objtype=False):
         """
         Print or tabview a Pandas object
         """
@@ -505,8 +504,7 @@ def interpreter(debug=False,
             switch_to_gui(args)
         
         elif objtype in ['result', 'edited', 'totals', 'previous',
-                         'features', 'postags', 'wordclasses']:
-
+                         'features', 'postags', 'wordclasses', 'series']:
             show_table(obj, objtype)
 
         elif objtype == 'concordance':
@@ -596,19 +594,7 @@ def interpreter(debug=False,
 
         if os.path.exists(path) or os.path.exists(os.path.join('data', path)):
             from corpkit.corpus import Corpus
-
             objs.corpus = Corpus(path, load_saved=loadsaved, **kwargs)
-            for i in ['features', 'wordclasses', 'postags']:
-                try:
-                    dat = load(objs.corpus.name + '-%s' % i)
-                    if hasattr(dat, 'results'):
-                        dat = dat.results
-                    setattr(objs, i, dat)
-                except (UnicodeDecodeError, IOError):
-                    pass
-                except ValueError:
-                    print('Warning: could not load saved interrogations. Different Pythons?')
-                    pass
         else:
             dirs = [x for x in os.listdir('data') if os.path.isdir(os.path.join('data', x))]
             corpname = dirs[int(tokens[0])-1]
@@ -623,10 +609,8 @@ def interpreter(debug=False,
         exclude = {}   
         searchmode = 'all'
         cqlmode = False
-        featuresmode = False
         if search_related[0] != 'for':
             search_related.insert(0, 'for')
-        
         for i, token in enumerate(search_related):
             if token in ['for', 'and', 'not', 'or']:
                 if token == 'or':
@@ -634,9 +618,14 @@ def interpreter(debug=False,
                 if search_related[i+1] == 'not':
                     continue
                 if search_related[i+1] == 'features':
-                    search = {'v': 'any'}
-                    featuresmode = True
-                    break
+                    search = 'features'
+                    continue
+                if search_related[i+1] == 'postags':
+                    search = 'postags'
+                    continue
+                if search_related[i+1] == 'wordclasses':
+                    search = 'wordclasses'
+                    continue
                 k = search_related[i+1]
                 if k == 'cql':
                     cqlmode = True
@@ -652,7 +641,7 @@ def interpreter(debug=False,
                     exclude[k] = v
                 else:
                     search[k] = v
-        return search, exclude, searchmode, cqlmode, featuresmode
+        return search, exclude, searchmode, cqlmode
 
     def process_long_key(srch):
         """
@@ -896,7 +885,7 @@ def interpreter(debug=False,
         else:
             with_related = []
 
-        search, exclude, searchmode, cqlmode, featuresmode = parse_search_related(search_related)
+        search, exclude, searchmode, cqlmode = parse_search_related(search_related)
         if not exclude and ex_related:
             exclude, _, _, _, _ = parse_search_related(ex_related)
 
@@ -955,15 +944,20 @@ def interpreter(debug=False,
         if debug:
             print(kwargs)
 
-        objs.result = corpp.interrogate(**kwargs)
-        objs.totals = objs.result.totals
+        objs.corpus.just = objs.just
+        objs.corpus.skip = objs.skip
+        objs.corpus.symbolic = objs.symbolic
+        
+        sch = kwargs.get('search', False)
+        if sch in ['features', 'postags', 'wordclasses']:
+            objs.result = getattr(corpp, sch)
+            objs.totals = getattr(corpp, sch).sum(axis=1)
+            if objs._interactive:
+                show_this([sch])
+        else:
+            objs.result = corpp.interrogate(**kwargs)
+            objs.totals = objs.result.totals
         # this should be done for pos and wordclasses too
-        if kwargs['search'] == {'v': 'any'}:
-            try:
-                from corpkit.other import save
-                save(objs.result.results, 'features')
-            except:
-                pass
         print('')
         return objs.result
 
@@ -1011,8 +1005,7 @@ def interpreter(debug=False,
             else:
                 print('Nothing here yet.')
         elif tokens[0] in ['features', 'wordclasses', 'postags']:
-            print(getattr(corpp, tokens[0]))
-
+            show_table(getattr(objs.corpus, tokens[0]))
         elif objs._get(tokens[0]):
             single_command_print(tokens)
         else:

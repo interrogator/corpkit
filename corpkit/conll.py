@@ -173,10 +173,8 @@ def get_representative(idx,
             lst_of_ixs = [just_same_coref.iloc[0].name]
         else:
             lst_of_ixs = [(sent_id, tok_id)]
-    
     if attr:
         lst_of_ixs = [df.ix[i][attr] for i in lst_of_ixs]
-
     return lst_of_ixs
 
 def get_all_corefs(s, i, df, coref=False):
@@ -201,7 +199,7 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False):
     out = []
 
     # if searching by head, they need to be heads
-    if obj == 'r':
+    if obj == 'h':
         df = df.loc[df['c'].endswith('*')]
 
     # cut down to just tokens with matching attr
@@ -350,6 +348,35 @@ def make_series(ser, df=False, obj=False,
             ser = df.loc[ser.name[0], ser['g']]
             count += 1
         return '20+'
+
+    # h is head of this particular group
+    if obj == 'h':
+        cohead = ser['c']
+        if cohead.endswith('*'):
+            return ser['m' + att]
+        elif cohead == '_':
+            return 'none'
+        else:
+            sent = df.loc[ser.name[0]]
+            just_cof = sent[sent['c'] == cohead + '*']
+            if just_cof.empty:
+                return ser['m' + att]
+            else:
+                return just_cof.iloc[0]['m' + att]
+        
+    # r is the representative mention head
+    if obj == 'r':
+        cohead = ser['c']
+        if cohead == '_':
+            return 'none'
+        if not cohead.endswith('*'):
+            cohead = cohead + '*'
+        # iterrows is slow, but we only need the first instance
+        just_cof = df[df['c'] == cohead]
+        if just_cof.empty:
+            return ser['m' + att]
+        else:
+            return just_cof.iloc[0]['m' + att]
 
     if obj == 'g':
         if ser[obj] == 0:
@@ -506,7 +533,12 @@ def fast_simple_conc(dfss, idxs, show,
     # make a quick copy if need be because we modify the df
     df = dfss.copy() if not simple else dfss
     # add text to df columns so that it resembles 'show' values
-    lst = ['s', 'i', 'w', 'l', 'f', 'p']
+    lst = ['s', 'i', 'w', 'l', 'e', 'p', 'f']
+
+    # for ner, change O to 'none'
+    if 'e' in df.columns:
+        df['e'] = df['e'].str.replace('^O$', 'none')
+
     df.columns = ['m' + i if len(i) == 1 and i in lst \
                   else i for i in list(df.columns)]
 
@@ -544,8 +576,8 @@ def fast_simple_conc(dfss, idxs, show,
                 att = 'p'
                 show[ind] = show[ind][:-1] + 'p'
             # for corefs, we also need the coref data
-            if ob in ['c', 'h', 's']:
-                dfx = df[['c', att]]
+            if ob in ['h', 'r']:
+                dfx = df[['c', 'm' + att]]
             else:
                 lst = ['s', 'i', 'w', 'l', 'f', 'p']
                 if att in lst and ob != 'm':
@@ -656,7 +688,7 @@ def show_this(df, matches, show, metadata, conc=False,
             return list(get_fast), {}
 
     # todo: make work for ngram, collocate and coref
-    if all(i[0] in ['m', 'g', '+', '-', 'd'] for i in show):
+    if all(i[0] in ['m', 'g', '+', '-', 'd', 'h', 'r'] for i in show):
         return fast_simple_conc(df,
                                 matches,
                                 show,
@@ -671,8 +703,8 @@ def show_this(df, matches, show, metadata, conc=False,
 def fix_show_bit(show_bit):
     """take a single search/show_bit type, return match"""
     #show_bit = [i.lstrip('n').lstrip('b') for i in show_bit]
-    ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 'r', 's', 'a']
-    starts = ['d', 'g', 'm', 'n', 'b', 'h', '+', '-']
+    ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 's', 'a', 'e']
+    starts = ['d', 'g', 'm', 'b', 'h', '+', '-', 'r']
     show_bit = show_bit.lstrip('n')
     show_bit = show_bit.lstrip('b')
     show_bit = list(show_bit)
@@ -984,6 +1016,22 @@ def get_stats(from_df=False, metadata=False, feature=False, root=False, **kwargs
             root.update()
     return result, {}
 
+def get_corefs(df, matches):
+    """
+    Add corefs to a set of matches
+    """
+    out = set()
+    df = df['c']
+    for s, i in matches:
+        # keep original
+        out.add((s,i))
+        coline = df[(s, i)]
+        if coline.endswith('*'):
+            same_co = df[df == coline]
+            for ix in same_co.index:
+                out.add(ix)
+    return out
+
 def pipeline(f=False,
              search=False,
              show=False,
@@ -1119,6 +1167,9 @@ def pipeline(f=False,
                 all_exclude.append(r)
         all_exclude = remove_by_mode(all_exclude, excludemode, exclude)
         all_matches = all_matches.difference(all_exclude)
+
+    if coref:
+        all_matches = get_corefs(df, all_matches)
 
     out, conc_out = show_this(df, all_matches, show, metadata, conc, 
                               coref=coref, category=category, 

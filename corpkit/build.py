@@ -712,6 +712,9 @@ def add_deps_to_corpus_path(path):
 def get_all_metadata_fields(corpus, include_speakers=False):
     from corpkit.constants import OPENER, PYTHON_VERSION
 
+    # allow corpus object
+    corpus = getattr(corpus, 'path', corpus)
+
     fs = []
     import os
     for root, dirnames, filenames in os.walk(corpus):
