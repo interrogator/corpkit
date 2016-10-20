@@ -132,7 +132,7 @@ def test_interro_multiindex_tregex_justspeakers():
     """Testing interrogation 6"""
     import pandas as pd
     corp = Corpus(speak_path)
-    data = corp.interrogate('t', r'__ < /JJ.?/', just_speakers=['each'])
+    data = corp.interrogate('t', r'__ < /JJ.?/', subcorpora='speaker')
     assert_equals(all(data.results.index), 
                   all(pd.MultiIndex(levels=[['ANONYMOUS', 'NEWCOMER',
                     'TESTER', 'UNIDENTIFIED'], ['first', 'second']],
@@ -305,3 +305,4 @@ def check_interpreter_saved_interro():
 # unannotation
 # language model
 # tgrep
+# features, postags, wordclasses, dotfiles

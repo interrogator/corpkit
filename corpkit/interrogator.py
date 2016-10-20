@@ -15,7 +15,6 @@ def interrogator(corpus,
     case_sensitive=False,
     save=False,
     subcorpora=False,
-    just_speakers=False,
     just_metadata=False,
     skip_metadata=False,
     preserve_case=False,
@@ -148,7 +147,7 @@ def interrogator(corpus,
                     show[index] = val[0]
         return show
 
-    def is_multiquery(corpus, search, query, just_speakers, outname):
+    def is_multiquery(corpus, search, query, outname):
         """
         Determine if multiprocessing is needed/possibe, and 
         do some retyping if need be as well
@@ -168,25 +167,11 @@ def interrogator(corpus,
 
         if isinstance(query, (dict, OrderedDict)):
             is_mul = 'namedqueriessingle'
-        if just_speakers:
-            if just_speakers == 'each':
-                is_mul = 'eachspeaker'
-                just_speakers = ['each']
-            if just_speakers == ['each']:
-                is_mul = 'eachspeaker'
-            elif isinstance(just_speakers, STRINGTYPE):
-                is_mul = False
-                just_speakers = [just_speakers]
-            #import re
-            #if isinstance(just_speakers, re._pattern_type):
-            #    is_mul = False
-            if isinstance(just_speakers, list):
-                if len(just_speakers) > 1:
-                    'multiplespeaker'
+        
         if isinstance(search, dict):
             if all(isinstance(i, dict) for i in list(search.values())):
                 is_mul = 'namedqueriesmultiple'
-        return is_mul, corpus, search, query, just_speakers
+        return is_mul, corpus, search, query
 
     def ispunct(s):
         import string
@@ -243,8 +228,7 @@ def interrogator(corpus,
             from corpkit.conll import pipeline
             searcher = pipeline
 
-        simp_crit = all(not i for i in [just_speakers,
-                                        kwargs.get('tgrep'),
+        simp_crit = all(not i for i in [kwargs.get('tgrep'),
                                         files_as_subcorpora,
                                         subcorpora,
                                         just_metadata,
@@ -682,8 +666,8 @@ def interrogator(corpus,
         lem_instance = WordNetLemmatizer()
 
     # do multiprocessing if need be
-    im, corpus, search, query, just_speakers = is_multiquery(corpus, search, query, 
-                                                just_speakers, kwargs.get('outname', False))
+    im, corpus, search, query, = is_multiquery(corpus, search, query, 
+                                                             kwargs.get('outname', False))
 
     # figure out if we can multiprocess the corpus
     if hasattr(corpus, '__iter__') and im:
@@ -708,7 +692,6 @@ def interrogator(corpus,
     locs['search'] = search
     locs['exclude'] = exclude
     locs['query'] = query
-    locs['just_speakers'] = just_speakers
     locs['corpus'] = corpus
     locs['multiprocess'] = multiprocess
     locs['print_info'] = kwargs.get('printstatus', True)
@@ -882,9 +865,7 @@ def interrogator(corpus,
         
         # conll querying goes by file, not subcorpus
         for f in files:
-            from corpkit.process import parse_just_speakers
             slow_treg_speaker_guess = kwargs.get('outname', '') if kwargs.get('multispeaker') else ''
-            just_speakers = parse_just_speakers(just_speakers, corpus)
             filepath, corefs = f.path, coref
             res, conc_res = searcher(filepath, search=search, show=show,
                                      dep_type=dep_type,
@@ -898,7 +879,6 @@ def interrogator(corpus,
                                      gramsize=gramsize,
                                      no_punct=no_punct,
                                      no_closed=no_closed,
-                                     just_speakers=just_speakers,
                                      split_contractions=split_contractions,
                                      window=window,
                                      filename=f.path,

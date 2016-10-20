@@ -813,12 +813,8 @@ class Corpus(object):
         """
         Get metadata for a corpus
         """
-        import json
-        import os
-        from corpkit.constants import OPENER
-        name = os.path.join('data', '.%s.json' % self.name)
-        with OPENER(name, 'r', encoding='utf-8') as fo:
-            return json.load(fo)
+        from corpkit.process import get_corpus_metadata
+        return get_corpus_metadata(self, generate=True)
 
     def parse(self,
               corenlppath=False,

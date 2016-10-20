@@ -9,7 +9,6 @@ def pmultiquery(corpus,
                 sort_by='total', 
                 save=False,
                 multiprocess='default', 
-                just_speakers=False,
                 root=False,
                 note=False,
                 print_info=True,
@@ -76,18 +75,6 @@ def pmultiquery(corpus,
         if all(getattr(x, 'level', False) == 's' for x in corpus):
             mult_corp_are_subs = True
 
-    if just_speakers:
-        if just_speakers is True:
-            import re
-            just_speakers = re.compile(r'.*')
-        else:
-            from corpkit.build import get_speaker_names_from_parsed_corpus
-            if just_speakers == 'each' or just_speakers == ['each']:
-                just_speakers = get_speaker_names_from_parsed_corpus(corpus)
-            if len(just_speakers) == 0:
-                print('No speaker name data found.')
-                return
-
     non_first_sub = None
     if subcorpora:
         non_first_sub = subcorpora[1:] if isinstance(subcorpora, list) else None
@@ -96,9 +83,8 @@ def pmultiquery(corpus,
         if subcorpora is True:
             import re
             subcorpora = re.compile(r'.*')
-        else: 
-            from corpkit.build import get_speaker_names_from_parsed_corpus
-            subcorpora = get_speaker_names_from_parsed_corpus(corpus, feature=subval)
+        else:
+            subcorpora = corpus.metadata['fields'][subval]
             if len(subcorpora) == 0:
                 print('No %s metadata found.' % str(subval))
                 return
@@ -106,8 +92,6 @@ def pmultiquery(corpus,
     mapcores = {'datalist': [corpus, 'corpus'],
                 'multiplecorpora': [corpus, 'corpus'],
                 'namedqueriessingle': [query, 'query'],
-                'eachspeaker': [just_speakers, 'just_speakers'],
-                'multiplespeaker': [just_speakers, 'just_speakers'],
                 'namedqueriesmultiple': [search, 'search'],
                 'subcorpora': [subcorpora, 'subcorpora']}
 
@@ -141,7 +125,6 @@ def pmultiquery(corpus,
     locs['multiprocess'] = False
     locs['df1_always_df'] = False
     locs['files_as_subcorpora'] = False
-    locs['just_speakers'] = just_speakers
     locs['corpus'] = corpus
 
     if multiple == 'multiplespeaker':
@@ -162,10 +145,6 @@ def pmultiquery(corpus,
         elif multiple in ['multiplecorpora', 'datalist']:
             d['outname'] = bit.name.replace('-parsed', '')
             d[itsname] = bit
-        elif multiple in ['eachspeaker', 'multiplespeaker']:
-            d[itsname] = bit
-            d['just_speakers'] = bit
-            d['outname'] = bit
         elif multiple in ['subcorpora']:
             d[itsname] = bit
             jmd = {subval: bit}
