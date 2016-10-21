@@ -83,7 +83,7 @@ def interrogator(corpus,
     from corpkit.interrogation import Interrogation, Interrodict
     from corpkit.corpus import Datalist, Corpora, Corpus, File, Subcorpus
     from corpkit.process import (tregex_engine, get_deps, unsplitter, sanitise_dict, 
-                                 get_speakername, animator, filtermaker, fix_search,
+                                 animator, filtermaker, fix_search,
                                  pat_format, auto_usecols, format_tregex,
                                  make_conc_lines_from_whole_mid)
     from corpkit.other import as_regex

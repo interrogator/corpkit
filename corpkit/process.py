@@ -395,6 +395,9 @@ def determine_datatype(path):
     return lookup.get(mc, 'plaintext'), singlefile
 
 def filtermaker(the_filter, case_sensitive=False, **kwargs):
+    """
+    Create a search/exclude value
+    """
     import re
     from corpkit.dictionaries.process_types import Wordlist
     from time import localtime, strftime
@@ -421,7 +424,7 @@ def filtermaker(the_filter, case_sensitive=False, **kwargs):
         if root:
             time = strftime("%H:%M:%S", localtime())
             print(the_filter)
-            print('%s: Invalid the_filter regular expression.' % time)
+            print('%s: Invalid regular expression.' % time)
             return False
         time = strftime("%H:%M:%S", localtime())
         selection = INPUTFUNC('\n%s: filter regular expression " %s " contains an error. You can either:\n\n' \
@@ -862,10 +865,10 @@ def show_tree_as_per_option(show, tree, sent=False, df=False,
 
 def tgrep(parse_string, search):
     """
-    Uses tgrep to search a Sentence
+    Uses tgrep to search a parse tree string
 
-    :param sents: Sentences from CoreNLP XML
-    :type sents: `list` of `Sentence` objects
+    :param parse_string: A bracketed tree
+    :type parse_string: `str`
 
     :param search: A search query
     :type search: `str` -- Tgrep query
@@ -877,7 +880,12 @@ def tgrep(parse_string, search):
     return [item for sublist in ptrees for item in sublist]
 
 def canpickle(obj):
-    """determine if object can be pickled"""
+    """
+    Determine if object can be pickled
+
+    :returns: `bool`
+
+    """
     import os
     try:
         from cPickle import UnpickleableError as unpick_error
@@ -898,7 +906,7 @@ def canpickle(obj):
 
 def sanitise_dict(d):
     """
-    Make a dict that works as query attribute
+    Make a dict that works as query attribute---remove nesting and unpicklable
     """
     if not isinstance(d, dict):
         return
@@ -941,7 +949,9 @@ def saferead(path):
         return data, enc
 
 def urlify(s):
-    "Turn title into filename"
+    """
+    Turn plot title into filename for saving
+    """
     import re
     s = s.lower()
     s = re.sub(r"[^\w\s-]", '', s)
@@ -949,21 +959,20 @@ def urlify(s):
     s = re.sub(r"-(textbf|emph|textsc|textit)", '-', s)
     return s
 
-def get_speakername(sent):
-    """Return speakername without CoreNLP_XML"""
-    sn = sent._element.xpath('speakername/text()')
-    return str(sn[0]) if sn else ''
-
 def gui():
+    """
+    Run the graphical interface with the current directory loaded
+    """
     import os
     from corpkit.gui import corpkit_gui
     current = os.getcwd()
     corpkit_gui(noupdate=True, loadcurrent=current)
 
-
 def dictformat(d, query=False):
     """
-    Format a dict search query
+    Format a dict search query for printing
+
+    :returns: `str`
     """
     from corpkit.constants import transshow, transobjs
     if isinstance(d, STRINGTYPE) and isinstance(query, dict):
@@ -1006,7 +1015,9 @@ def dictformat(d, query=False):
 
 
 def fix_search(search, case_sensitive=False, root=False):
-    """if search has nested dicts, remove them"""
+    """
+    If search has nested dicts, translate them
+    """
     ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 's']
     
     # handle the possibility of nesting queries
@@ -1266,7 +1277,6 @@ def make_conc_lines_from_whole_mid(wholes,
         return []
 
     conc_lines = []
-    # remove duplicates from results
     unique_wholes = []
     unique_middle_column_result = []
     duplicates = []

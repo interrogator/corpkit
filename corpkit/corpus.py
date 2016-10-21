@@ -1140,7 +1140,6 @@ class Subcorpus(Corpus):
                 if is_number(key):
                     return self.__getattribute__('c' + key)
 
-
 class File(Corpus):
     """
     Models a corpus file for reading, interrogating, concordancing.
@@ -1177,16 +1176,9 @@ class File(Corpus):
 
         :returns: `str`/unpickled data
         """
-
-        if self.datatype == 'tokens':
-            import cPickle as pickle
-            with open(self.path, "rb", **kwargs) as fo:
-                data = pickle.load(fo)
-            return data
-        else:
-            with open(self.path, 'r', **kwargs) as fo:
-                data = fo.read()
-            return data
+        from corpkit.constants import OPENER
+        with OPENER(self.path, 'r', **kwargs) as fo:
+            return fo.read()
 
     @lazyprop
     def document(self):
@@ -1227,6 +1219,8 @@ class File(Corpus):
             doc = self.document
             for sent in list(doc.index.levels[0]):
                 text.append('%d: ' % sent + ' '.join(list(doc.loc[sent]['w'])))
+        else:
+            self.read()
         return '\n'.join(text)
 
 class Datalist(object):
