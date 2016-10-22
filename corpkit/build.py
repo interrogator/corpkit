@@ -710,14 +710,20 @@ def add_deps_to_corpus_path(path):
         df.to_csv(f, sep='\t', header=False)
 
 def get_all_metadata_fields(corpus, include_speakers=False):
+    from corpkit.corpus import Corpus
     from corpkit.constants import OPENER, PYTHON_VERSION
 
     # allow corpus object
-    corpus = getattr(corpus, 'path', corpus)
+    if not isinstance(corpus, Corpus):
+        corpus = Corpus(corpus)
+    if not corpus.datatype == 'conll':
+        return []
+
+    path = getattr(corpus, 'path', corpus)
 
     fs = []
     import os
-    for root, dirnames, filenames in os.walk(corpus):
+    for root, dirnames, filenames in os.walk(path):
         for filename in filenames:
             fs.append(os.path.join(root, filename))
 

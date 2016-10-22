@@ -1194,7 +1194,7 @@ class File(Corpus):
             return parse_conll(self.path)
         else:
             from corpkit.process import saferead
-            return saferead(self)[0]
+            return saferead(self.path)[0]
     
     @lazyprop
     def trees(self):

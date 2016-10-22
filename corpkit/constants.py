@@ -25,12 +25,13 @@ LETTERS = sorted(_letters + _adjacent)
 # translating search values intro words
 transshow = {'f': 'Function',
              'l': 'Lemma',
-             'r': 'Distance from root',
+             'a': 'Distance from root',
              'w': 'Word',
              't': 'Trees',
              'i': 'Index',
              'n': 'N-grams',
              'p': 'POS',
+             'e': 'NER',
              'x': 'Word class',
              's': 'Sentence index'}
 

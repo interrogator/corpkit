@@ -1088,17 +1088,28 @@ def pat_format(pat, case_sensitive=False, root=False):
             pat = re.compile(pat, re.IGNORECASE)
     return pat
 
-def make_name_to_query_dict(existing={}):
+def make_name_to_query_dict(existing={}, cols=False, dtype=False):
+    if dtype and dtype != 'conll':
+        return {'None': 'None'}
     from corpkit.constants import transshow, transobjs
     for l, o in transobjs.items():
+        if cols and l in ['g', 'd'] and l not in cols:
+            continue
         if o == 'Match':
             o = ''
         else:
             o = o + ' '
         for m, p in sorted(transshow.items()):
+            if cols:
+                fixed = m.replace('x', 'p')
+                if fixed in ['n', 't', 'a']:
+                    pass
+                else:
+                    if fixed not in cols:
+                        continue
             if m in ['n', 't']:
                 continue
-            if p != 'POS' and o != '':
+            if p != 'POS' and o != '' and o != 'NER':
                 p = p.lower()
             existing['%s%s' % (o, p)] = '%s%s' % (l, m)
     return existing
@@ -1343,6 +1354,22 @@ def lemmatiser(list_of_words, tag, translated_option,
         output.append(word)
     return output
 
+def get_first_df(corpus):
+    """
+    Get the first document in a corpus, so that we can
+    check what columns it has
+    """
+    # genius code below
+    from corpkit.corpus import Corpus
+    if not isinstance(corpus, Corpus):
+        corpus = Corpus(corpus)
+    if corpus.subcorpora:
+        return corpus.subcorpora[0].files[0].document
+    elif corpus.files:
+        return corpus.files[0].document
+    else:
+        return corpus.document
+
 def make_dotfile(path, return_json=False, data_dict=False):
     """
     Generate a dotfile in the data directory containing corpus information
@@ -1361,6 +1388,8 @@ def make_dotfile(path, return_json=False, data_dict=False):
         for field in fields:
             vals = get_speaker_names_from_parsed_corpus(path, field)
             json_data['fields'][field] = vals
+        df = get_first_df(path)
+        json_data['columns'] = ['s', 'i'] + list(df.columns)
     dotname = '.%s.json' % os.path.basename(path)
     with OPENER(os.path.join('data', dotname), 'w', encoding='utf-8') as fo:
         fo.write(json.dumps(json_data))
@@ -1373,7 +1402,17 @@ def get_corpus_metadata(path, generate=False):
     """
     import os
     import json
+    from corpkit.corpus import Corpus
     from corpkit.constants import OPENER
+
+    if not isinstance(path, Corpus):
+        corpus = Corpus(path)
+    else:
+        corpus = path
+
+    if not corpus.datatype == 'conll':
+        return {}
+
     path = getattr(path, 'path', path)
     dotname = '.%s.json' % os.path.basename(path)
     dotpath = os.path.join('data', dotname)

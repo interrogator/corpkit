@@ -558,12 +558,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         except AttributeError:
             direct = itertools.cycle([0,1]).next
         corpus_names_and_speakers = {}
-
-        # datatype of current corpus
-        datatype = StringVar()
-        datatype.set('-parsed')
-        singlefile = IntVar()
-        singlefile.set(0)
             
         ###################     ###################     ###################     ###################
         #  DICTIONARIES   #     #  DICTIONARIES   #     #  DICTIONARIES   #     #  DICTIONARIES   #
@@ -660,11 +654,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             else:
                 def_queries[i] = r'\b(m.n|wom.n|child(ren)?)\b'
 
-        # dependency search names
-        depdict = {'Basic': 'basic-dependencies', 
-                   'Collapsed': 'collapsed-dependencies', 
-                   'CC-processed': 'collapsed-ccprocessed-dependencies'}
-
         ###################     ###################     ###################     ###################
         #    FUNCTIONS    #     #    FUNCTIONS    #     #    FUNCTIONS    #     #    FUNCTIONS    #
         ###################     ###################     ###################     ###################
@@ -680,9 +669,11 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 pass
             return "break"
 
-        def runner(button, command, conc = False):
-            """runs the command of a button, disabling the button till it is done,
-            whether it returns early or not"""
+        def runner(button, command, conc=False):
+            """
+            Runs the command of a button, disabling the button till it is done,
+            whether it returns early or not
+            """
             try:
                 if button == interrobut or button == interrobut_conc:
                     command(conc)
@@ -1010,6 +1001,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 om['menu'].delete(0, 'end')
                 if not delete:
                     for corp in all_corpora:
+                        if not corp.endswith('parsed') and not corp.endswith('tokenised') and om == available_corpora:
+                            continue
                         om['menu'].add_command(label=corp, command=_setit(current_corpus, corp))
 
             return all_corpora
@@ -1730,8 +1723,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 self['menu'].config(font=('calibri',(10)))
             
         def corpus_callback(*args):
-            """on selecting a corpus, set everything appropriately.
-            also, disable some kinds of search based on the name"""
+            """
+            On selecting a corpus, set everything appropriately.
+            also, disable some kinds of search based on the name
+            """
             if current_corpus.get() == '':
                 return
             corpus_name = current_corpus.get()
@@ -1739,11 +1734,16 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             fp = os.path.join(corpora_fullpath.get(), corpus_name)
             corpus_fullpath.set(fp)
 
-            # find out what kind of corpus it is
-            from corpkit.process import determine_datatype
-            datat, singlef = determine_datatype(fp)
-            datatype.set(datat)
-            singlefile.set(singlef)
+            from corpkit.corpus import Corpus
+            corpus = Corpus(fp)
+            dtype = corpus.datatype
+            cols = []
+            if dtype == 'conll':
+                datatype_picked.set('Word')
+                try:
+                    cols = corpus.metadata['columns']
+                except KeyError:
+                    pass
 
             subdrs = sorted([d for d in os.listdir(corpus_fullpath.get()) \
                             if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
@@ -1755,13 +1755,24 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
             path_to_new_unparsed_corpus.set(fp)
             #add_corpus_button.set('Added: "%s"' % os.path.basename(fp))
-            # why is it setting itself? #
+            # why is it setting itself?
             #current_corpus.set(os.path.basename(fp))
+
+            from corpkit.process import make_name_to_query_dict
+            exist = {'CQL': 'cql'}
+            if 'f' in cols:
+                exist['Trees'] = 't'
+                exist['Stats'] = 'v'
+            # todo: only cql for tokenised
+            convert_name_to_query = make_name_to_query_dict(exist, cols, dtype)
+
+            # allow tokenising/parsing of plaintext
             if not corpus_name.endswith('-parsed') and not corpus_name.endswith('-tokenised'):
                 parsebut.config(state=NORMAL)
                 tokbut.config(state=NORMAL)
                 parse_button_text.set('Parse: %s' % os.path.basename(fp))
                 tokenise_button_text.set('Tokenise: %s' % corpus_name)
+            # disable tokenising and parsing of non plaintxt
             else:
                 parsebut.config(state=NORMAL)
                 tokbut.config(state=NORMAL)
@@ -1769,7 +1780,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 tokenise_button_text.set('Tokenise corpus')
                 parsebut.config(state=DISABLED)
                 tokbut.config(state=DISABLED)
-            if not corpus_name.endswith('-parsed'):
+            # no corefs
+            if not corpus_name.endswith('-parsed') and not corpus_name.endswith('tokenised'):
                 #pick_dep_type.config(state=DISABLED)
                 coref_but.config(state=DISABLED)
                 #parsebut.config(state=NORMAL)
@@ -1777,39 +1789,38 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 interrobut_conc.config(state=DISABLED)
                 recalc_but.config(state=DISABLED)
                 #sensplitbut.config(state=NORMAL)
-            else:
-                if datatype_picked.get() not in ['Trees', 'N-grams']:
-                    #pick_dep_type.config(state=NORMAL)
-                    coref_but.config(state=NORMAL)
-                    #q.config(state=NORMAL)
-                #else:
-                    #q.config(state=DISABLED)
-                #sensplitbut.config(state=DISABLED)
+                pick_a_datatype.configure(state=DISABLED)
+                interrobut.configure(state=DISABLED)
                 interrobut_conc.config(state=DISABLED)
                 recalc_but.config(state=DISABLED)
-                for i in sorted(convert_name_to_query.keys()):
-                    # for now --- simplifying gui!
+            else:
+                interrobut_conc.config(state=NORMAL)
+                recalc_but.config(state=NORMAL)
+                pick_a_datatype.configure(state=NORMAL)
+                interrobut.configure(state=NORMAL)
+                if datatype_picked.get() not in ['Trees', 'N-grams']:
+                    coref_but.config(state=NORMAL)
+                interrobut_conc.config(state=DISABLED)
+                recalc_but.config(state=DISABLED)
+                for i in sorted(convert_name_to_query):
+                    # todo: for now --- simplifying gui!
                     if i.lower() == 'distance from root' or i.lower().startswith('head'):
                         continue
+
                     pick_a_datatype['menu'].add_command(label=i, command=_setit(datatype_picked, i))
                 #parsebut.config(state=DISABLED)
                 #speakcheck_build.config(state=DISABLED)
                 datatype_picked.set('Word')
-            if not corpus_name.endswith('-tokenised'):
-                if not corpus_name.endswith('-parsed'):
+            if not corpus_name.endswith('-tokenised') and not corpus_name.endswith('-parsed'):
                     pick_a_datatype['menu'].add_command(label='Word', command=_setit(datatype_picked, 'Word'))
-                    datatype_picked.set('Word')
                     
+
             else:
-                #for i in ['Word', 'N-grams']:
-                #    pick_a_datatype['menu'].add_command(label=i, command=_setit(datatype_picked, i))
-                #tokbut.config(state=DISABLED)
                 datatype_picked.set('Word')
             
             add_subcorpora_to_build_box(fp)
 
             note.progvar.set(0)
-            #lab.set('Concordancing: %s' % corpus_name)
             
             if corpus_name in list(corpus_names_and_speakers.keys()):
                 refresh_by_metadata()
@@ -1817,14 +1828,15 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             else:
                 pass
                 #speakcheck.config(state=DISABLED)
-            interrobut.config(state=NORMAL)
-            interrobut_conc.config(state=NORMAL)
-            recalc_but.config(state=NORMAL)
             timestring('Set corpus directory: "%s"' % corpus_name)
             editf.set('Edit file: ')
-            parse_only = [ck3, ck4, ck5, ck6, ck7, ck9, ck10, ck11, ck12, ck13, ck14, ck15, ck16]
-            non_parsed = [ck1, ck2, ck8]
-
+            parse_only = [ck4, ck5, ck6, ck7, ck9, ck10, ck11, ck12, ck13, ck14, ck15, ck16]
+            non_parsed = [ck1, ck8]
+            if 'l' in cols:
+                non_parsed.append(ck2)
+            if 'p' in cols:
+                non_parsed.append(ck3)
+            
             if not corpus_name.endswith('-parsed'):
                 for but in parse_only:
                     desel_and_turn_off(but)
@@ -1969,7 +1981,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             if os.path.isdir(corpus_fullpath.get()):
                 from corpkit.process import get_corpus_metadata
                 ns = get_corpus_metadata(corpus_fullpath.get(), generate=True)
-                ns = list(ns['fields'].keys())
+                ns = list(ns.get('fields', {}))
                 #ns = corpus_names_and_speakers[os.path.basename(corpus_fullpath.get())]
             else:
                 return
@@ -2006,7 +2018,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         by_met_bar = Scrollbar(by_meta_scrl)
         by_met_bar.pack(side=RIGHT, fill=Y)
         # listbox itself
-        slist_height = 2 if small_screen else 4
+        slist_height = 2 if small_screen else 6
         by_met_listbox = Listbox(by_meta_scrl, selectmode=EXTENDED, width=12, height=slist_height,
                                   relief=SUNKEN, bg='#F4F4F4',
                                   yscrollcommand=by_met_bar.set, exportselection=False)
@@ -2049,7 +2061,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
         Label(interro_opt, text='Query:').grid(row=4, column=0, sticky='NW', pady=(5,0))
         entrytext.set(r'\b(m.n|wom.n|child(ren)?)\b')
-        qa_height = 2 if small_screen else 4
+        qa_height = 2 if small_screen else 6
         qa = Text(interro_opt, width=40, height=qa_height, borderwidth=0.5, 
                   font=("Courier New", 14), undo=True, relief=SUNKEN, wrap=WORD, highlightthickness=0)
         qa.insert(END, entrytext.get())
@@ -2159,6 +2171,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                     n_items.remove(i)
                 chosen = StringVar()
                 poss = ['None'] + sorted(convert_name_to_query.keys())
+                poss = [k for k in poss if not 'distance' in k.lower() and not 'head ' in k.lower()]
                 chosen.set('Word')
                 opt = OptionMenu(more_criteria, chosen, *poss)
                 opt.config(width=16)
@@ -5521,7 +5534,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 fp = filedialog.askdirectory(title='Open project',
                                            **the_kwargs)
             else:
-                fp = path
+                fp = os.path.abspath(path)
 
             if not fp or fp == '':
                 return
@@ -5572,7 +5585,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                         first = False
                 if first:
                     corpus_fullpath.set(os.path.join(corpora_fullpath.get(), first))
-                    current_corpus.set(first)
+                    try:
+                        current_corpus.set(first)
+                    except:
+                        pass
                 else:
                     corpus_fullpath.set('')
                     # no corpora, so go to build...
@@ -5581,7 +5597,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 #    current_corpus.set(os.path.basename(corpus_fullpath.get()))
                 
             corpus_name = os.path.basename(corpus_fullpath.get())
-            current_corpus.set(corpus_name)
+            try:
+                current_corpus.set(corpus_name)
+            except:
+                pass
 
             if corpus_fullpath.get() != '':
                 subdrs = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
@@ -6153,30 +6172,24 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             if len(chosen_f) == 0:
                 return
 
-            if chosen_f[0].endswith('.txt') or chosen_f[0].endswith('.p'):
+            if chosen_f[0].endswith('.txt'):
                 newp = path_to_new_unparsed_corpus.get()
                 if selected_corpus_has_no_subcorpora.get() == 0:
                     fp = os.path.join(newp, subc_sel_vals_build[0], chosen_f[0])
                 else:
                     fp = os.path.join(newp, chosen_f[0])
-                if chosen_f[0].endswith('.txt'):
-                    try:
-                        text=open(fp).read()
-                    except IOError:
-                        fp = os.path.join(newp, os.path.basename(corpus_fullpath.get()), chosen_f[0])
-                        text=open(fp).read()
-                else:
-                    import pickle
-                    data = pickle.load(open(fp, "rb"))
-                    text='\n'.join(data)
+                if not os.path.isfile(fp):
+                    fp = os.path.join(newp, os.path.basename(corpus_fullpath.get()), chosen_f[0])
+                from corpkit.constants import OPENER
+                with OPENER(fp, 'r', encoding='utf-8') as fo:
+                    text = fo.read()
 
                 # needs a scrollbar
                 editor = Text(tab0, height=32)
-
                 bind_textfuncts_to_widgets([editor])
 
                 buildbits['editor'] = editor
-                editor.grid(row=1, column=2, rowspan = 9, pady=(10,0), padx=(20, 0))
+                editor.grid(row=1, column=2, rowspan=9, pady=(10,0), padx=(20, 0))
                 if editor not in boxes:
                     boxes.append(editor)
                 all_text_widgets.append(editor)
@@ -6209,23 +6222,20 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 if but not in boxes:
                     boxes.append(but)
 
-            elif chosen_f[0].endswith('.xml') or chosen_f[0].endswith('.conll'):
+            elif chosen_f[0].endswith('.conll'):
 
                 import re
-                if chosen_f[0].endswith('.conll'):
-                    parsematch = re.compile(r'^# parse=(.*)')
-                else:
-                    parsematch = re.compile(r'^\s*<parse>(.*)<.parse>')
+                parsematch = re.compile(r'^# parse=(.*)')
                 newp = path_to_new_unparsed_corpus.get()
                 if selected_corpus_has_no_subcorpora.get() == 0:
                     fp = os.path.join(newp, subc_sel_vals_build[0], chosen_f[0])
                 else:
                     fp = os.path.join(newp, chosen_f[0])
-                try:
-                    text=open(fp).read()
-                except IOError:
+                if not os.path.isfile(fp):
                     fp = os.path.join(newp, os.path.basename(corpus_fullpath.get()), chosen_f[0])
-                    text=open(fp).read()
+                from corpkit.constants import OPENER
+                with OPENER(fp, 'r', encoding='utf-8') as fo:
+                    text = fo.read()
                 lines = text.splitlines()
                 editf.set('View trees: %s' % chosen_f[0])
                 vieweditxml = Label(tab0, textvariable=editf, font=("Helvetica", 13, "bold"))
@@ -6261,11 +6271,11 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                         bracktree = searched.group(1)
                         flat = flatten_treestring(bracktree)
                         trees.append([bracktree, flat])
-                sentsbox = Listbox(tab0, selectmode = SINGLE, width=120, font=("Courier New", 11))
+                sentsbox = Listbox(tab0, selectmode=SINGLE, width=120, font=("Courier New", 11))
                 if sentsbox not in boxes:
                     boxes.append(sentsbox)
                 buildbits['sentsbox'] = sentsbox
-                sentsbox.grid(row=1, column=2, rowspan = 4, padx=(20,0))
+                sentsbox.grid(row=1, column=2, rowspan=4, padx=(20,0))
                 sentsbox.delete(0, END)
                 for i in list(sentdict.keys()):
                     del sentdict[i]
@@ -6296,23 +6306,15 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         editf.set('Edit file: ')
 
         def savebuttonaction(*args):
-            if fullpath_to_file.get().endswith('.txt'):
-                f = open(fullpath_to_file.get(), "w")
-            else:
-                import pickle
-                f = open(fullpath_to_file.get(), "wb")
+            from corpkit.constants import OPENER, PYTHON_VERSION
             editor = buildbits['editor']
-            text=editor.get(1.0, END)
-            if fullpath_to_file.get().endswith('.p'):
-                text=[x.strip() for x in text.split('\n')]
-                pickle.dump(text, f)
-            else:
-                try:
-                    # normalize trailing whitespace
-                    f.write(text.rstrip().encode("utf-8"))
-                    f.write("\n")
-                finally:
-                    f.close()
+            text = editor.get(1.0, END)
+            with OPENER(fullpath_to_file.get(), "w") as fo:
+                if PYTHON_VERSION == 2:
+                    fo.write(text.rstrip().encode("utf-8"))
+                    fo.write("\n")
+                else:
+                    fo.write(text.rstrip() + '\n')
             timestring('%s saved.' % filename.get())
 
         filename = StringVar()
