@@ -56,7 +56,7 @@ def interrogator(corpus,
     locs.update(kwargs)
     locs.pop('kwargs', None)
 
-    # so you can do corpus.interrogate('features/postags/wordclasses')
+    # so you can do corpus.interrogate('features/postags/wordclasses/lexicon')
     if search == 'features':
         search = 'v'
         query = 'any'
@@ -67,6 +67,8 @@ def interrogator(corpus,
         # use tregex if simple because it's faster
         # but use dependencies otherwise
         search = 't' if subcorpora else {'w': 'any'}
+    if search == 'lexicon':
+        search = {'w': 'any'}
 
     if not kwargs.get('cql') and isinstance(search, STRINGTYPE) and len(search) > 3:
         raise ValueError('search argument not recognised.')

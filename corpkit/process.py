@@ -1067,6 +1067,9 @@ def fix_search(search, case_sensitive=False, root=False):
     return newsearch
 
 def pat_format(pat, case_sensitive=False, root=False):
+    """
+    Coerce or compile search value
+    """
     from corpkit.dictionaries.process_types import Wordlist
     import re
     if pat == 'any':
@@ -1089,9 +1092,13 @@ def pat_format(pat, case_sensitive=False, root=False):
     return pat
 
 def make_name_to_query_dict(existing={}, cols=False, dtype=False):
+    """
+    Make or add to dict of longhand and shorthand search bits
+    """
+    from corpkit.constants import transshow, transobjs
     if dtype and dtype != 'conll':
         return {'None': 'None'}
-    from corpkit.constants import transshow, transobjs
+    
     for l, o in transobjs.items():
         if cols and l in ['g', 'd'] and l not in cols:
             continue

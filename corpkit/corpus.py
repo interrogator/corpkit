@@ -139,7 +139,9 @@ class Corpus(object):
 
     @lazyprop
     def subcorpora(self):
-        """A list-like object containing a corpus' subcorpora."""
+        """
+        A list-like object containing a corpus' subcorpora.
+        """
         import re
         import os
         import operator
@@ -162,16 +164,18 @@ class Corpus(object):
 
     @lazyprop
     def speakerlist(self):
-        """A list of speakers in the corpus"""
+        """
+        A list of speakers in the corpus
+        """
         from corpkit.build import get_speaker_names_from_parsed_corpus
         return get_speaker_names_from_parsed_corpus(self)
 
     @lazyprop
     def files(self):
-        """A list-like object containing the files in a folder
+        """
+        A list-like object containing the files in a folder
 
         >>> corpus.subcorpora[0].files
-
         """
 
         import re
@@ -423,38 +427,29 @@ class Corpus(object):
         Get a lexicon/frequency distribution from a corpus,
         and save to disk for next time.
 
-        :param kwargs: Arguments to pass to the 
-                       :func:`~corpkit.corpus.Corpus.interrogate` method
-        :type kwargs: `keyword arguments`
-
         :returns: a `DataFrame` of tokens and counts
         """
-        from os.path import join, isfile, isdir
-        from corpkit.interrogator import interrogator
-        from corpkit.other import load
-        from corpkit.process import make_savename_for_features
+        
+        from corpkit.process import get_corpus_metadata, add_df_to_dotfile, make_df_json_name
 
-        show = kwargs.get('show', ['w'])
-        savedir = 'saved_interrogations'
-        if isinstance(show, STRINGTYPE):
-            show = [show]
+        kwa = {'just_metadata': self.just,
+               'skip_metadata': self.skip,
+               'subcorpora': self.symbolic}
 
-        name = make_savename_for_features(obj='lexicon',
-                                    corpname=self.name,
-                                    subcorpora=self.symbolic)
-
-        kwa = {'just_metadata': self.just, 'skip_metadata': self.skip}
-
-        if isfile(join(savedir, name + '.p')):
-            try:
-                return load(name)
-            except AttributeError:
-                pass
-        dat = self.interrogate('w', show=show,
-                               subcorpora=self.symbolic, **kwa).results
-        if isdir(savedir):
-            dat.save(name)
-        return dat
+        md = get_corpus_metadata(self.path, generate=True)
+        name = make_df_json_name('lexicon', self.symbolic)
+        
+        if name in md:
+            import pandas as pd
+            return pd.DataFrame(md[name])
+        else:
+            lexi = self.interrogate('lexicon', **kwa)
+            from corpkit.interrogation import Interrodict
+            if isinstance(lexi, Interrodict):
+                lexi = lexi.multiindex()
+            lexi = lexi.results
+            add_df_to_dotfile(self.path, lexi, typ='lexicon', subcorpora=self.symbolic)
+            return lexi
 
     def configurations(self, search, **kwargs):
         """
@@ -1428,3 +1423,11 @@ class Corpora(Datalist):
         """
         for corpus in self:
             corpus.wordclasses
+
+    @lazyprop
+    def lexicon(self):
+        """
+        Generate lexicon attribute for all corpora
+        """
+        for corpus in self:
+            corpus.lexicon
