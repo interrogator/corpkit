@@ -47,7 +47,7 @@ def configurations(corpus, search, **kwargs):
                    gov_word_or_lemma: word_or_token},
 
                  'and_or':
-                  {'f': 'conj:(and|or)',
+                  {'f': 'conj:(?:and|or)',
                    'gf': roles.participant,
                    gov_word_or_lemma: word_or_token},
                 },
@@ -73,7 +73,7 @@ def configurations(corpus, search, **kwargs):
                    gov_word_or_lemma: word_or_token},
 
                  'and_or':
-                  {'f': 'conj:(and|or)',
+                  {'f': 'conj:(?:and|or)',
                    'gf': roles.event,                 
                    gov_word_or_lemma: word_or_token},
               
@@ -91,7 +91,7 @@ def configurations(corpus, search, **kwargs):
                    gov_word_or_lemma: word_or_token},
 
                  'and_or':
-                  {'f': 'conj:(and|or)',
+                  {'f': 'conj:(?:and|or)',
                    'gf': roles.modifier,
                    gov_word_or_lemma: word_or_token},
 
@@ -112,7 +112,7 @@ def configurations(corpus, search, **kwargs):
             for name, pattern in v.items():
                 newqueries[name] = pattern
         queries = newqueries
-        queries['and_or'] = {'f': 'conj:(and|or)', gov_word_or_lemma: word_or_token},
+        queries['and_or'] = {'f': 'conj:(?:and|or)', gov_word_or_lemma: word_or_token}
 
     # count all queries to be done
     # total_queries = 0

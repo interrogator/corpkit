@@ -819,7 +819,7 @@ class Interrodict(OrderedDict):
         index = [i.name for i in data]
 
         # todo: better default for speakers?
-        if self.query['subcorpora']:
+        if isinstance(self.query, dict) and self.query.get('subcorpora'):
             nms = {'names': self.query['subcorpora']}
         else:
             nms = {} 
