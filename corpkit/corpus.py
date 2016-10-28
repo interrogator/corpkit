@@ -546,8 +546,8 @@ class Corpus(object):
 
         :Example:
 
-        >>> corpus.interrogate({T: r'/NN.?/' < /^t/'}) # T- nouns, via trees
-        >>> corpus.interrogate({W: '^t': P: r'^v'}) # T- nouns, via dependencies
+        >>> corpus.interrogate({T: r'/NN.?/ < /^t/'}) # T- nouns, via trees
+        >>> corpus.interrogate({W: '^t': P: r'^v'}) # T- verbs, via dependencies
 
         :param searchmode: Return results matching any/all criteria
         :type searchmode: `str` -- `'any'`/`'all'`
