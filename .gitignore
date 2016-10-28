@@ -82,3 +82,12 @@ corpkit/settings.ini
 data/.test-parsed.json
 data/.test-speak-parsed.json
 data/.test-tokenised.json
+talks/_minted-write-up/
+talks/write-up.aux
+talks/write-up.bbl
+talks/write-up.bcf
+talks/write-up.blg
+talks/write-up.pdf
+talks/write-up.run.xml
+talks/write-up.synctex.gz
+talks/write-up.tex

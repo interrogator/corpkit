@@ -5833,7 +5833,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  #     # BUILD TAB  # 
         ##############     ##############     ##############     ##############     ############## 
         
-        from corpkit.build import download_large_file, extract_cnlp, get_corpus_filepaths, \
+        from corpkit.build import download_large_file, get_corpus_filepaths, \
             check_jdk, parse_corpus, move_parsed_files, corenlp_exists
 
         def create_tokenised_text():
@@ -6092,7 +6092,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 newsub = os.path.join(newp, subc_sel_vals_build[0])
             else:
                 newsub = newp
-            fs = [f for f in os.listdir(newsub) if f.endswith('.txt') or f.endswith('.xml') or f.endswith('.p') or f.endswith('.conll')]
+            fs = [f for f in os.listdir(newsub) if f.endswith('.txt') \
+                                                or f.endswith('.xml') \
+                                                or f.endswith('.conll')]
             for e in fs:
                 f_view.insert(END, e)
             if selected_corpus_has_no_subcorpora.get() == 0:      

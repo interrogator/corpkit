@@ -54,7 +54,7 @@ def lazyprop(fn):
     elif fn.__name__ == 'document':
         @property
         def _lazyprop(self):
-            """Return the parsed XML of a parsed file"""
+            """Return a DataFrame representation of a parsed file"""
             if not hasattr(self, attr_name):
                 setattr(self, attr_name, fn(self))
             return getattr(self, attr_name)

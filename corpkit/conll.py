@@ -20,6 +20,9 @@ def parse_conll(f,
     
     with open(f, 'r') as fo:
         data = fo.read().strip('\n')
+
+    # todo: file metadata?
+
     splitdata = []
     metadata = {}
     count = 1
@@ -48,6 +51,7 @@ def parse_conll(f,
     head = head[:l]
     
     # if formatting for the first time, add sent ids
+    
     if first_time:
         for i, d in enumerate(splitdata, start=1):
             d = d.replace('\n', '\n%s\t' % str(i))
@@ -64,6 +68,7 @@ def parse_conll(f,
     try:
         df = pd.read_csv(StringIO(data), sep='\t', header=None,
                          names=head, index_col=['s', 'i'], usecols=usecols)
+        #df.index = pd.MultiIndex.from_tuples([(1, i) for i in df.index])
     except ValueError:
         return
     df._metadata = metadata

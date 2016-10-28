@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 from corpkit.constants import INPUTFUNC, PYTHON_VERSION
+
 def make_corpus(unparsed_corpus_path,
                 project_path=None,
                 parse=True,
@@ -61,7 +62,6 @@ def make_corpus(unparsed_corpus_path,
 
     from corpkit.build import (get_corpus_filepaths, 
                                check_jdk, 
-                               add_ids_to_xml, 
                                rename_all_files,
                                make_no_id_corpus, parse_corpus, move_parsed_files)
     from corpkit.constants import REPEAT_PARSE_ATTEMPTS
@@ -78,24 +78,6 @@ def make_corpus(unparsed_corpus_path,
         copier = shutil.copyfile
     else:
         copier = shutil.copytree
-
-    # raise error if no tokeniser
-    #if tokenise:
-    #    if outname:
-    #        newpath = os.path.join(os.path.dirname(unparsed_corpus_path), outname)
-    #    else:
-    #        newpath = unparsed_corpus_path + '-tokenised'
-    #    if isdir(newpath):
-    #        shutil.rmtree(newpath)
-    #    import nltk
-    #    if nltk_data_path:
-    #        if nltk_data_path not in nltk.data.path:
-    #            nltk.data.path.append(nltk_data_path)
-    #    try:
-    #        from nltk import word_tokenize as tokenise
-    #    except:
-    #        print('\nTokeniser not found. Pass in its path as keyword arg "nltk_data_path = <path>".\n')
-    #        raise
 
     if sys.platform == "darwin":
         if not check_jdk():
@@ -277,7 +259,6 @@ def make_corpus(unparsed_corpus_path,
                          'corpuspath': to_parse,
                          'filelist': listpath,
                          'corenlppath': corenlppath,
-                         'nltk_data_path': nltk_data_path,
                          'operations': operations,
                          'copula_head': cop_head,
                          'multiprocessing': True,
@@ -286,7 +267,7 @@ def make_corpus(unparsed_corpus_path,
                          'stdout': stdout,
                          'outname': outname,
                          'coref': coref,
-                         'output_format': kwargs.get('output_format', 'xml')
+                         'output_format': kwargs.get('output_format', 'conll')
                         }
                     ds.append(d)
 
@@ -309,7 +290,6 @@ def make_corpus(unparsed_corpus_path,
                                          corpuspath=to_parse,
                                          filelist=filelist,
                                          corenlppath=corenlppath,
-                                         nltk_data_path=nltk_data_path,
                                          operations=operations,
                                          copula_head=cop_head,
                                          root=root,
@@ -340,22 +320,19 @@ def make_corpus(unparsed_corpus_path,
             return unparsed_corpus_path + '.conll'
 
         if parse:
+            from corpkit.conll import convert_json_to_conll
+
             move_parsed_files(project_path, to_parse, newparsed,
                           ext=kwargs.get('output_format', 'conll'), restart=restart)
+        
+            coref = False
+            if operations is False:
+                coref = True
+            elif 'coref' in operations or 'dcoref' in operations:
+               coref = True
 
-            if speaker_segmentation and kwargs.get('output_format', 'conll') == 'conll':
-                add_ids_to_xml(newparsed, originalname=to_parse)
-            if kwargs.get('output_format') == 'conll':
-                #from corpkit.build import add_deps_to_corpus_path
-                from corpkit.conll import convert_json_to_conll
-                coref = False
-                if operations is False:
-                    coref = True
-                elif 'coref' in operations or 'dcoref' in operations:
-                   coref = True
-
-                convert_json_to_conll(newparsed, speaker_segmentation=speaker_segmentation,
-                                      coref=coref, metadata=metadata)
+            convert_json_to_conll(newparsed, speaker_segmentation=speaker_segmentation,
+                                  coref=coref, metadata=metadata)
 
         try:
             os.remove(filelist)
