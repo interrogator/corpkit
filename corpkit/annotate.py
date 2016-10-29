@@ -8,12 +8,14 @@ def process_special_annotation(v, lin):
     this gets processed here. it's potentially the place where the
     user could add entropy score, or something like that.
     """
-    if v not in ['i', 'index', 'm']:
+    if v.lower() not in ['i', 'index', 'm', 'scheme', 't', 'q']:
         return v
     if v == 'index':
         return lin.name
-    else:
+    elif v in ['m', 't']:
         return str(lin[v])
+    else:
+        return v
 
 def make_string_to_add(annotation, lin, replace=False):
     """

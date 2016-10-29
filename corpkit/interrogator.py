@@ -28,7 +28,7 @@ def interrogator(corpus,
     gramsize=1,
     conc=False,
     maxconc=9999,
-    window=4,
+    window=None,
     no_closed=False,
     no_punct=True,
     discard=False,
@@ -129,11 +129,11 @@ def interrogator(corpus,
         If there's a gramsize of more than 1, remake show
         for ngramming
         """
+        if gramsize == 1:
+            return show
         out = []
         for i in show:
             out.append(i)
-        if gramsize == 1:
-            return show
         for i in range(1, gramsize):
             for bit in show:
                 out.append('+%d%s' % (i, bit))

@@ -548,7 +548,7 @@ def get_all_metadata_fields(corpus, include_speakers=False):
 
     # allow corpus object
     if not isinstance(corpus, Corpus):
-        corpus = Corpus(corpus)
+        corpus = Corpus(corpus, print_info=False)
     if not corpus.datatype == 'conll':
         return []
 

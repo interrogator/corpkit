@@ -45,6 +45,9 @@ except ImportError:
     from tkinter.ttk import Progressbar, Style
     from tkinter import _setit
 
+# todo: delete from the rest of code
+from corpkit.corpus import Corpus
+
 # determine path to gui resources:
 py_script = False
 from_py = False
@@ -1459,8 +1462,11 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                             return_count, return_gov_lemma, return_gov_pos, return_gov_func, \
                             return_dep_lemma, return_dep_pos, return_dep_func, \
                             return_ngm_lemma, return_ngm_pos, return_ngm_func, return_ngm]
+            must_make = [return_ngm_lemma, return_ngm_pos, return_ngm_func, return_ngm]
 
-            to_show = [i.get() for i in poss_returns if i.get() != '']
+            to_show = [prenext_pos.get() + i.get() if i in must_make and i.get() else i.get() for i in poss_returns]
+            to_show = [i for i in to_show if i and 'Position' not in i]
+
             if not to_show and not selected_option == 'v':
                 timestring('Interrogation must return something.')
                 return
@@ -1513,6 +1519,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             interrogator_args = {'search': queryd,
                                  'show': to_show,
                                  'case_sensitive': bool(case_sensitive.get()),
+                                 'no_punct': bool(no_punct.get()),
                                  #'spelling': conv,
                                  'root': root,
                                  'note': note,
@@ -1576,13 +1583,12 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             #    interrogator_args['query'] = 'any'
 
             # if ngramming, there are two extra options
-            if selected_option.startswith('n') or any(x.startswith('n') for x in to_show):
-                global ngmsize
-                if (ngmsize.var).get() != 'Size':
-                    interrogator_args['gramsize'] = int((ngmsize.var).get())
-
-                #global split_contract
-                #interrogator_args['split_contractions'] = split_contract.get()
+            ngm = ngmsize.var.get()
+            if ngm != 'Size':
+                interrogator_args['gramsize'] = int(ngm)
+            clc = collosize.var.get()
+            if clc != 'Size':
+                interrogator_args['window'] = int(clc)
 
             #if subc_pick.get() == "Subcorpus" or subc_pick.get().lower() == 'all' or \
             #    selected_corpus_has_no_subcorpora.get() == 1:
@@ -1735,7 +1741,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             corpus_fullpath.set(fp)
 
             from corpkit.corpus import Corpus
-            corpus = Corpus(fp)
+            corpus = Corpus(fp, print_info=False)
             dtype = corpus.datatype
             cols = []
             if dtype == 'conll':
@@ -1798,7 +1804,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 recalc_but.config(state=NORMAL)
                 pick_a_datatype.configure(state=NORMAL)
                 interrobut.configure(state=NORMAL)
-                if datatype_picked.get() not in ['Trees', 'N-grams']:
+                if datatype_picked.get() not in ['Trees']:
                     coref_but.config(state=NORMAL)
                 interrobut_conc.config(state=DISABLED)
                 recalc_but.config(state=DISABLED)
@@ -1910,20 +1916,20 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
         exclude_str = StringVar()
         exclude_str.set('')
-        Label(interro_opt, text='Exclude:').grid(row=7, column=0, sticky=W, pady=(0, 10))
+        Label(interro_opt, text='Exclude:').grid(row=8, column=0, sticky=W, pady=(0, 10))
         exclude_op = StringVar()
         exclude_op.set('None')
         exclude = OptionMenu(interro_opt, exclude_op, *['None'] + sorted(convert_name_to_query.keys()))
         exclude.config(width=14)
-        exclude.grid(row=7, column=0, sticky=W, padx=(60, 0), pady=(0, 10))
+        exclude.grid(row=8, column=0, sticky=W, padx=(60, 0), pady=(0, 10))
         qr = Entry(interro_opt, textvariable=exclude_str, width=18, state=DISABLED)
-        qr.grid(row=7, column=0, columnspan=2, sticky=E, padx=(0,40), pady=(0, 10))
+        qr.grid(row=8, column=0, columnspan=2, sticky=E, padx=(0,40), pady=(0, 10))
         all_text_widgets.append(qr)
         ex_plusbut = Button(interro_opt, text='+', \
                         command=lambda: add_criteria(ex_objs, ex_permref, ex_anyall, ex_additional_criteria, \
                                                        exclude_op, exclude_str, title = 'Exclude from interrogation'), \
                         state=DISABLED)
-        ex_plusbut.grid(row=7, column=1, sticky=E, pady=(0, 10))
+        ex_plusbut.grid(row=8, column=1, sticky=E, pady=(0, 10))
 
         #blklst = StringVar()
         #Label(interro_opt, text='Blacklist:').grid(row=12, column=0, sticky=W)
@@ -1938,7 +1944,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             Add the values for a metadata field to the subcorpus box
             """
             from corpkit.process import get_corpus_metadata
-            wx = evt.widget
+            try:
+                wx = evt.widget
+            except:
+                wx = evt
             speaker_listbox.configure(state=NORMAL)
             speaker_listbox.delete(0, END)
             indices = wx.curselection()
@@ -1948,11 +1957,11 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 value = wx.get(index)
                 if value == 'files':
                     from corpkit.corpus import Corpus
-                    corp = Corpus(current_corpus.get())
+                    corp = Corpus(current_corpus.get(), print_info=False)
                     vals = [i.name for i in corp.all_files]
                 elif value == 'folders':
                     from corpkit.corpus import Corpus
-                    corp = Corpus(current_corpus.get())
+                    corp = Corpus(current_corpus.get(), print_info=False)
                     vals = [i.name for i in corp.subcorpora]
                 elif value == 'none':
                     vals = []
@@ -2000,7 +2009,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             for lb in lbs:
                 lb.configure(state=NORMAL)
                 lb.delete(0, END)
-                lb.insert(END, 'folders')
+                from corpkit.corpus import Corpus
+                corp = Corpus(current_corpus.get(), print_info=False)
+                if corp.level == 'c':
+                    lb.insert(END, 'folders')
                 lb.insert(END, 'files')
                 for idz in sorted(ns):
                     lb.insert(END, idz)
@@ -2010,6 +2022,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 lb.configure(state=NORMAL)
                 lb.delete(0, END)
                 lb.configure(state=DISABLED)
+
+            by_met_listbox.selection_set(0)
+            populate_metavals(by_met_listbox)
 
         # by metadata   
         by_meta_scrl = Frame(interro_opt)
@@ -2053,7 +2068,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         coref = IntVar(root)
         coref.set(False)
         coref_but = Checkbutton(interro_opt, text='Count coreferents', variable=coref, onvalue=True, offvalue=False)
-        coref_but.grid(row=5, column=1, sticky=E) 
+        coref_but.grid(row=6, column=1, sticky=E, pady=(5,0)) 
         coref_but.config(state=DISABLED)
 
         # query
@@ -2266,14 +2281,27 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         #tfbut.grid(row=9, column=0, sticky=W)
         case_sensitive = IntVar()
         tmp = Checkbutton(interro_opt, text="Case sensitive", variable=case_sensitive, onvalue=True, offvalue=False)
-        tmp.grid(row=5, column=0, sticky=W, padx=(160,0))
+        tmp.grid(row=6, column=0, sticky=W, padx=(140,0), pady=(5,0))
+
+        no_punct = IntVar()
+        tmp = Checkbutton(interro_opt, text="Punctuation", variable=no_punct, onvalue=False, offvalue=True)
+        tmp.deselect()
+        tmp.grid(row=6, column=0, sticky=W, pady=(5,0))
 
         global ngmsize
-        Label(interro_opt, text='N-grams:').grid(row=5, column=0, sticky=W) 
-        ngmsize = MyOptionMenu(interro_opt, 'Size','2','3','4','5','6','7','8')
+        Label(interro_opt, text='N-gram size:').grid(row=5, column=0, sticky=W, padx=(240,0), columnspan=2, pady=(5,0)) 
+        ngmsize = MyOptionMenu(interro_opt, 'Size','1', '2','3','4','5','6','7','8')
         ngmsize.configure(width=12)
-        ngmsize.grid(row=5, column=0, sticky=W, padx=(65, 0))
-        ngmsize.config(state=DISABLED)
+        ngmsize.grid(row=5, column=1, sticky=E, pady=(5,0))
+        #ngmsize.config(state=DISABLED)
+
+        global collosize
+        Label(interro_opt, text='Collocation window:').grid(row=5, column=0, sticky=W, pady=(5,0)) 
+        collosize = MyOptionMenu(interro_opt, 'Size','1', '2','3','4','5','6','7','8')
+        collosize.configure(width=12)
+        collosize.grid(row=5, column=0, sticky=W, padx=(140,0), pady=(5,0))
+        #collosize.config(state=DISABLED)
+
         #global split_contract
         #split_contract = IntVar(root)
         #split_contract.set(False)
@@ -2293,25 +2321,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
         def turnon(but):
             but.config(state=NORMAL)
-
-        def ngram_callback(*args):
-            ngmshows = [return_ngm, return_ngm_lemma, return_ngm_func, return_ngm_pos]
-            ngmbuts = [ck17, ck18, ck19, ck20]
-            non_ngram = [ck1, ck2, ck3, ck4, ck5, ck6, ck7, ck8, ck9, ck10, \
-                ck11, ck12, ck13, ck14, ck15, ck16]
-            if any(ngmshow.get() for ngmshow in ngmshows):
-                for but in ngmbuts:
-                    turnon(but)
-                for but in non_ngram:
-                    desel_and_turn_off(but)
-                ngmsize.config(state=NORMAL)
-                #split_contract_but.config(state=NORMAL)
-            if all(not ngmshow.get() for ngmshow in ngmshows):
-                if return_count.get() != 'c':
-                    for but in non_ngram:
-                        turnon(but)
-                    ngmsize.config(state=DISABLED)
-                    #split_contract_but.config(state=DISABLED)
 
         def callback(*args):
             """if the drop down list for data type changes, fill options"""
@@ -2354,20 +2363,15 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 nametexter.config(state=NORMAL)
                 nametext.set('untitled')
 
-            if chosen == 'Stats' or chosen == 'N-grams':
+            if chosen == 'Stats':
                 for but in [ck2, ck3, ck4, ck5, ck6, ck7, ck8, ck9, ck10, \
                                 ck11, ck12, ck13, ck14, ck15, ck16]:
                     desel_and_turn_off(but)
                 turnon(ck1)
                 ck1.select()
                 ngmshows = [return_ngm, return_ngm_lemma, return_ngm_func, return_ngm_pos]
-                if chosen == 'N-grams' or any(ngmshow.get() for ngmshow in ngmshows):
-                    #lbut.config(state=DISABLED)
-                    ngmsize.config(state=NORMAL)
-                    #split_contract_but.config(state=NORMAL)
-                else:
-                    ngmsize.config(state=DISABLED)
-                    #split_contract_but.config(state=DISABLED)
+                #ngmsize.config(state=NORMAL)
+                #collosize.config(state=NORMAL)
             
             #if qa.get(1.0, END).strip('\n').strip() in def_queries.values() + special_examples.values():
             clean_query = qa.get(1.0, END).strip('\n').strip()
@@ -2395,7 +2399,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         interro_return_frm = Frame(interro_opt)
 
         Label(interro_return_frm, text='   Return', font=("Courier New", 13, "bold")).grid(row=0, column=0, sticky=E)
-        interro_return_frm.grid(row=6, column=0, columnspan=2, sticky=W, pady=10, padx=(10,0))
+        interro_return_frm.grid(row=7, column=0, columnspan=2, sticky=W, pady=10, padx=(10,0))
 
         Label(interro_return_frm, text='    Token', font=("Courier New", 13)).grid(row=0, column=1, sticky=E)
         Label(interro_return_frm, text='    Lemma', font=("Courier New", 13)).grid(row=0, column=2, sticky=E)
@@ -2404,7 +2408,14 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         Label(interro_return_frm, text='    Match', font=("Courier New", 13)).grid(row=1, column=0, sticky=E)
         Label(interro_return_frm, text=' Governor', font=("Courier New", 13)).grid(row=2, column=0, sticky=E)
         Label(interro_return_frm, text='Dependent', font=("Courier New", 13)).grid(row=3, column=0, sticky=E)
-        Label(interro_return_frm, text=   'N-gram', font=("Courier New", 13)).grid(row=4, column=0, sticky=E)
+
+        prenext_pos = StringVar(root)
+        prenext_pos.set('Position')
+        pick_posi_o = ('-5', '-4', '-3', '-2', '-1', '+1', '+2', '+3', '+4', '+5')
+        pick_posi_m = OptionMenu(interro_return_frm, prenext_pos, *pick_posi_o)
+        pick_posi_m.config(width=8)
+        pick_posi_m.grid(row=4, column=0, sticky=E)
+        #Label(interro_return_frm, text=   'N-gram', font=("Courier New", 13)).grid(row=4, column=0, sticky=E)
         Label(interro_return_frm, text='    Other', font=("Courier New", 13)).grid(row=5, column=0, sticky=E)
         Label(interro_return_frm, text='    Count', font=("Courier New", 13)).grid(row=5, column=1, sticky=E)
         Label(interro_return_frm, text='    Index', font=("Courier New", 13)).grid(row=5, column=2, sticky=E)
@@ -2516,7 +2527,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         return_gov = StringVar()
         return_gov.set('')
         ck9 = Checkbutton(interro_return_frm, variable=return_gov, 
-                          onvalue='g', offvalue = '')
+                          onvalue='gw', offvalue = '')
         ck9.grid(row=2, column=1, sticky=E)
 
         return_gov_lemma = StringVar()
@@ -2540,7 +2551,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         return_dep = StringVar()
         return_dep.set('')
         ck13 = Checkbutton(interro_return_frm, variable=return_dep, 
-                          onvalue='d', offvalue = '')
+                          onvalue='dw', offvalue = '')
         ck13.grid(row=3, column=1, sticky=E)
 
         return_dep_lemma = StringVar()
@@ -2564,31 +2575,26 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         return_ngm = StringVar()
         return_ngm.set('')
         ck17 = Checkbutton(interro_return_frm, variable=return_ngm, 
-                          onvalue='n', offvalue = '')
+                          onvalue='mw', offvalue = '')
         ck17.grid(row=4, column=1, sticky=E)
 
         return_ngm_lemma = StringVar()
         return_ngm_lemma.set('')
         ck18 = Checkbutton(interro_return_frm, variable=return_ngm_lemma, 
-                          onvalue='nl', offvalue = '')
+                          onvalue='ml', offvalue = '')
         ck18.grid(row=4, column=2, sticky=E)
 
         return_ngm_pos = StringVar()
         return_ngm_pos.set('')
         ck19 = Checkbutton(interro_return_frm, variable=return_ngm_pos, 
-                          onvalue='np', offvalue = '')
+                          onvalue='mp', offvalue = '')
         ck19.grid(row=4, column=3, sticky=E)
 
         return_ngm_func = StringVar()
         return_ngm_func.set('')
         ck20 = Checkbutton(interro_return_frm, variable=return_ngm_func, 
-                          onvalue='npl', offvalue = '', state=DISABLED)
+                          onvalue='mf', offvalue = '', state=DISABLED)
         ck20.grid(row=4, column=4, sticky=E)
-
-        return_ngm.trace("w", ngram_callback)
-        return_ngm_lemma.trace("w", ngram_callback)
-        return_ngm_pos.trace("w", ngram_callback)
-        return_ngm_func.trace("w", ngram_callback)
 
         def q_callback(*args):
             qa.configure(state=NORMAL)
@@ -2722,7 +2728,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 data2 = 'self'
             elif data2 in ['features', 'postags', 'wordclasses']:
                 from corpkit.corpus import Corpus
-                corp = Corpus(current_corpus.get())
+                corp = Corpus(current_corpus.get(), print_info=False)
                 data2 = getattr(corp, data2_pick.get())
                 #todo: populate results/totals with possibilities for features etc
             elif data2 is not False:
@@ -4913,6 +4919,98 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         interrobut_conc.config(command=lambda: runner(interrobut_conc, do_interrogation, conc = True), state=DISABLED)
         interrobut_conc.grid(row=0, column=6, padx=(5,0))
 
+        annotation = False
+        txt_var = StringVar()
+        txt_var_r = StringVar()
+
+        def annotate_corpus():
+            """
+            Allow the user to annotate the corpus
+            """
+
+            anno_trans = {'Middle': 'm',
+                          'Scheme': 't',
+                          'Index': 'index',
+                          'Colour': 'q'}
+
+            def allow_text(*args):
+                """
+                If the user wants to add text as value, let him/her
+                """
+                if anno_dec.get() == 'Custom':
+                    txt_box_r.config(state=NORMAL)
+                else:
+                    txt_box_r.config(state=DISABLED)
+
+            def go_action(*args):
+                """
+                Do annotation
+                """
+                from corpkit.corpus import Corpus
+                corp = Corpus(current_corpus.get(), print_info=False)
+                data = current_conc[0]
+                chosen = anno_dec.get()
+
+                # add colour and scheme to df
+                if chosen == 'Scheme':
+                    themelist = get_list_of_themes(data)
+                    if any(t != '' for t in themelist):
+                        data.insert(0, 't', themelist)
+                elif chosen == 'Colour':
+                    colourlist = get_list_of_colours(data)
+                    if any(t != '' for t in colourlist):
+                        data.insert(0, 'q', colourlist)
+
+                if chosen == 'Tag':
+                    annotation = txt_box.get()
+                elif chosen == 'Custom':
+                    field = txt_box.get()
+                    value = txt_box_r.get()
+                    annotation = {field: value}
+                else:
+                    field = txt_box.get()
+                    value = anno_trans.get(chosen, chosen)
+                    annotation = {field: value}
+
+                if debug:
+                    print('Annotation:', annotation)
+
+                corp.annotate(data, annotation, dry_run=False)
+                timestring('Annotation done.')
+                refresh_by_metadata()
+                anno_pop.destroy()
+
+            from tkinter import Toplevel
+            anno_pop = Toplevel()
+            #anno_pop.geometry('+400+40')
+            anno_pop.title("Annotate corpus")
+            anno_pop.wm_attributes('-topmost', 1)
+
+            #Label(anno_pop, text='Annotate with:').grid(row=1, column=0, sticky=W)
+            anno_dec = StringVar()
+            anno_dec.set('Middle')
+            annotype = ('Index', 'Position', 'Speaker', 'Colour', 'Scheme', 'Middle', 'Custom', 'Tag')
+            anno_lb = OptionMenu(anno_pop, anno_dec, *annotype)
+            anno_lb.grid(row=2, column=1, sticky=E)
+
+            Label(anno_pop, text='Field:').grid(row=1, column=0)
+            Label(anno_pop, text='Value:').grid(row=1, column=1)
+
+            txt_box = Entry(anno_pop, textvariable=txt_var, width=10)
+            all_text_widgets.append(txt_box)
+            txt_box.grid(row=2, column=0)
+
+            txt_box_r = Entry(anno_pop, textvariable=txt_var_r, width=22)
+            txt_box_r.config(state=DISABLED)
+            all_text_widgets.append(txt_box_r)
+            txt_box_r.grid(row=3, columnspan=2)
+
+            anno_dec.trace("w", allow_text)
+
+            do_anno = Button(anno_pop, text='Annotate', command=go_action)
+            do_anno.grid(row=4, columnspan=2)
+
+
         def recalc(*args):
             import pandas as pd
             name = simpledialog.askstring('New name', 'Choose a name for the data:')
@@ -4979,6 +5077,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
         # export to csv
         Button(conc_left_buts, text='Export', command=lambda: conc_export()).grid(row=0, column=6)
+
+        # annotate
+        Button(conc_left_buts, text='Annotate', command=annotate_corpus).grid(row=0, column=7)
 
         store_label = Label(conc_right_button_frame, text='Stored concordances', font=("Helvetica", 13, "bold"))
 
@@ -5848,7 +5949,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             #tokbut.grid(row=6, column=0, sticky=W)
             unparsed_corpus_path = corpus_fullpath.get()
             #filelist, _ = get_corpus_filepaths(project_fullpath.get(), unparsed_corpus_path)
-            corp = Corpus(unparsed_corpus_path)
+            corp = Corpus(unparsed_corpus_path, print_info=False)
             parsed = corp.tokenise(postag=tokenise_pos,
                                    lemmatise=tokenise_lem,
                                    root=root, 
@@ -5883,7 +5984,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 return
 
             unparsed_corpus_path = corpus_fullpath.get()
-            unparsed = Corpus(unparsed_corpus_path)
+            unparsed = Corpus(unparsed_corpus_path, print_info=False)
             note.progvar.set(0)
             unparsed_corpus_path = corpus_fullpath.get()
             corenlppath.set(get_corenlp_path(corenlppath.get()))

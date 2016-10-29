@@ -779,7 +779,7 @@ class Corpus(object):
         Delete metadata for corpus. May be needed if corpus is changed
         """
         import os
-        os.remove(os.path.join('data'), '.%s.json' % self.name)
+        os.remove(os.path.join('data', '.%s.json' % self.name))
 
     @lazyprop
     def metadata(self):
@@ -1077,7 +1077,7 @@ class Corpus(object):
         if not dry_run:
             self.delete_metadata()
             from corpkit.process import make_dotfile
-            make_dotfile(corpus)
+            make_dotfile(self)
 
     def unannotate(annotation, dry_run=True):
         """

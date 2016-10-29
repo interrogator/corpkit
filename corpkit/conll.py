@@ -17,6 +17,8 @@ def parse_conll(f,
 
     # go to corpkit.constants to modify the order of columns if yours are different
     from corpkit.constants import CONLL_COLUMNS as head
+
+    from collections import defaultdict
     
     with open(f, 'r') as fo:
         data = fo.read().strip('\n')
@@ -28,7 +30,7 @@ def parse_conll(f,
     count = 1
     sents = data.split('\n\n')    
     for sent in sents:
-        metadata[count] = {}
+        metadata[count] = defaultdict(set)
         for line in sent.split('\n'):
             if line and not line.startswith('#') \
                 and not just_meta:
@@ -37,7 +39,8 @@ def parse_conll(f,
                 line = line.lstrip('# ')
                 if '=' in line:
                     field, val = line.split('=', 1)
-                    metadata[count][field] = val
+                    metadata[count][field].add(val)
+        metadata[count] = {k: ','.join(v) for k, v in metadata[count].items()}
         count += 1
     if just_meta:
         return metadata
@@ -522,7 +525,8 @@ def fast_simple_conc(dfss, idxs, show,
                      only_format_match=True,
                      conc=False,
                      preserve_case=False,
-                     gramsize=1):
+                     gramsize=1,
+                     window=None):
     """
     Fast, simple concordancer, heavily conditional
     to save time.
@@ -669,6 +673,20 @@ def fast_simple_conc(dfss, idxs, show,
 
     return list(matches), conc_res
 
+def make_collocate_show(show, current):
+    """
+    Turn show into a collocate showing thing
+    """
+    out = []
+    for i in show:
+        out.append(i)
+    for i in show:
+        newn = '%s%s' % (str(current), i)
+        if not newn.startswith('-'):
+            newn = '+' + newn
+        out.append(newn)
+    return out
+
 def show_this(df, matches, show, metadata, conc=False,
               coref=False, category=False, show_conc_metadata=False, **kwargs):
 
@@ -676,6 +694,7 @@ def show_this(df, matches, show, metadata, conc=False,
     ngram_mode = kwargs.get('ngram_mode', True)
     preserve_case = kwargs.get('preserve_case', False)
     gramsize = kwargs.get('gramsize', 1)
+    window = kwargs.get('window', None)
 
     matches = sorted(list(matches))
 
@@ -688,7 +707,7 @@ def show_this(df, matches, show, metadata, conc=False,
     # attempt to leave really fast
     if kwargs.get('countmode'):
         return len(matches), {}
-    if len(show) == 1 and not conc:
+    if len(show) == 1 and not conc and gramsize == 1 and not window:
         if show[0] in ['ms', 'mi', 'mw', 'ml', 'mp', 'mf']:
             get_fast = df.loc[matches][show[0][-1]]
             if not preserve_case:
@@ -697,7 +716,7 @@ def show_this(df, matches, show, metadata, conc=False,
 
     # todo: make work for ngram, collocate and coref
     if all(i[0] in ['m', 'g', '+', '-', 'd', 'h', 'r'] for i in show):
-        if gramsize == 1:
+        if gramsize == 1 and not window:
             return fast_simple_conc(df,
                                 matches,
                                 show,
@@ -708,14 +727,22 @@ def show_this(df, matches, show, metadata, conc=False,
                                 only_format_match,
                                 conc=conc,
                                 preserve_case=preserve_case,
-                                gramsize=gramsize)
+                                gramsize=gramsize,
+                                window=window)
         else:
             resbit = []
             concbit = []
-            for i in range(gramsize):
+            iterab = range(1, gramsize + 1) if gramsize > 1 else range(-window, window+1)
+            for i in iterab:
+                if i == 0:
+                    continue
+                if window:
+                    nnshow = make_collocate_show(show, i)
+                else:
+                    nnshow = show
                 r, c = fast_simple_conc(df,
                                 matches,
-                                show,
+                                nnshow,
                                 metadata,
                                 show_conc_metadata,
                                 kwargs.get('filename', ''),
@@ -723,15 +750,14 @@ def show_this(df, matches, show, metadata, conc=False,
                                 only_format_match,
                                 conc=conc,
                                 preserve_case=preserve_case,
-                                gramsize=gramsize)
-                #resbit.append(r)
-                #concbit.append(c)
-                #for gm in r:
+                                gramsize=gramsize,
+                                window=window)
+
                 resbit.append(r)
-                #for gm in c:
                 concbit.append(c)
-                df = df.shift(1)
-                df = df.fillna('none')
+                if not window:
+                    df = df.shift(1)
+                    df = df.fillna('none')
             resbit = list(zip(*resbit))
             concbit = list(zip(*concbit))
             out = []
