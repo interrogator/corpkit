@@ -326,7 +326,7 @@ def parse_corpus(proj_path=False,
         extra_jar = ''
 
     out_form = 'xml' if kwargs.get('output_format') == 'xml' else 'json'
-    out_form = 'xml' if kwargs.get('output_format') == 'xml' else 'conll'
+    out_ext = 'xml' if kwargs.get('output_format') == 'xml' else 'conll'
 
     arglist = ['java', '-cp', 
                'stanford-corenlp-%s.jar:stanford-corenlp-%s-models.jar:xom.jar:joda-time.jar:%sjollyday.jar:ejml-0.23.jar' % (fver, fver, extra_jar), 

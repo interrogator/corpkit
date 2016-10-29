@@ -532,7 +532,7 @@ class Corpus(object):
                        +--------------------+-------+----------+-----------+-----------+
                        | Word class         | `X`   | `GX`     | `DX`      | `HX`      |
                        +--------------------+-------+----------+-----------+-----------+
-                       | Distance from root | `R`   | `GR`     | `DR`      | `HR`      |
+                       | Distance from root | `A`   | `GA`     | `DA`      | `HA`      |
                        +--------------------+-------+----------+-----------+-----------+
                        | Index              | `I`   | `GI`     | `DI`      | `HI`      |
                        +--------------------+-------+----------+-----------+-----------+
@@ -567,10 +567,10 @@ class Corpus(object):
 
                       When multiprocessing, the following is possible:
 
-                         >>> {'Nouns': r'/NN.?/', 'Verbs': r'/VB.?/'}
-                         ### return an :class:`corpkit.interrogation.Interrodict` object:
+                         >>> q = {'Nouns': r'/NN.?/', 'Verbs': r'/VB.?/'}
+                         ### return an :class:`corpkit.interrogation.Interrogation` object with multiindex:
                          >>> corpus.interrogate(T, q)
-                         ### return an :class:`corpkit.interrogation.Interrogation` object:
+                         ### return an :class:`corpkit.interrogation.Interrogation` object without multiindex:
                          >>> corpus.interrogate(T, q, show=C)
 
         :type query: `str`, `dict` or `list`
@@ -621,11 +621,8 @@ class Corpus(object):
                      completion
         :type save: `str`
 
-        :param gramsize: Size of n-grams (default 2)
+        :param gramsize: Size of n-grams (default 1, i.e. unigrams)
         :type gramsize: `int`
-
-        :param split_contractions: Make `"don't"` et al into two tokens
-        :type split_contractions: `bool`
 
         :param multiprocess: How many parallel processes to run
         :type multiprocess: `int`/`bool` (`bool` determines automatically)

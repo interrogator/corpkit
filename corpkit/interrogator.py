@@ -25,8 +25,7 @@ def interrogator(corpus,
     multiprocess=False,
     spelling=False,
     regex_nonword_filter=r'[A-Za-z0-9]',
-    gramsize=2,
-    split_contractions=False,
+    gramsize=1,
     conc=False,
     maxconc=9999,
     window=4,
@@ -91,6 +90,7 @@ def interrogator(corpus,
     from corpkit.other import as_regex
     from corpkit.dictionaries.process_types import Wordlist
     from corpkit.build import check_jdk
+    from corpkit.conll import pipeline
 
     import re
     if regex_nonword_filter:
@@ -124,7 +124,37 @@ def interrogator(corpus,
         print('%s: Interrogation resumed.\n' % time)
         signal.signal(signal.SIGINT, signal_handler)
 
-    def fix_show(show):
+    def add_adj_for_ngram(show, gramsize):
+        """
+        If there's a gramsize of more than 1, remake show
+        for ngramming
+        """
+        out = []
+        for i in show:
+            out.append(i)
+        if gramsize == 1:
+            return show
+        for i in range(1, gramsize):
+            for bit in show:
+                out.append('+%d%s' % (i, bit))
+        return out
+
+    def fix_show_bit(show_bit):
+        """
+        Take a single search/show_bit type, return match
+        """
+        ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 's', 'a', 'e']
+        starts = ['d', 'g', 'm', 'b', 'h', '+', '-', 'r']
+        show_bit = show_bit.lstrip('n')
+        show_bit = show_bit.lstrip('b')
+        show_bit = list(show_bit)
+        if show_bit[-1] not in ends:
+            show_bit.append('w')
+        if show_bit[0] not in starts:
+            show_bit.insert(0, 'm')
+        return ''.join(show_bit)
+
+    def fix_show(show, gramsize):
         """
         Lowercase anything in show and turn into list
         """
@@ -133,21 +163,8 @@ def interrogator(corpus,
         elif isinstance(show, STRINGTYPE):
             show = show.lower()
             show = [show]
-
-        # this little 'n' business is a hack: when ngramming,
-        # n shows have their n stripped, so nw should be nw 
-        # so we know we're ngramming and so it's not empty.
-        for index, val in enumerate(show):
-            if val == 'n' or val == 'nw':
-                show[index] = 'nw'
-            elif val == 'b' or val == 'bw':
-                show[index] = 'bw'
-            elif val.endswith('pl'):
-                show[index] = val.replace('pl', 'x')
-            else:
-                if len(val) == 2 and val.endswith('w'):
-                    show[index] = val[0]
-        return show
+        show = [fix_show_bit(i) for i in show]
+        return add_adj_for_ngram(show, gramsize)
 
     def is_multiquery(corpus, search, query, outname):
         """
@@ -225,11 +242,7 @@ def interrogator(corpus,
         statsmode = False
         tree_to_text = False
         search_trees = False
-
-        if datatype == 'conll':
-            from corpkit.conll import pipeline
-            searcher = pipeline
-
+            
         simp_crit = all(not i for i in [kwargs.get('tgrep'),
                                         files_as_subcorpora,
                                         subcorpora,
@@ -239,43 +252,29 @@ def interrogator(corpus,
         if search.get('t') and simp_crit:
             if have_java:
                 simple_tregex_mode = True
-                searcher = None
             else:
                 search_trees = 'tgrep'
-                searcher = pipeline
             optiontext = 'Searching parse trees'
 
         elif datatype == 'conll':
         
-            if any(i.endswith('n') for i in search.keys()):
-                search['w'] = search.pop('n')
-                if not show_ngram:
-                    show = ['n']
             if any(i.endswith('t') for i in search.keys()):
                 if have_java and not kwargs.get('tgrep'):
                     search_trees = 'tregex'
                 else:
                     search_trees = 'tgrep'
-                searcher = pipeline
                 optiontext = 'Searching parse trees'
             elif any(i.endswith('v') for i in search.keys()):
                 # either of these searchers now seems to work
-                searcher = pipeline
                 #seacher = get_stats_conll
                 statsmode = True
                 optiontext = 'General statistics'
             elif any(i.endswith('r') for i in search.keys()):
-                searcher = pipeline
                 optiontext = 'Distance from root'
             else:
-                searcher = pipeline
                 optiontext = 'Querying CONLL data'
-            # ngram mode for parsed data
-            if show_ngram:
-                optiontext = 'N-grams from CONLL data'
-                searcher = pipeline
 
-        return searcher, optiontext, simple_tregex_mode, statsmode, tree_to_text, search_trees
+        return optiontext, simple_tregex_mode, statsmode, tree_to_text, search_trees
 
     def get_tregex_values(show):
         """If using Tregex, set appropriate values
@@ -527,21 +526,20 @@ def interrogator(corpus,
 
                 all_conc_lines.append(Series(lin, index=conc_col_names))
 
-        try:
-            conc_df = pd.concat(all_conc_lines, axis=1).T
-        except ValueError:
-            # no results
-            return
+        conc_df = pd.concat(all_conc_lines, axis=1).T
 
         if all(x == '' for x in list(conc_df['s'].values)) or \
            all(x == 'none' for x in list(conc_df['s'].values)):
             conc_df.drop('s', axis=1, inplace=True)
         
-        if show_collocates and not language_model:
-            counted = Counter(conc_df['m'])
-            indices = [l for l in list(conc_df.index) if counted[conc_df.ix[l]['m']] > 1] 
-            conc_df = conc_df.ix[indices]
-            conc_df = conc_df.reset_index(drop=True)
+        # count each thing that occurs in the middle col
+        # remove things that only appear once?!
+        # i have no idea what this was doing in here.
+        #if not language_model:
+        #    counted = Counter(conc_df['m'])
+        #    indices = [l for l in list(conc_df.index) if counted[conc_df.ix[l]['m']] > 1] 
+        #    conc_df = conc_df.ix[indices]
+        #    conc_df = conc_df.reset_index(drop=True)
 
         locs['corpus'] = corpus.name
 
@@ -656,10 +654,7 @@ def interrogator(corpus,
     # figure out how the user has entered the query and show, and normalise
     from corpkit.process import searchfixer
     search = searchfixer(search, query)
-    show = fix_show(show)
-    
-    show_ngram = any(x.startswith('n') for x in show)
-    show_collocates = any(x.startswith('b') for x in show)
+    show = fix_show(show, gramsize)
 
     # instantiate lemmatiser if need be
     lem_instance = False
@@ -737,7 +732,7 @@ def interrogator(corpus,
     startnum = kwargs.get('startnum', 0)
 
     # Determine the search function to be used #
-    searcher, optiontext, simple_tregex_mode, statsmode, tree_to_text, search_trees = determine_search_func(show)
+    optiontext, simple_tregex_mode, statsmode, tree_to_text, search_trees = determine_search_func(show)
     
     # no conc for statsmode
     if statsmode:
@@ -748,8 +743,6 @@ def interrogator(corpus,
     # Set some Tregex-related values
     translated_option = False
     if search.get('t'):
-        if show_ngram:
-            raise ValueError("Can't search trees for n-grams---use a dependency search.")
         query, translated_option = get_tregex_values(show)
         if query == 'Bad query' and translated_option is None:
             if root:
@@ -869,7 +862,7 @@ def interrogator(corpus,
         for f in files:
             slow_treg_speaker_guess = kwargs.get('outname', '') if kwargs.get('multispeaker') else ''
             filepath, corefs = f.path, coref
-            res, conc_res = searcher(filepath, search=search, show=show,
+            res, conc_res = pipeline(filepath, search=search, show=show,
                                      dep_type=dep_type,
                                      exclude=exclude,
                                      excludemode=excludemode,
@@ -881,7 +874,6 @@ def interrogator(corpus,
                                      gramsize=gramsize,
                                      no_punct=no_punct,
                                      no_closed=no_closed,
-                                     split_contractions=split_contractions,
                                      window=window,
                                      filename=f.path,
                                      coref=corefs,
@@ -1005,9 +997,9 @@ def interrogator(corpus,
         df = DataFrame(the_big_dict, index=sorted(results.keys()))
 
         # for ngrams, remove hapaxes
-        if show_ngram or show_collocates:
-            if not language_model:
-                df = df[[i for i in list(df.columns) if df[i].sum() > 1]]
+        #if show_ngram or show_collocates:
+        #    if not language_model:
+        #        df = df[[i for i in list(df.columns) if df[i].sum() > 1]]
 
         numentries = len(df.columns)
         tot = df.sum(axis=1)

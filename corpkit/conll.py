@@ -521,7 +521,8 @@ def fast_simple_conc(dfss, idxs, show,
                      category=False,
                      only_format_match=True,
                      conc=False,
-                     preserve_case=False):
+                     preserve_case=False,
+                     gramsize=1):
     """
     Fast, simple concordancer, heavily conditional
     to save time.
@@ -557,11 +558,13 @@ def fast_simple_conc(dfss, idxs, show,
     if not simple:
         formatted = []
         import numpy as np
+
         for ind, i in enumerate(show):
             # nothing to do if it's an m feature
             if i.startswith('m') and not i.endswith('a'):
                 continue
             # defaults for adjacent work
+
             adj, tomove, adjname = False, False, ''
             adj, i = determine_adjacent(i)
             adjname = ''.join(adj) if hasattr(adj, '__iter__') else ''
@@ -594,7 +597,7 @@ def fast_simple_conc(dfss, idxs, show,
                 else:
                     dfx = df[[ob, att]]
             # decide if we need to format everything
-            if not conc or only_format_match:
+            if (not conc or only_format_match) and not adj:
                 to_proc = just_matches
             else:
                 to_proc = df
@@ -622,7 +625,6 @@ def fast_simple_conc(dfss, idxs, show,
                 df = make_new_for_dep(df, ser, i)
 
         df = df.fillna('none')
-
 
     # x is wordclass. so, we just get pos and translate it
     nshow = [(i.replace('x', 'p'), i.endswith('x')) for i in show]
@@ -673,6 +675,7 @@ def show_this(df, matches, show, metadata, conc=False,
     only_format_match = kwargs.pop('only_format_match', True)
     ngram_mode = kwargs.get('ngram_mode', True)
     preserve_case = kwargs.get('preserve_case', False)
+    gramsize = kwargs.get('gramsize', 1)
 
     matches = sorted(list(matches))
 
@@ -694,7 +697,8 @@ def show_this(df, matches, show, metadata, conc=False,
 
     # todo: make work for ngram, collocate and coref
     if all(i[0] in ['m', 'g', '+', '-', 'd', 'h', 'r'] for i in show):
-        return fast_simple_conc(df,
+        if gramsize == 1:
+            return fast_simple_conc(df,
                                 matches,
                                 show,
                                 metadata,
@@ -703,21 +707,44 @@ def show_this(df, matches, show, metadata, conc=False,
                                 category,
                                 only_format_match,
                                 conc=conc,
-                                preserve_case=preserve_case)
-
-def fix_show_bit(show_bit):
-    """take a single search/show_bit type, return match"""
-    #show_bit = [i.lstrip('n').lstrip('b') for i in show_bit]
-    ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 's', 'a', 'e']
-    starts = ['d', 'g', 'm', 'b', 'h', '+', '-', 'r']
-    show_bit = show_bit.lstrip('n')
-    show_bit = show_bit.lstrip('b')
-    show_bit = list(show_bit)
-    if show_bit[-1] not in ends:
-        show_bit.append('w')
-    if show_bit[0] not in starts:
-        show_bit.insert(0, 'm')
-    return ''.join(show_bit)
+                                preserve_case=preserve_case,
+                                gramsize=gramsize)
+        else:
+            resbit = []
+            concbit = []
+            for i in range(gramsize):
+                r, c = fast_simple_conc(df,
+                                matches,
+                                show,
+                                metadata,
+                                show_conc_metadata,
+                                kwargs.get('filename', ''),
+                                category,
+                                only_format_match,
+                                conc=conc,
+                                preserve_case=preserve_case,
+                                gramsize=gramsize)
+                #resbit.append(r)
+                #concbit.append(c)
+                #for gm in r:
+                resbit.append(r)
+                #for gm in c:
+                concbit.append(c)
+                df = df.shift(1)
+                df = df.fillna('none')
+            resbit = list(zip(*resbit))
+            concbit = list(zip(*concbit))
+            out = []
+            conc_out = []
+            # this is slow but keeps the order
+            # remove it esp for resbit where it doesn't matter
+            for r in resbit:
+                for b in r:
+                    out.append(b)
+            for c in concbit:
+                for b in c:
+                    conc_out.append(b)
+            return out, conc_out
 
 def remove_by_mode(matches, mode, criteria):
     """
@@ -1060,7 +1087,6 @@ def pipeline(f=False,
 
     if isinstance(show, str):
         show = [show]
-    show = [fix_show_bit(i) for i in show]
 
     all_matches = []
     all_exclude = []
@@ -1292,7 +1318,6 @@ def convert_json_to_conll(path,
             #except ValueError:
             #    continue
 
-        ref = 1
         for idx, sent in enumerate(data['sentences'], start=1):
             tree = sent['parse'].replace('\n', '')
             tree = re.sub(r'\s+', ' ', tree)

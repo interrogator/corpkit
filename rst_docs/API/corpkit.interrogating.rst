@@ -66,7 +66,7 @@ Corpus interrogations will output a :class:`corpkit.interrogation.Interrogation`
     'exclude': False,
     'excludemode': 'any',
     'files_as_subcorpora': True,
-    'gramsize': 2,
+    'gramsize': 1,
     ...}
 
    >>> propnoun.concordance # (sample)
@@ -105,11 +105,15 @@ Parsed corpora contain many different kinds of things we might like to search. T
 +--------+-----------------------+
 | X      |  Word class           |
 +--------+-----------------------+
-| R      |  Distance from root   |
+| E      |  NER tag              |
++--------+-----------------------+
+| A      |  Distance from root   |
 +--------+-----------------------+
 | I      |  Index in sentence    |
 +--------+-----------------------+
 | S      |  Sentence index       |
++--------+-----------------------+
+| R      | Coref representative  |
 +--------+-----------------------+
 
 
@@ -140,13 +144,13 @@ In the examples above, we match attributes of tokens. The great thing about pars
 +--------+------------------------+
 | Search | Gloss                  |
 +========+========================+
-| G      |  Governor              |
+| G      | Governor               |
 +--------+------------------------+
-| D      |  Dependent             |
+| D      | Dependent              |
 +--------+------------------------+
-| H      |  Coreference head      |
+| H      | Coreference head       |
 +--------+------------------------+
-| T      |  Syntax tree           |
+| T      | Syntax tree            |
 +--------+------------------------+
 | A1     | Token 1 place to left  |
 +--------+------------------------+
@@ -174,7 +178,7 @@ In the examples above, we match attributes of tokens. The great thing about pars
 +--------------------+-------+----------+-----------+------------+-----------------+
 | Word class         | X     | GX       | DX        | HX         | A1X/Z1X         |
 +--------------------+-------+----------+-----------+------------+-----------------+
-| Distance from root | R     | GR       | DR        | HR         | A1R/Z1R         |
+| Distance from root | A     | GA       | DA        | HA         | A1A/Z1A         |
 +--------------------+-------+----------+-----------+------------+-----------------+
 | Index              | I     | GI       | DI        | HI         | A1I/Z1I         |
 +--------------------+-------+----------+-----------+------------+-----------------+
@@ -201,33 +205,7 @@ In many cases, rather than using ``exclude``, you could also remove results late
 What to show
 ---------------------
 
-Up till now, all searches have simply returned words. The final major argument of the ``interrogate`` method is ``show``, which dictates what is returned from a search. Words are the default value. You can use any of the search values as a show value, plus a few extra values for n-gramming and collocation:
-
-+------+-----------------------+------------------------+
-| Show | Gloss                 | Example                |
-+======+=======================+========================+
-| N    |  N-gram word          | `The women were`       |
-+------+-----------------------+------------------------+
-| NL   |  N-gram lemma         | `The woman be`         |
-+------+-----------------------+------------------------+
-| NF   |  N-gram function      | `det nsubj root`       |
-+------+-----------------------+------------------------+
-| NP   |  N-gram POS tag       | `DT NNS VBN`           |
-+------+-----------------------+------------------------+
-| NX   |  N-gram word class    | `determiner noun verb` |
-+------+-----------------------+------------------------+
-| B    |  Collocate word       | `The_were`             |
-+------+-----------------------+------------------------+
-| BL   |  Collocate lemma      | `The_be`               |
-+------+-----------------------+------------------------+
-| BF   |  Collocate function   | `det_root`             |
-+------+-----------------------+------------------------+
-| BP   |  Collocate POS tag    | `DT_VBN`               |
-+------+-----------------------+------------------------+
-| BX   |  Collocate word class | `determiner_verb`      |
-+------+-----------------------+------------------------+
-
-``show`` can be either a single string or a list of strings. If a list is provided, each value is returned with forward slashes as delimiters.
+Up till now, all searches have simply returned words. The final major argument of the ``interrogate`` method is ``show``, which dictates what is returned from a search. Words are the default value. You can use any of the search values as a show value. ``show`` can be either a single string or a list of strings. If a list is provided, each value is returned with forward slashes as delimiters.
 
 .. code-block:: python
 
@@ -236,37 +214,37 @@ Up till now, all searches have simply returned words. The final major argument o
 
    ['friend/friend/nn', 'friends/friend/nns', 'fiend/fiend/nn', 'fiends/fiend/nns', ... ]
 
-N-gramming is therefore as simple as:
+Unigrams are generated by default. To get n-grams, pass in an n value as ``gramsize``:
 
 .. code-block:: python
 
    >>> example = corpus.interrogate({W: r'wom[ae]n]'}, show=N, gramsize=2)
    >>> list(example.results)
 
-   ['a woman', 'the woman', 'the women', 'women are', ... ]
+   ['a/woman', 'the/woman', 'the/women', 'women/are', ... ]
 
 
 So, this leaves us with a huge array of possible things to show, all of which can be combined if need be:
 
-+--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
-|                    | Match | Governor | Dependent | Coref Head | N-gram | Collocate | 1L position | 1R position |
-+====================+=======+==========+===========+============+========+===========+=============+=============+
-| Word               | W     | G        | D         | H          | N      | B         | A1          | Z1          |
-+--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
-| Lemma              | L     | GL       | DL        | HL         | NL     | BL        | A1L         | Z1L         |
-+--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
-| Function           | F     | GF       | DF        | HF         | NF     | BF        | A1F         | Z1F         |
-+--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
-| POS tag            | P     | GP       | DP        | HP         | NP     | BP        | A1P         | Z1P         |
-+--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
-| Word class         | X     | GX       | DX        | HX         | NX     | BX        | A1X         | Z1X         |
-+--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
-| Distance from root | R     | GR       | DR        | HR         | NR     | BR        | A1R         | Z1R         |
-+--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
-| Index              | I     | GI       | DI        | HI         | NI     | BI        | A1I         | Z1I         |
-+--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
-| Sentence index     | S     | GS       | DS        | HS         | NS     | BS        | A1S         | Z1S         |
-+--------------------+-------+----------+-----------+------------+--------+-----------+-------------+-------------+
++--------------------+-------+----------+-----------+------------+-------------+-------------+
+|                    | Match | Governor | Dependent | Coref Head | 1L position | 1R position |
++====================+=======+==========+===========+============+=============+=============+
+| Word               | W     | G        | D         | H          | A1          | Z1          |
++--------------------+-------+----------+-----------+------------+-------------+-------------+
+| Lemma              | L     | GL       | DL        | HL         | A1L         | Z1L         |
++--------------------+-------+----------+-----------+------------+-------------+-------------+
+| Function           | F     | GF       | DF        | HF         | A1F         | Z1F         |
++--------------------+-------+----------+-----------+------------+-------------+-------------+
+| POS tag            | P     | GP       | DP        | HP         | A1P         | Z1P         |
++--------------------+-------+----------+-----------+------------+-------------+-------------+
+| Word class         | X     | GX       | DX        | HX         | A1X         | Z1X         |
++--------------------+-------+----------+-----------+------------+-------------+-------------+
+| Distance from root | A     | GA       | DA        | HA         | A1A         | Z1R         |
++--------------------+-------+----------+-----------+------------+-------------+-------------+
+| Index              | I     | GI       | DI        | HI         | A1I         | Z1I         |
++--------------------+-------+----------+-----------+------------+-------------+-------------+
+| Sentence index     | S     | GS       | DS        | HS         | A1S         | Z1S         |
++--------------------+-------+----------+-----------+------------+-------------+-------------+
 
 One further extra show value is ``'c'`` (count), which simply counts occurrences of a phenomenon. Rather than returning a DataFrame of results, it will result in a single Series. It cannot be combined with other values.
 
@@ -376,12 +354,6 @@ When working with dependencies, you can use any of the long list of search and `
    ### interrogate corpus, outputting the nsubj lemma
    >>> sayers = parsed.interrogate(crit, show=L)
 
-You can also select from the three dependency grammars used by CoreNLP: one of `'basic-dependencies'`, `'collapsed-dependencies'`, or `'collapsed-ccprocessed-dependencies'` can be passed in as `dep_type`:
-
-.. code-block:: python
-
-   >>> corpus.interrogate(query, dep_type='collapsed-ccprocessed-dependencies')
-
 Working with metadata
 ----------------------------------
 
@@ -456,20 +428,20 @@ Interrogating the corpus can be slow. To speed it up, you can pass an integer as
 N-grams
 ---------------------
 
-N-gramming can be done simply by using an n-gram string (``N``, ``NL``, ``NP`` or ``NPL``) as the `show` value. Two options for n-gramming are ``gramsize=n``, where ``n`` determines the number of tokens in the n-gram, and ``split_contractions=True``, which controls whether or not words like *doesn't* are treated as one token or two.
+N-gramming can be generated by making ``gramsize`` > 1:
 
 .. code-block:: python
 
-   >>> corpus.interrogate({W: 'father'}, show='NL', gramsize=3, split_contractions=False)
+   >>> corpus.interrogate({W: 'father'}, show='L', gramsize=3)
 
 Collocation
 ------------
 
-Collocations can be shown by using one of the ``B`` show values. You can use ``window=n`` to specify the size of the window to the left and right of the match.
+Collocations can be shown by making using ``window``:
 
 .. code-block:: python
 
-   >>> corpus.interrogate({W: 'father'}, show='BL', window=6)
+   >>> corpus.interrogate({W: 'father'}, show='L', window=6)
 
 Saving interrogations
 ----------------------

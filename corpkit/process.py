@@ -1121,18 +1121,6 @@ def make_name_to_query_dict(existing={}, cols=False, dtype=False):
             existing['%s%s' % (o, p)] = '%s%s' % (l, m)
     return existing
 
-def make_savename_for_features(corpname=False, obj='features', subcorpora=False):
-    subc = subcorpora if subcorpora else ''
-    if isinstance(subcorpora, list):
-        subc = '-'.join(subcorpora)
-    if subc in ['default', 'folders', 'folder']:
-        subc = ''
-    if corpname:
-        obj = corpname + '-' + obj
-    if subc:
-        obj = obj + '-' + subc
-    return obj
-
 def auto_usecols(search, exclude, show, usecols, coref=False):
     """
     Figure out if we can speed up conll parsing based on search,
@@ -1369,7 +1357,7 @@ def get_first_df(corpus):
     # genius code below
     from corpkit.corpus import Corpus
     if not isinstance(corpus, Corpus):
-        corpus = Corpus(corpus)
+        corpus = Corpus(corpus, print_info=False)
     if corpus.subcorpora:
         return corpus.subcorpora[0].files[0].document
     elif corpus.files:
@@ -1413,7 +1401,7 @@ def get_corpus_metadata(path, generate=False):
     from corpkit.constants import OPENER
 
     if not isinstance(path, Corpus):
-        corpus = Corpus(path)
+        corpus = Corpus(path, print_info=False)
     else:
         corpus = path
 
