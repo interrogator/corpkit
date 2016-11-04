@@ -265,6 +265,7 @@ def parse_corpus(proj_path=False,
     corenlppath = get_corenlp_path(corenlppath)
 
     if not corenlppath:
+        print("CoreNLP not found. Auto-installing.")
         cnlp_dir = os.path.join(os.path.expanduser("~"), 'corenlp')
         corenlppath, fpath = download_large_file(cnlp_dir, url,
                                                  root=root,
