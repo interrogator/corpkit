@@ -10,4 +10,3 @@ requests
 chardet
 blessings>=1.6
 traitlets>=4.1.0
-tabview>=1.4.0
