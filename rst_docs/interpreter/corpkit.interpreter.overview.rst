@@ -138,13 +138,14 @@ In square brackets with asterisks are recursive parts of the syntax, which often
 In the pages that follow, the syntax is provided for the most common commands. You can also type the name of the command with no arguments into the interpreter, in order to show usage examples.
 
 Prompt features
------------
+-------------------
 
 * You can use `history`, `clear`, `ls` and `cd` commands as you would in the shell
 * You can execute arbitrary bash commands by beginning the line with an exclamation point (e.g. ``!rm data/*``)
 * You can use semicolons to put multiple commands on a line (currently needs a space **before and after** the semicolon)
 * There is no piping or output redirection (yet), but you can use the `export` and `save` commands to export results
 * You can use backslashes to continue writing on the next line
+* You can write scripts and pass them to the *corpkit* interpreter
 
 The below is therefore a possible (but terrible) way to write code in *corpkit*:
 

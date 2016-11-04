@@ -13,6 +13,20 @@ if len(sys.argv) > 1 and os.path.isfile(sys.argv[-1]):
 else:
     fromscript = False
 
+def install(name, loc):
+    """
+    If we don't have a module, download it
+    """
+    import pip
+    import importlib
+    try:
+        importlib.import_module(name)
+    except ImportError:
+        pip.main(['install', loc])
+
+tabview = ('tabview', 'git+https://github.com/interrogator/tabview@93644dd1f410de4e47466ea8083bb628b9ccc471#egg=tabview')
+colorama = ('colorama', 'colorama')
+
 # run a command a la python -c
 command = sys.argv[sys.argv.index('-c') + 1] if '-c' in sys.argv else False
 
@@ -21,6 +35,11 @@ quiet = any(i in sys.argv for i in ['--q', '--quiet'])
 load = any(i in sys.argv for i in ['--load', '-l'])
 profile = any(i in sys.argv for i in ['--profile', '-p'])
 version = any(i in sys.argv for i in ['--version', '-v'])
+
+if not any('noinstall' in arg.lower() for arg in sys.argv):
+    install(*tabview)
+    install(*colorama)
+
 if version:
     import corpkit
     print(corpkit.__version__)

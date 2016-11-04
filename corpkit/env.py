@@ -37,7 +37,6 @@ help_text = "\nThis is a dedicated interpreter for corpkit, a tool for creating,
             " | `query`       | Values used to perform search or edit         | \n"\
             " +---------------+-----------------------------------------------+ "\
             "\n\nCommand examples:\n\n" \
-
             " +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+  \n"\
             " | Command         | Purpose                                                      | Syntax                                                                                     |  \n"\
             " +=================+==============================================================+============================================================================================+  \n"\
@@ -83,11 +82,10 @@ help_text = "\nThis is a dedicated interpreter for corpkit, a tool for creating,
             " +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+  \n"\
             " | `ipython`       | Enter IPython with objects available                         | `ipython`                                                                                  |  \n"\
             " +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+  \n"\
-            " | `py`            | Execute Python code                                          | `py 'print("hello world")'`                                                                |  \n"\
+            " | `py`            | Execute Python code                                          | `py 'print('hello world')'`                                                                |  \n"\
             " +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+  \n"\
             " | `!`             | Run a line of bash shell                                     | `!ls -al data`                                                                             |  \n"\
             " +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+  \n"\
-
             "\nMore information:\n\nYou can access more specific help by entering corpkit, then by doing 'help <command>', or by visiting\n" \
             "http://corpkit.readthedocs.io/en/latest\n\n" \
             "For help on viewing results, hit '?' when in the result viewing mode. For concordances, hit 'h'.\n\n(Hit 'q' to exit help).\n\n"
@@ -763,7 +761,6 @@ def interpreter(debug=False,
             except (SyntaxError, NameError):
                 return val
 
-
     def search_helper(text='search'):
         """
         Interactive mode for search, exclude or show
@@ -953,6 +950,8 @@ def interpreter(debug=False,
 
         if debug:
             print(kwargs)
+
+        kwargs['show_conc_metadata'] = True
 
         objs.corpus.just = objs.just
         objs.corpus.skip = objs.skip

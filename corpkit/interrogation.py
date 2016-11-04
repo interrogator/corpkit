@@ -593,7 +593,7 @@ class Concordance(pd.core.frame.DataFrame):
         self.concordance = data
 
     def format(self, kind='string', n=100, window=35,
-               print_it=True, columns='all', **kwargs):
+               print_it=True, columns='all', metadata=True, **kwargs):
         """
         Print concordance lines nicely, to string, LaTeX or CSV
 
@@ -621,10 +621,10 @@ class Concordance(pd.core.frame.DataFrame):
         from corpkit.other import concprinter
         if print_it:
             print(concprinter(self, kind=kind, n=n, window=window,
-                           columns=columns, return_it=True, **kwargs))
+                           columns=columns, return_it=True, metadata=metadata, **kwargs))
         else:
             return concprinter(self, kind=kind, n=n, window=window,
-                           columns=columns, return_it=True, **kwargs)
+                           columns=columns, return_it=True, metadata=metadata, **kwargs)
 
     def calculate(self):
         """Make new Interrogation object from (modified) concordance lines"""

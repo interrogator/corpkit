@@ -102,7 +102,7 @@ def quickview(results, n=25):
             print('%s: %s' %(str(index).rjust(3), entry.ljust(longest)))
 
 def concprinter(dataframe, kind='string', n=100,
-                window=35, columns='all', **kwargs):
+                window=35, columns='all', metadata=True, **kwargs):
     """
     Print conc lines nicely, to string, latex or csv
 
@@ -149,8 +149,18 @@ def concprinter(dataframe, kind='string', n=100,
     if window:
         to_show = resize_by_window_size(to_show, window)
 
-    if columns != 'all':
-        to_show = to_show[columns]
+    # if showing metadata to the right of lmr, add it here
+    cnames = list(to_show.columns)
+    ind = cnames.index('r')
+    if columns == 'all':
+        columns = cnames[:ind+1]
+    if metadata is True:
+        after_right = cnames[ind+1:]
+        columns = columns + after_right
+    elif isinstance(metadata, list):
+        columns = columns + metadata
+
+    to_show = to_show[columns]
 
     if kind.startswith('s'):
         functi = pd.DataFrame.to_string
@@ -164,13 +174,13 @@ def concprinter(dataframe, kind='string', n=100,
         kwargs['sep'] = '\t'
 
     # automatically basename subcorpus for show
-    if 'c' in list(df.columns):
+    if 'c' in list(to_show.columns):
         import os
-        df['c'] = df['c'].apply(os.path.basename)
+        to_show['c'] = to_show['c'].apply(os.path.basename)
 
-    if 'f' in list(df.columns):
+    if 'f' in list(to_show.columns):
         import os
-        df['f'] = df['f'].apply(os.path.basename)
+        to_show['f'] = to_show['f'].apply(os.path.basename)
 
     return_it = kwargs.pop('return_it', False)
     print_it = kwargs.pop('print_it', True)
