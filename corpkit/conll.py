@@ -7,7 +7,16 @@ def parse_conll(f,
                 just_meta=False,
                 usecols=None):
     """
-    Take a file and return pandas dataframe with multiindex and metadata
+    Make a pandas.DataFrame with metadata from a CONLL-U file
+    
+    Args:
+        f (str): Filepath
+        first_time (bool, optional): If True, add in sent index
+        just_meta (bool, optional): Return only a metadata `dict`
+        usecols (None, optional): Which columns must be parsed by pandas.read_csv
+    
+    Returns:
+        pandas.DataFrame: DataFrame containing tokens and a ._metadata attribute
     """
     import pandas as pd
     try:
@@ -15,11 +24,11 @@ def parse_conll(f,
     except ImportError:
         from io import StringIO
 
+    from collections import defaultdict
+
     # go to corpkit.constants to modify the order of columns if yours are different
     from corpkit.constants import CONLL_COLUMNS as head
 
-    from collections import defaultdict
-    
     with open(f, 'r') as fo:
         data = fo.read().strip('\n')
 
@@ -81,7 +90,6 @@ def get_dependents_of_id(idx, df=False, repeat=False, attr=False, coref=False):
     """
     Get dependents of a token
     """
-
     sent_id, tok_id = getattr(idx, 'name', idx)
     deps = df.ix[sent_id, tok_id]['d'].split(',')
     out = []
@@ -110,13 +118,6 @@ def get_governors_of_id(idx, df=False, repeat=False, attr=False, coref=False):
     if attr:
         return getattr(df.loc[sent_id,govid], attr, 'root')
     return [(sent_id, govid)]
-
-    #sent = df.xs(sent_id, level='s', drop_level=False)
-    #res = list(i for i, tk in sent.iterrows() if tk['g'] == tok_id)
-    #if repeat is not False:
-    #    return [res[repeat-1]]
-    #else:
-    #    return res
 
 def get_match(idx, df=False, repeat=False, attr=False, **kwargs):
     """
@@ -784,6 +785,10 @@ def remove_by_mode(matches, mode, criteria):
         return set(k for k, v in counted.items() if v >= len(criteria))
 
 def determine_adjacent(original):
+    """
+    Figure out if we're doing an adjacent location, get the co-ordinates
+    and return them and the stripped original
+    """
     if original[0] in ['+', '-']:
         adj = (original[0], original[1:-2])
         original = original[-2:]
@@ -794,8 +799,7 @@ def determine_adjacent(original):
 def process_df_for_speakers(df, metadata, criteria, coref=False,
                             feature='speakers', method='just'):
     """
-    keep just the correct speakers
-    reverse=skip, not reverse=just
+    Keep or remove parts of the DataFrame based on metadata criteria
     """
     if not criteria:
         df._metadata = metadata
@@ -837,6 +841,9 @@ def process_df_for_speakers(df, metadata, criteria, coref=False,
     return df
 
 def cut_df_by_meta(df, just_metadata, skip_metadata):
+    """
+    Reshape a DataFrame based on filters
+    """
     if df is not None:
         if just_metadata:
             for k, v in just_metadata.items():
@@ -1016,7 +1023,8 @@ def get_stats(from_df=False, metadata=False, feature=False, root=False, **kwargs
 
     tree = [x['parse'] for x in metadata.values()]
     
-    tregex_qs = {'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S !$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
+    tregex_qs = {'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S '\
+                 '!$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
                  'Open interrogative': r'ROOT < SBARQ <<- (/\?/ !< __)', 
                  'Closed interrogative': r'ROOT ( < (SQ < (NP $+ VP)) << (/\?/ !< __) | < (/(S|SBAR)/ < (VP $+ NP)) <<- (/\?/ !< __))',
                  'Unmodalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
@@ -1236,7 +1244,9 @@ def pipeline(f=False,
     return out, conc_out
 
 def load_raw_data(f):
-    """loads the stripped and raw versions of a parsed file"""
+    """
+    Loads the stripped and raw versions of a parsed file
+    """
     from corpkit.process import saferead
 
     # open the unparsed version of the file, read into memory

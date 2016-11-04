@@ -1,14 +1,11 @@
 """
-Translating between CQL and corpkit
-
-* CQL is extended through the use of wordlists
-
+Translating between CQL and corpkit's native 
 """
 
-MAX = 9
-
 def remake_special(querybit, customs=False, return_list=False, **kwargs):
-    """expand references to wordlists in queries"""
+    """
+    Expand references to wordlists in queries
+    """
     import re
     from corpkit.dictionaries import roles, wordlists, processes
     from corpkit.other import as_regex
@@ -50,7 +47,9 @@ def remake_special(querybit, customs=False, return_list=False, **kwargs):
     return ''.join(fixed)   
 
 def parse_quant(quant):
-    """normalise quanitifers ... i don't know what i'm doing anymore"""
+    """
+    Normalise quanitifers
+    """
     if quant.startswith('}{'):
         quant = quant.strip('}{ ')
         if ',' in quant:
@@ -60,6 +59,10 @@ def parse_quant(quant):
     return quant
 
 def process_piece(piece, op='=', quant=False, **kwargs):
+    """
+    Make a single search obj and value
+    """
+
     from corpkit.process import make_name_to_query_dict
     if op not in piece:
         return False, False
@@ -85,8 +88,10 @@ def process_piece(piece, op='=', quant=False, **kwargs):
 
 
 def tokenise_cql(query):
-    """take a cql query and return a list of tuples
-    which is token, quantifer"""
+    """
+    Take a cql query and return a list of tuples
+    which is token, quantifer
+    """
     quantstarts = ['+', '{', ',', '}', '?', '*']
     tokens = ''
     count = 0
@@ -137,6 +142,9 @@ def tokenise_cql(query):
     return out
 
 def to_corpkit(cstring, **kwargs):
+    """
+    Turn CQL into corpkit (two dict) format
+    """
     sdict = {}
     edict = {}
     cstring = tokenise_cql(cstring)
@@ -168,6 +176,9 @@ def to_corpkit(cstring, **kwargs):
     return sdict, edict
 
 def to_cql(dquery, exclude=False, **kwargs):
+    """
+    Turn dictionary query into cql format
+    """
     qlist = []
     from corpkit.constants import transobjs, transshow
     if exclude:

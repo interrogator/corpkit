@@ -1,3 +1,6 @@
+# this code is written in corpkit interpreter language.
+# it is used to test that the interpreter works properly
+
 set test-speak-parsed
 search corpus for words matching '^[abcd]' showing pos and lemma
 search corpus for governor-function matching 'root' showing lemma with preserve_case

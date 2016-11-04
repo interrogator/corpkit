@@ -15,11 +15,6 @@ Overview
 
 It's a little less powerful than the full Python API, but it is easier to use, especially if you don't know Python. You can also switch instantly from the interpreter to the full API, so you only need the API for the really tricky stuff.
 
-.. note::
-
-   Interpreter documentation still under construction. For now, feel free to file an Issue on GitHub if there's something you think really needs explanation!
-   
-
 The syntax of the interpreter is based around *objects*, which you do things to, and *commands*, which are actions performed upon the objects. The example below uses the `search` command on a `corpus` object, which produces new objects, called `result`, `concordance`, `totals` and `query`. As you can see, very complex searches can be performed using an English-like syntax:
 
 .. code-block:: bash
@@ -68,6 +63,8 @@ The most common objects you'll be using are:
 +---------------+-----------------------------------------------+
 | `postags`     | Distribution of POS tags in corpus            |
 +---------------+-----------------------------------------------+
+| `lexicon`     | Distribution of lexis in the corpus           |
++---------------+-----------------------------------------------+
 | `figure`      | Plotted data                                  |
 +---------------+-----------------------------------------------+
 | `query`       | Values used to perform search or edit         |
@@ -79,13 +76,12 @@ The most common objects you'll be using are:
 | `wordlists`   | A list of wordlists for searching, editing    |
 +---------------+-----------------------------------------------+
 
-
-When you start the interperter, these are all empty. You'll need to use commands to put data in their namespace. You can also create your own object names using the ``call`` command. 
+When you start the interpreter, these are all empty. You'll need to run commands in order to fill them with data. You can also create your own object names using the ``call`` command.
 
 Commands 
 -----------
 
-You do things to the objects via commands. Each command has its own syntax, designed to be as similar to natural language as possible.
+You do things to the objects via commands. Each command has its own syntax, designed to be as similar to natural language as possible. Below is a table of common commands, an explanation of their purpose, and an example of their syntax
 
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 | Command         | Purpose                                                      | Syntax                                                                                     |
@@ -133,6 +129,8 @@ You do things to the objects via commands. Each command has its own syntax, desi
 | `ipython`       | Enter IPython with objects available                         | `ipython`                                                                                  |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 | `py`            | Execute Python code                                          | `py 'print("hello world")'`                                                                |
++-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
+| `!`             | Run a line of bash shell                                     | `!ls -al data`                                                                             |
 +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+
 
 In square brackets with asterisks are recursive parts of the syntax, which often also accept `not` operators. `<text>` denotes places where you can choose an identifier, filename, etc.

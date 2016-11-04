@@ -25,10 +25,13 @@ def make_corpus(unparsed_corpus_path,
     :param unparsed_corpus_path: path to corpus containing text files, 
                                  or subdirs containing text files
     :type unparsed_corpus_path: str
+    
     :param project_path: path to corpkit project
     :type project_path: str
+
     :param parse: Do parsing?
     :type parse: bool
+    
     :param tokenise: Do tokenising?
     :type tokenise: bool
     

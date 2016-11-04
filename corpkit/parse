@@ -7,12 +7,12 @@ A script to parse using corpkit
 
 :Example:
 
-parse junglebook --speaker-segmentation True
+$ parse junglebook --speaker-segmentation True
 
 """
 
 import sys
-from corpkit import Corpus
+from corpkit.corpus import Corpus
 
 if len(sys.argv) == 1:
     raise ValueError('Please specify a corpus to parse.')
