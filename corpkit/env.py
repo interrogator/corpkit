@@ -967,8 +967,8 @@ def interpreter(debug=False,
         if sch in ['features', 'postags', 'wordclasses']:
             objs.result = getattr(corpp, sch)
             objs.totals = getattr(corpp, sch).sum(axis=1)
-            if objs._interactive:
-                show_this([sch])
+            #if objs._interactive:
+            #    show_this([sch])
         else:
             objs.result = corpp.interrogate(**kwargs)
             objs.totals = objs.result.totals
@@ -1147,7 +1147,7 @@ def interpreter(debug=False,
             objs.previous = out
             show_this(['result'])
             objs.query = out.query
-            if objs._do_conc:
+            if objs._do_conc and (hasattr(out, 'concordance') and out.concordance is not None):
                 objs.concordance = out.concordance
                 objs._old_concs.append(objs.concordance)
             else:
@@ -1156,7 +1156,7 @@ def interpreter(debug=False,
             objs.edited = False
 
         # either all or no showing should be done here 
-        if command in [edit_something, sort_something, calculate_result,
+        elif command in [edit_something, sort_something, calculate_result,
                        keep_conc, del_conc]:
             from corpkit.interrogation import Concordance
             if isinstance(out, Concordance):
