@@ -436,13 +436,19 @@ def interpreter(debug=False,
         else:
             showfunc = print
             kwa = {}
-
         obj = getattr(obj, 'results', obj)
         if isinstance(obj, (pd.DataFrame, pd.Series)):
-            showfunc(obj.round(objs._decimal), **kwa)
+            df = obj.round(objs._decimal)
+            df = df.rename_axis(None)
+            showfunc(df, **kwa)
             return
         elif obj:
-            showfunc(obj.round(objs._decimal), **kwa)
+            try:
+                df = obj.round(objs._decimal)
+                df = df.rename_axis(None)
+            except:
+                df = obj
+            showfunc(df, **kwa)
             return
         #else:
         #    if isinstance(objs._get(command)[1], (pd.DataFrame, pd.Series)):
@@ -1132,7 +1138,10 @@ def interpreter(debug=False,
             objs._previous_type = attr
 
         if command == search_corpus:
-            if not objs.result:
+            # can be dataframe in the case of features
+            import pandas as pd
+            from corpkit.interrogation import Interrogation, Concordance
+            if not isinstance(objs.result, (Interrogation, Concordance, pd.DataFrame, pd.Series)):
                 return
             objs.result = out
             objs.previous = out
