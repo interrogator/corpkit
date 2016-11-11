@@ -11,7 +11,6 @@ RUN apk add --update \
     freetype \
     pkgconf \
     libxft-dev \
-    libxslt1-dev \
     libxml2-dev
 
 RUN apk --update add openjdk8-jre-base
