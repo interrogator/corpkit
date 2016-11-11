@@ -584,7 +584,9 @@ def get_all_metadata_fields(corpus, include_speakers=False):
     return list(fields)
 
 def get_names(filepath, speakid):
-    """get a list of speaker names from a file"""
+    """
+    Get a list of speaker names from a file
+    """
     import re
     from corpkit.process import saferead
     txt, enc = saferead(filepath)
