@@ -14,6 +14,9 @@ RUN apk add --update \
 
 RUN apk --update add openjdk8-jre-base
 
+# needed for numpy
+RUN ln -s /usr/include/locale.h /usr/include/xlocale.h
+
 RUN pip install --upgrade pip
 RUN pip install cython
 RUN pip install numpy
@@ -27,4 +30,4 @@ RUN git clone https://github.com/interrogator/corpkit
 RUN pip install -r corpkit/requirements.txt
 
 RUN python -m corpkit.download.corenlp
-CMD python -m corpkit.env
+CMD ["python","-m","corpkit.env"]
