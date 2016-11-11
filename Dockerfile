@@ -1,4 +1,4 @@
-FROM Alpine:latest
+FROM alpine:latest
 MAINTAINER interro_gator
 
 RUN apk add --update \
