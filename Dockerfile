@@ -1,8 +1,6 @@
 FROM alpine:latest
 MAINTAINER interro_gator
 
-RUN apt-get update
-
 RUN apk add --update \
     python3 \
     python-dev \
@@ -12,7 +10,7 @@ RUN apk add --update \
     libpng \
     freetype \
     pkgconf \
-    libxft-dev libfreetype6 libfreetype6-dev
+    libxft-dev libfreetype6 libfreetype6-dev 
 
 RUN apk --update add openjdk8-jre-base
 
