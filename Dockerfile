@@ -7,7 +7,8 @@ RUN apk add --update \
     py-pip \
     build-base \
     git \
-    py-matplotlib
+    libpng \
+    freetype
 
 RUN apk --update add openjdk-8-jre
 
