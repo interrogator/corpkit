@@ -10,13 +10,16 @@ RUN apk add --update \
     libpng \
     freetype \
     pkgconf \
-    libxft-dev libfreetype6 libfreetype6-dev 
+    libxft-dev
 
 RUN apk --update add openjdk8-jre-base
 
 RUN pip install --upgrade pip
 
 RUN rm -rf /var/cache/apk/*
+
+RUN git clone git://github.com/matplotlib/matplotlib.git
+RUN cd matplotlib && python setup.py install && cd ..
 
 RUN git clone https://github.com/interrogator/corpkit
 RUN pip install -r corpkit/requirements.txt
