@@ -8,7 +8,7 @@ None of them is intended to be called by the user him/herself.
 
 def download_large_file(proj_path, url, actually_download=True, root=False, **kwargs):
     """
-    Download something to proj_path
+    Download something to proj_path, unless it's CoreNLP, which goes to ~/corenlp
     """
     import os
     import shutil
@@ -20,12 +20,16 @@ def download_large_file(proj_path, url, actually_download=True, root=False, **kw
 
     file_name = url.split('/')[-1]
     home = os.path.expanduser("~")
+    customdir = kwargs.get('custom_corenlp_dir', False)
     # if it's corenlp, put it in home/corenlp
     # if that dir exists, check if for a zip file
     # if there's a zipfile and it works, move on
     # if there's a zipfile and it's broken, delete it
     if 'stanford' in url:
-        downloaded_dir = os.path.join(home, 'corenlp')
+        if customdir:
+            downloaded_dir = customdir
+        else:
+            downloaded_dir = os.path.join(home, 'corenlp')
         if not os.path.isdir(downloaded_dir):
             os.makedirs(downloaded_dir)
         else:
@@ -102,7 +106,7 @@ def download_large_file(proj_path, url, actually_download=True, root=False, **kw
                 pass
             if root:
                 root.update()
-            return
+            return None, None
 
         if kwargs.get('note'):  
             kwargs['note'].progvar.set(100)

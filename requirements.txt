@@ -1,11 +1,9 @@
--e git+https://www.github.com/interrogator/corenlp-xml-lib#egg=corenlp-xml-lib
 -e git+https://github.com/interrogator/tkintertable.git@e983dea6565d583439cbe04034774944388213ae#egg=tkintertable
 -e git+https://github.com/interrogator/tabview@93644dd1f410de4e47466ea8083bb628b9ccc471#egg=tabview
 matplotlib >= 1.5.1
 nltk >= 3.0.0
 joblib
 pandas >= 0.16.1
-lxml>=3.4.4
 requests
 chardet
 blessings>=1.6

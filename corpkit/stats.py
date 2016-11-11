@@ -46,7 +46,7 @@ def surprisal(self,
               search={'w', 'any'},
               exclude=False,
               show=['w'],
-              gramsize,
+              gramsize=1,
               subcorpora='default',
               **kwargs):
     """
