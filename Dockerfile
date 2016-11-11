@@ -1,6 +1,7 @@
 FROM alpine:latest
 MAINTAINER interro_gator
 
+
 RUN apk add --update \
     python3 \
     python-dev \
@@ -8,7 +9,8 @@ RUN apk add --update \
     build-base \
     git \
     libpng \
-    freetype
+    freetype \
+    pkgconf
 
 RUN apk --update add openjdk8-jre-base
 
