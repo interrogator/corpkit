@@ -5,7 +5,8 @@ RUN apk add --update \
     python3 \
     python-dev \
     py-pip \
-    build-base
+    build-base \
+    git
 
 RUN apk --update add openjdk7-jre
 
