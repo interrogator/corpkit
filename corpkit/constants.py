@@ -62,3 +62,5 @@ MAX_SPEAKERNAME_SIZE = 40
 
 
 REPEAT_PARSE_ATTEMPTS = 3
+
+CORENLP_URL = 'http://nlp.stanford.edu/software/stanford-corenlp-full-2015-12-09.zip'

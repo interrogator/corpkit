@@ -216,7 +216,7 @@ def parse_corpus(proj_path=False,
     import time
 
     fileparse = kwargs.get('fileparse', False)
-    url = 'http://nlp.stanford.edu/software/stanford-corenlp-full-2015-12-09.zip'
+    from corpkit.constants import CORENLP_URL as url
     
     if not check_jdk():
         print('Need latest Java.')
