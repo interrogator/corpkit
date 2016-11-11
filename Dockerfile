@@ -15,6 +15,8 @@ RUN apk add --update \
 RUN apk --update add openjdk8-jre-base
 
 RUN pip install --upgrade pip
+RUN pip install cython
+RUN pip install numpy
 
 RUN rm -rf /var/cache/apk/*
 
