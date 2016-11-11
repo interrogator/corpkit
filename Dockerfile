@@ -54,6 +54,8 @@ RUN cd matplotlib && python setup.py install && cd ..
 # install corpkit requirements
 RUN pip install -r requirements.txt
 
+RUN pip install docker-py
+
 # add everything from corpkit to working dir
 COPY . /.src
 
@@ -61,9 +63,9 @@ COPY . /.src
 RUN python /.src/setup.py install
 
 # download might be needed for licence issues
-RUN python -m corpkit.download.corenlp /
+#RUN python -m corpkit.download.corenlp /
 
-CMD ["python","-m","corpkit.env"]
+CMD python -m corpkit.env docker=corpkit
 
 WORKDIR /projects
 

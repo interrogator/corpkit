@@ -226,6 +226,7 @@ class Objects(object):
         self.just = {}
         self.skip = {}
         self.symbolic = False
+        self._docker = False
 
         # system toggles and references to older data
         self._in_a_project = None
@@ -267,7 +268,8 @@ def interpreter(debug=False,
                 quiet=False,
                 python_c_mode=False,
                 profile=False,
-                loadcurrent=False):
+                loadcurrent=False,
+                docker=False):
 
     import os
 
@@ -283,6 +285,9 @@ def interpreter(debug=False,
              "                         '-._____.-'\n"
 
     objs = Objects()
+
+    if docker:
+        objs._docker = docker
 
     # basic way to check that we're currently in a project, because i'm lazy
     def check_in_project():
@@ -1811,6 +1816,16 @@ def interpreter(debug=False,
         import os
         the_path = os.path.expanduser(tokens[-1])
         outf = os.path.join(os.getcwd(), 'data', os.path.basename(the_path))
+        # if we're using docker things get tricky
+        if objs._docker:
+            import subprocess
+            from docker import Client
+            cli = Client()
+            idx = str(subprocess.check_output(["cat", "/etc/hostname"])).strip('\n').strip()
+            outf = ':'.join([idx, outf])
+            cli.copy(the_path, outf)
+            print('%s added to %s.' % (tokens[-1], outf))
+            return
         shutil.copytree(the_path, outf)
         print('%s added to %s.' % (tokens[-1], outf))
 
@@ -2237,5 +2252,10 @@ if __name__ == '__main__':
     else:
         fromscript = False
 
+    docker = next((i for i in sys.argv if i.startswith('docker=')), False)
+    if docker:
+        docker = docker.split('=', 1)[-1]
+    print(sys.argv)
+
     debug = sys.argv[-1] == 'debug'
-    interpreter(debug=debug, fromscript=fromscript)
+    interpreter(debug=debug, fromscript=fromscript, docker=docker)
