@@ -10,7 +10,7 @@ RUN apk add --update \
     libpng \
     freetype
 
-RUN apk --update add openjdk-8-jre
+RUN apk --update add openjdk8-jre-base
 
 RUN pip install --upgrade pip
 
