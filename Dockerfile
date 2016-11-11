@@ -9,7 +9,7 @@ RUN apk add --update \
 
 RUN apk --update add openjdk7-jre
 
-rm -rf /var/cache/apk/*
+RUN rm -rf /var/cache/apk/*
 
 RUN git clone https://github.com/interrogator/corpkit
 RUN pip install -r corpkit/requirements.txt
