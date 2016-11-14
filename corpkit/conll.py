@@ -32,25 +32,21 @@ def parse_conll(f,
     with open(f, 'r') as fo:
         data = fo.read().strip('\n')
 
-    # todo: file metadata?
-
     splitdata = []
     metadata = {}
-    count = 1
     sents = data.split('\n\n')    
-    for sent in sents:
+    for count, sent in enumerate(sents, start=1):
         metadata[count] = defaultdict(set)
         for line in sent.split('\n'):
             if line and not line.startswith('#') \
                 and not just_meta:
-                splitdata.append('\n%s' % line)
+                splitdata.append('\n%d\t%s' % (count, line))
             else:
                 line = line.lstrip('# ')
                 if '=' in line:
                     field, val = line.split('=', 1)
                     metadata[count][field].add(val)
         metadata[count] = {k: ','.join(v) for k, v in metadata[count].items()}
-        count += 1
     if just_meta:
         return metadata
 
@@ -59,15 +55,13 @@ def parse_conll(f,
         return
 
     # determine the number of columns we need
-    l = len(splitdata[0].strip('\t').split('\t'))
+    l = len(splitdata[0].strip('\t').split('\t')) - 1
     head = head[:l]
     
-    # if formatting for the first time, add sent ids
-    
-    if first_time:
-        for i, d in enumerate(splitdata, start=1):
-            d = d.replace('\n', '\n%s\t' % str(i))
-            splitdata[i-1] = d
+    # introduce sentence index for multiindex
+    #for i, d in enumerate(splitdata, start=1):
+    #    d = d.replace('\n', '\n%s\t' % str(i))
+    #    splitdata[i-1] = d
 
     # turn into something pandas can read    
     data = '\n'.join(splitdata)
@@ -79,7 +73,7 @@ def parse_conll(f,
     # open with sent and token as multiindex
     try:
         df = pd.read_csv(StringIO(data), sep='\t', header=None,
-                         names=head, index_col=['s', 'i'], usecols=usecols)
+                         names=['s'] + head, index_col=['s', 'i'], usecols=usecols)
         #df.index = pd.MultiIndex.from_tuples([(1, i) for i in df.index])
     except ValueError:
         return
@@ -1368,7 +1362,8 @@ def convert_json_to_conll(path,
                                              metadata_mode=True,
                                              speaker_segmentation=speaker_segmentation)
                             
-            output = '# sent_id %d\n# parse=%s\n' % (idx, tree)
+            #output = '# sent_id %d\n# parse=%s\n' % (idx, tree)
+            output = '# parse=%s\n' % tree
             for k, v in sorted(metad.items()):
                 output += '# %s=%s\n' % (k, v)
             for token in sent['tokens']:
@@ -1384,8 +1379,7 @@ def convert_json_to_conll(path,
                 if not depends:
                     depends = '0'
                 #offsets = '%d,%d' % (token['characterOffsetBegin'], token['characterOffsetEnd'])
-                line = [idx,
-                        index,
+                line = [index,
                         token['word'],
                         token['lemma'],
                         token['pos'],
