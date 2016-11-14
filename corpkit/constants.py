@@ -1,6 +1,7 @@
 import sys
 import codecs
 
+# python 2/3 coompatibility
 PYTHON_VERSION = sys.version_info.major
 STRINGTYPE = str if PYTHON_VERSION == 3 else basestring
 INPUTFUNC = input if PYTHON_VERSION == 3 else raw_input
@@ -40,26 +41,29 @@ transobjs = {'g': 'Governor',
              'm': 'Match',
              'h': 'Head'}
 
-# modify this if your conll-style data is different from what is provided by the
-# parser plus post-processing. data must tart with 's' for sentence index and 'i'
-# for token index. after that, you can have whichever fields you like, and should 
-# be able to access them using normal corpkit syntax.
+# below are the column names for the conll-u formatted data
+# corpkit's format is slightly different, but largely compatible.
 
-# 'd', for deps, is a comma-sep string of dependent token indices
+# Key differences:
+#
+#     1. 'e' is used for NER, rather than lang specific POS
+#     2. 'd' gives a comma-sep list of dependents, rather than head-deprel pairs
+#        this is done for processing speed.
+#     3. 'c' is used for corefs, not 'misc comment'. it has an artibrary number 
+#        representing a dependency chain. head of a mention is marked with an asterisk.
 
-# 'c', for coref, has an artibrary number representing a dependency chain. the
-# head of a mention is marked with an asterisk.
+# 'm' does not have anything in it in corpkit, but denotes morphological features
 
-# y and z are left as custom fields, not really in use now, but theoretically
-# they are searchable
-
-# default: sent, index, word, lem, pos, ner, gov, func, deps, coref, custom * 3
-CONLL_COLUMNS = ['i', 'w', 'l', 'p', 'e', 'g', 'f', 'd', 'c', 'y', 'z']
+# default: index, word, lem, pos, ner, morph, gov, func, deps, coref
+CONLL_COLUMNS = ['i', 'w', 'l', 'p', 'e', 'm', 'g', 'f', 'd', 'c']
 
 # what the longest possible speaker ID is. this prevents huge lines with colons
 # from getting matched unintentionally
 MAX_SPEAKERNAME_SIZE = 40
 
+# parsing sometimes fails with a java error. if corpus.parse(restart=True), this will try
+# parsing n times before giving up
 REPEAT_PARSE_ATTEMPTS = 3
 
+# location of the current corenlp
 CORENLP_URL = 'http://nlp.stanford.edu/software/stanford-corenlp-full-2015-12-09.zip'

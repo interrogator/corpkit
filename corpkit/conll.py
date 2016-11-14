@@ -1362,6 +1362,9 @@ def convert_json_to_conll(path,
                                              metadata_mode=True,
                                              speaker_segmentation=speaker_segmentation)
                             
+            # currently there is no standard for sent_id, so i'm leaving it out, but
+            # if https://github.com/UniversalDependencies/docs/issues/273 is updated
+            # then i could switch it back
             #output = '# sent_id %d\n# parse=%s\n' % (idx, tree)
             output = '# parse=%s\n' % tree
             for k, v in sorted(metad.items()):
@@ -1384,6 +1387,7 @@ def convert_json_to_conll(path,
                         token['lemma'],
                         token['pos'],
                         token.get('ner', '_'),
+                        '_', # this is morphology, which is unannotated always, but here to conform to conll u
                         governor,
                         func,
                         ','.join(depends)]
