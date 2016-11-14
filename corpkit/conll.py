@@ -57,7 +57,6 @@ def parse_conll(f,
     # head can only be as long as the list of cols in the df
     num_tabs = splitdata[0].strip('\t').count('\t')
     head = head[:num_tabs]
-    print('HEAD', head)
     
     # introduce sentence index for multiindex
     #for i, d in enumerate(splitdata, start=1):
@@ -1121,7 +1120,6 @@ def pipeline(f=False,
     all_exclude = []
 
     if from_df is False or from_df is None:
-        print('USECOLS', kwargs.get('usecols'))
         df = parse_conll(f, usecols=kwargs.get('usecols'))
         # can fail here if df is none
         metadata = df._metadata

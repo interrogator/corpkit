@@ -86,7 +86,7 @@ pip install corpkit
 Via Git:
 
 ```shell
-git clone https://www.github.com/interrogator/corpkit
+git clone https://github.com/interrogator/corpkit
 cd corpkit
 python setup.py install
 ```
