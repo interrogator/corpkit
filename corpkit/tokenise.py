@@ -65,8 +65,7 @@ def write_df_to_conll(df, newf, plain=False, stripped=False,
     sent_ixs = set(df.index.labels[0])
     for si in sent_ixs:
         si = si + 1
-
-        outstring += '# sent_id %d\n' % si
+        #outstring += '# sent_id %d\n' % si
         if metadata:
             metad = get_speaker_from_offsets(stripped,
                                              plain,
@@ -77,7 +76,8 @@ def write_df_to_conll(df, newf, plain=False, stripped=False,
             for k, v in sorted(metad.items()):
                 outstring += '# %s=%s\n' % (k, v)
 
-        sent = df.loc[si:si]
+        sent = df.loc[si]
+
         csv = sent.to_csv(None, sep='\t', header=False)
         outstring += csv + '\n'
     try:
