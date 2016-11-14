@@ -6195,7 +6195,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 newsub = newp
             fs = [f for f in os.listdir(newsub) if f.endswith('.txt') \
                                                 or f.endswith('.xml') \
-                                                or f.endswith('.conll')]
+                                                or f.endswith('.conll') \
+                                                or f.endswith('.conllu')]
             for e in fs:
                 f_view.insert(END, e)
             if selected_corpus_has_no_subcorpora.get() == 0:      
@@ -6325,7 +6326,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 if but not in boxes:
                     boxes.append(but)
 
-            elif chosen_f[0].endswith('.conll'):
+            elif chosen_f[0].endswith('.conll') or chosen_f[0].endswith('.conllu'):
 
                 import re
                 parsematch = re.compile(r'^# parse=(.*)')

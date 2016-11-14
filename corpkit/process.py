@@ -390,7 +390,8 @@ def determine_datatype(path):
         mc = '.txt'
     
     lookup = {'.txt': 'plaintext',
-              '.conll': 'conll'}
+              '.conll': 'conll',
+              '.conllu': 'conll'}
 
     return lookup.get(mc, 'plaintext'), singlefile
 

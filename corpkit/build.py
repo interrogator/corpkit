@@ -262,7 +262,8 @@ def parse_corpus(proj_path=False,
         if not os.path.isfile(new_corpus_path):
             fs = get_filepaths(new_corpus_path, ext=False)
             if not multiprocessing:
-                if any([f.endswith('.conll') for f in fs]):
+                if any([f.endswith('.conll') for f in fs]) or 
+                   any([f.endswith('.conllu') for f in fs]):
                     print('Folder containing .conll files already exists: %s' % new_corpus_path)
                     return False
          

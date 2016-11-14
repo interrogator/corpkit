@@ -83,7 +83,7 @@ class Corpus(object):
                         continue
                     if isinstance(f, str) and f.startswith('.'):
                         continue
-                    if f[0].endswith('conll'):
+                    if f[0].endswith('conll') or f[0].endswith('conllu'):
                         self.datatype = 'conll'
                         break
 
@@ -1151,7 +1151,7 @@ class File(Corpus):
         kwargs = {'print_info': False, 'level': 'f', 'datatype': datatype}
         kwargs.update(kwa)
         Corpus.__init__(self, self.path, **kwargs)
-        if self.path.endswith('.conll'):
+        if self.path.endswith('.conll') or self.path.endswith('.conllu'):
             self.datatype = 'conll'
         else:
             self.datatype = 'plaintext'

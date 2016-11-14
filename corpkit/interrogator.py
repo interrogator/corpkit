@@ -1029,7 +1029,7 @@ def interrogator(corpus,
     # if we're doing files as subcorpora,  we can remove the extension etc
     if isinstance(df, DataFrame) and files_as_subcorpora:
         cname = corpus.name.replace('-stripped', '').replace('-parsed', '')
-        edits = [(r'(-[0-9][0-9][0-9])?\.txt\.conll', ''),
+        edits = [(r'(-[0-9][0-9][0-9])?\.txt\.conllu?', ''),
                  (r'-%s(-stripped)?(-parsed)?' % cname, '')]
         from corpkit.editor import editor
         df = editor(df, replace_subcorpus_names=edits).results
@@ -1039,7 +1039,7 @@ def interrogator(corpus,
     if conc_df is not None and conc_df is not False:
         # removed 'f' from here for now
         for col in ['c']:
-            for pat in ['.txt', '.conll']:
+            for pat in ['.txt', '.conll', '.conllu']:
                 conc_df[col] = conc_df[col].str.replace(pat, '')
             conc_df[col] = conc_df[col].str.replace(r'-[0-9][0-9][0-9]$', '')
 
