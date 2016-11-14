@@ -55,7 +55,7 @@ transobjs = {'g': 'Governor',
 # 'm' does not have anything in it in corpkit, but denotes morphological features
 
 # default: index, word, lem, pos, ner, morph, gov, func, deps, coref
-CONLL_COLUMNS = ['i', 'w', 'l', 'p', 'e', 'm', 'g', 'f', 'd', 'c']
+CONLL_COLUMNS = ['i', 'w', 'l', 'p', 'e', 'v', 'g', 'f', 'd', 'c']
 
 # what the longest possible speaker ID is. this prevents huge lines with colons
 # from getting matched unintentionally

@@ -9,7 +9,7 @@ corpkit documentation
 
 *corpkit* is a Python-based tool for doing more sophisticated corpus linguistics. It exists as a graphical interface, a Python API, and a natural language interpreter. The API and interpreter are documented here.
 
-With *corpkit*, you can create parsed, structured and metadata-annotated corpora, and then search them for complex lexicogrammatical patterns. Search results can be quickly edited, sorted and visualised, saved and loaded within projects, or exported to formats that can be handled by other tools.
+With *corpkit*, you can create parsed, structured and metadata-annotated corpora, and then search them for complex lexicogrammatical patterns. Search results can be quickly edited, sorted and visualised, saved and loaded within projects, or exported to formats that can be handled by other tools. In fact, you can easily work with any dataset in `CONLL U`_ format, including the freely available, multilingual `Universal Dependencies Treebanks`_. 
 
 Concordancing is extended to allow the user to query and display grammatical features alongside tokens. Keywording can be restricted to certain word classes or positions within the clause. If your corpus contains multiple documents or subcorpora, you can identify keywords in each, compared to the corpus as a whole.
 
@@ -199,3 +199,5 @@ If you'd like to cite *corpkit*, you can use:
 .. _matplotlib: http://matplotlib.org/
 .. _joblib: http://pythonhosted.org/joblib/
 .. _Corpus Workbench: http://cwb.sourceforge.net/
+.. _CONLL U: http://universaldependencies.org/format.html
+.. _Univseral Dependencies treebanks: https://github.com/UniversalDependencies

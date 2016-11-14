@@ -1184,15 +1184,21 @@ def auto_usecols(search, exclude, show, usecols, coref=False):
     # we add one to the index because conll_columns does not have 's', yet it
     # is there in the df
     out = [0, 1, 2]
-    for n, c in enumerate(CONLL_COLUMNS):
-        if c in stcols and c not in out:
-            out.append(n+1)
+    for n, c in enumerate(CONLL_COLUMNS, start=1):
+        if c in stcols and n not in out:
+            out.append(n)
     return out
 
-def format_tregex(results, show=False, lemtag=False, exclude=False,
-                  excludemode=False, translated_option=False,
-                  lem_instance=False, whole=False,
-                  speaker_data=False, countmode=False):
+def format_tregex(results,
+                  show=False,
+                  lemtag=False,
+                  exclude=False,
+                  excludemode=False,
+                  translated_option=False,
+                  lem_instance=False,
+                  whole=False,
+                  speaker_data=False,
+                  countmode=False):
     """
     Format tregex by show list
     """

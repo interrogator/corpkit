@@ -4,7 +4,7 @@
 
 > **corpkit** is a module for doing more sophisticated corpus linguistics. It links state-of-the-art natural language processing technologies to functional linguistic research aims, allowing you to easily build, search and visualise grammatically annotated corpora in novel ways.
 
-The basic workflow involves making corpora, parsing them, and searching them. The results of searches are Pandas objects, which can be edited, visualised or exported in a lot of ways. The tool has three interfaces, each with its own documentation:
+The basic workflow involves making corpora, parsing them, and searching them. The results of searches are [CONLL-U formatted](http://universaldependencies.org/format.html) files, represented as [pandas](http://pandas.pydata.org/) objects, which can be edited, visualised or exported in a lot of ways. The tool has three interfaces, each with its own documentation:
 
 1. [A Python API](http://corpkit.readthedocs.io)
 2. [A natural language interpreter](http://corpkit.readthedocs.io/en/latest/rst_docs/interpreter/corpkit.interpreter.overview.html)
@@ -31,6 +31,7 @@ From all three interfaces, you can do a lot of neat things. In general:
 > Interrogating a corpus produces an `Interrogation` object, with results as Pandas DataFrame attributes.
 
 * Search corpora using regular expressions, wordlists, CQL, Tregex, or a rich, purpose built dependency searching syntax
+* Interrogate any dataset in CONLL-U format (e.g. [the Universal Dependencies Treebanks](https://github.com/UniversalDependencies))
 * Collocation, n-gramming
 * Restrict searches by metadata feature
 * Use metadata as symbolic subcorpora
