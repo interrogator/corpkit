@@ -200,4 +200,4 @@ If you'd like to cite *corpkit*, you can use:
 .. _joblib: http://pythonhosted.org/joblib/
 .. _Corpus Workbench: http://cwb.sourceforge.net/
 .. _CONLL U: http://universaldependencies.org/format.html
-.. _Univseral Dependencies Treebanks: https://github.com/UniversalDependencies
+.. _Universal Dependencies Treebanks: https://github.com/UniversalDependencies
