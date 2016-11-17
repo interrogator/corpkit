@@ -1122,6 +1122,9 @@ def pipeline(f=False,
     if from_df is False or from_df is None:
         df = parse_conll(f, usecols=kwargs.get('usecols'))
         # can fail here if df is none
+        if df is None:
+            print('Problem reading data from %s.' % f)
+            return [], []
         metadata = df._metadata
     else:
         df = from_df
