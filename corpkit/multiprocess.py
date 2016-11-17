@@ -102,6 +102,7 @@ def pmultiquery(corpus,
     denom = len(toiter)
     num_cores = best_num_parallel(num_cores, denom)
 
+    # todo: code below makes no sense
     vals = ['eachspeaker', 'multiplespeaker', 'namedqueriesmultiple']
     if multiple == 'multiplecorpora' and any(x is True for x in vals):
         from corpkit.corpus import Corpus, Corpora

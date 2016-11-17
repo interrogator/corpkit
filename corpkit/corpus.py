@@ -1228,9 +1228,9 @@ class Datalist(list):
 
     def __init__(self, data, **kwargs):
 
-        self.symbolic = kwargs.get('symbolic')
-        self.just = kwargs.get('just')
-        self.skip = kwargs.get('skip')
+        self.symbolic = kwargs.get('symbolic', False)
+        self.just = kwargs.get('just', False)
+        self.skip = kwargs.get('skip', False)
         super(Datalist, self).__init__(data)
 
     def __repr__(self):
@@ -1282,7 +1282,11 @@ class Datalist(list):
         kwargs['subcorpora'] = self.symbolic
 
         from corpkit.interrogator import interrogator
-        return interrogator(self, *args, **kwargs)
+        interro = interrogator(self, *args, **kwargs)
+        from corpkit.interrogation import Interrodict
+        if isinstance(interro, Interrodict):
+            interro = interro.multiindex()
+        return interro
 
     def concordance(self, *args, **kwargs):
         """
@@ -1332,9 +1336,10 @@ class Corpora(Datalist):
                 raise ValueError('Corpora(str) needs to point to a directory.')
             data = sorted([join(data, d) for d in os.listdir(data)
                            if isdir(join(data, d)) and not d.startswith('.')])
+        
         # otherwise, make a list of Corpus objects
         for index, i in enumerate(data):
-            if isinstance(i, str):
+            if isinstance(i, STRINGTYPE):
                 data[index] = Corpus(i, **kwargs)
 
         # now turn it into a Datalist
@@ -1342,22 +1347,6 @@ class Corpora(Datalist):
 
     def __repr__(self):
         return "<%s instance: %d items>" % (classname(self), len(self))
-
-    def __getitem__(self, key):
-        """allow slicing, indexing"""
-        from corpkit.process import makesafe
-        if isinstance(key, slice):
-            # Get the start, stop, and step from the slice
-            return Corpora([self[ii] for ii in range(*key.indices(len(self)))], **kwargs)
-        elif isinstance(key, int):
-            return self.__getitem__(makesafe(self.data[key]))
-        else:
-            try:
-                return self.__getattribute__(key)
-            except:
-                from corpkit.process import is_number
-                if is_number(key):
-                    return self.__getattribute__('c' + key)
 
     def parse(self, **kwargs):
         """

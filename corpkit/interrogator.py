@@ -681,7 +681,7 @@ def interrogator(corpus,
     # split corpus if the user wants multiprocessing but no other iterable
     if not im and multiprocess:
         im = 'datalist'
-        if hasattr(corpus, 'subcorpora') and corpus.subcorpora:
+        if getattr(corpus, 'subcorpora', False):
             corpus = corpus[:]
         else:
             corpus = corpus.files
