@@ -91,6 +91,10 @@ def interrogator(corpus,
     from corpkit.dictionaries.process_types import Wordlist
     from corpkit.build import check_jdk
     from corpkit.conll import pipeline
+    from corpkit.process import delete_files_and_subcorpora
+    
+    # remake corpus without bad files and folders 
+    corpus = delete_files_and_subcorpora(corpus, skip_metadata, just_metadata)
 
     import re
     if regex_nonword_filter:

@@ -1818,12 +1818,15 @@ def interpreter(debug=False,
         outf = os.path.join(os.getcwd(), 'data', os.path.basename(the_path))
         # if we're using docker things get tricky
         if objs._docker:
+            # not working yet
             import subprocess
             from docker import Client
             cli = Client()
             idx = str(subprocess.check_output(["cat", "/etc/hostname"])).strip('\n').strip()
             outf = ':'.join([idx, outf])
-            cli.copy(the_path, outf)
+            os.makedirs(outf)
+            os.system("docker cp %s/ %s" % (the_path, outf))
+            #cli.copy(the_path, outf)
             print('%s added to %s.' % (tokens[-1], outf))
             return
         shutil.copytree(the_path, outf)

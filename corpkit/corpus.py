@@ -290,30 +290,36 @@ class Corpus(object):
         Get attributes from corpus
         todo: symbolic stuff for item selection
         """
+        from corpkit.constants import STRINGTYPE
         from corpkit.process import makesafe
-        if isinstance(key, slice):
-            # Get the start, stop, and step from the slice
-            if hasattr(self, 'subcorpora') and self.subcorpora:
-                return Datalist([self[ii] for ii in range(
-                    *key.indices(len(self.subcorpora)))], **self.kwa)
-            elif hasattr(self, 'files') and self.files:
-                return Datalist([self[ii] for ii in range(
-                    *key.indices(len(self.files)))], **self.kwa)                
-        elif isinstance(key, int):
-            try:
-                return self.subcorpora.__getitem__(makesafe(self.subcorpora[key]))
-            except:
-                try:
-                    return self.subcorpora.__getitem__(self.subcorpora[key])
-                except AttributeError:
-                    return
-        else:
-            try:
-                return self.subcorpora.__getattribute__(key)
-            except:
-                from corpkit.process import is_number
-                if is_number(key):
-                    return self.__getattribute__('c' + key)
+
+        if getattr(self, 'subcorpora', False):
+            get_from = self.subcorpora
+
+        elif getattr(self, 'files', False):
+            get_from = self.files
+
+        if isinstance(key, (int, slice)):
+            return get_from.__getitem__(key)
+
+        elif isinstance(key, STRINGTYPE):
+            return get_from.__getitem__(get_from.index(key))
+
+    def __delitem__(self, key):
+        from corpkit.constants import STRINGTYPE
+        from corpkit.process import makesafe
+
+        if getattr(self, 'subcorpora', False):
+            del_from = self.subcorpora
+
+        elif getattr(self, 'files', False):
+            del_from = self.files
+        
+        if isinstance(key, (int, slice)):
+            del_from.__delitem__(key)
+
+        elif isinstance(key, STRINGTYPE):
+            del_from.__delitem__(del_from.index(key))
 
     @lazyprop
     def features(self):
@@ -1215,85 +1221,31 @@ class File(Corpus):
             self.read()
         return '\n'.join(text)
 
-class Datalist(object):
-    """
-    A list-like object containing subcorpora or corpus files.
-
-    Objects can be accessed as attributes, dict keys or by indexing/slicing.
-
-    Methods for interrogating, concordancing and getting configurations are the 
-    same as for :class:`corpkit.corpus.Corpus`
-    """
+class Datalist(list):
 
     def __init__(self, data, **kwargs):
-        import re
-        import os
-        from os.path import join, isfile, isdir
-        from corpkit.process import makesafe
-        self.current = 0
-        if data:
-            self.high = len(data)
-        else:
-            self.high = 0
-        self.data = data
-        if data and len(data) > 0:
-            for subcorpus in data:
-                safe_var = makesafe(subcorpus)
-                setattr(self, safe_var, subcorpus)
+
         self.symbolic = kwargs.get('symbolic')
         self.just = kwargs.get('just')
         self.skip = kwargs.get('skip')
-
-    def __str__(self):
-        stringform = []
-        for i in self.data:
-            stringform.append(i.name)
-        return '\n'.join(stringform)
+        super(Datalist, self).__init__(data)
 
     def __repr__(self):
         return "<%s instance: %d items>" % (classname(self), len(self))
 
+    def __getattr__(self, key):
+        ix = next((i for i, d in enumerate(self) if d.name == key), None)
+        if ix is not None:
+            return self[ix]
+
     def __delitem__(self, key):
-        self.__delattr__(key)
-
-    def __getitem__(self, key):
-
-        from corpkit.process import makesafe
-
-        if isinstance(key, slice):
-            # Get the start, stop, and step from the slice
-            return Datalist([self[ii] for ii in range(*key.indices(len(self)))])
-        elif isinstance(key, int):
-            return self.__getitem__(makesafe(self.data[key]))
-        else:
-            try:
-                return self.__getattribute__(key)
-            except:
-                from corpkit.process import is_number
-                if is_number(key):
-                    return self.__getattribute__('c' + key)
-
-    def __setitem__(self, key, value):
-        from corpkit.process import makesafe, is_number
-        if key.startswith('c') and len(key) > 1 and all(
-                is_number(x) for x in key[1:]):
-            self.__setattr__(key.lstrip('c'), value)
-        else:
-            self.__setattr__(key, value)
-
-    def __iter__(self):
-        for datum in self.data:
-            yield datum
-
-    def __len__(self):
-        return len(self.data)
-
-    def __next__(self):
-        if self.current > self.high:
-            raise StopIteration
-        else:
-            self.current += 1
-            return self.current - 1
+        from corpkit.constants import STRINGTYPE
+        if isinstance(key, STRINGTYPE):
+            key = next((i for i, d in enumerate(self) if d.name == key), None)
+            if key is None:
+                return
+        super(Datalist, self).__delitem__(key)
+        
 
     def interrogate(self, *args, **kwargs):
         """

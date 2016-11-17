@@ -1449,3 +1449,121 @@ def add_df_to_dotfile(path, df, typ='features', subcorpora=False):
     if name not in md:
         md[name] = df.astype(object).to_dict()
         make_dotfile(path, data_dict=md)
+
+def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
+    """
+    Remake a Corpus object without some files or folders
+    """
+
+    import re
+    from corpkit.corpus import Corpus
+    
+    # return if nothing to do
+    if not isinstance(corpus, Corpus):
+        return corpus
+        
+    if not skip_metadata and not just_metadata:
+        return corpus
+
+    sd = skip_metadata.get('folders', None) if isinstance(skip_metadata, dict) else None
+    sf = skip_metadata.get('files', None) if isinstance(skip_metadata, dict) else None
+    jd = just_metadata.get('folders', None) if isinstance(just_metadata, dict) else None
+    jf = just_metadata.get('files', None) if isinstance(just_metadata, dict) else None
+
+    if not any([sd, sf, jd, jf]):
+        return corpus
+
+    # now, the real processing begins
+    # the code has to be this way, sorry.
+
+    if sd is not None:
+        todel = set()
+        if isinstance(sd, list):
+            for i, sub in enumerate(corpus.subcorpora):
+                if sub.name in sd:
+                    todel.add(i)
+        else:
+            for i, sub in enumerate(corpus.subcorpora):
+                if re.search(sd, sub.name):
+                    todel.add(i)
+
+        for i in sorted(todel, reverse=True):
+            del corpus.subcorpora[i]
+
+    if sf is not None:
+        if not getattr(corpus, 'subcorpora', False):
+            todel = set()
+            if isinstance(sf, list):
+                for i, sub in enumerate(corpus.files):
+                    if sub.name in sf:
+                        todel.add(i)
+            else:
+                for i, sub in enumerate(corpus.files):
+                    if re.search(sf, sub.name):
+                        todel.add(i)
+
+            for i in sorted(todel, reverse=True):
+                del corpus.files[i]
+
+        else:
+            for sc in corpus.subcorpora:
+                todel = set()
+                if isinstance(sf, list):
+                    for i, sub in enumerate(corpus.files):
+                        if sub.name in sf:
+                            todel.add(i)
+
+                else:
+                    for i, sub in enumerate(sc.files):
+                        if re.search(sf, sub.name):
+                            todel.add(i)
+
+                for i in sorted(todel, reverse=True):
+                    del sc.files[i]
+
+    if jd is not None:
+        todel = set()
+        if isinstance(jd, list):
+            for i, sub in enumerate(corpus.subcorpora):
+                if sub.name not in jd:
+                    todel.add(i)
+        else:
+            for i, sub in enumerate(corpus.subcorpora):
+                if not re.search(jd, sub.name):
+                    todel.add(i)
+
+        for i in sorted(todel, reverse=True):
+            del corpus.subcorpora[i]
+
+    if jf is not None:
+        if not getattr(corpus, 'subcorpora', False):
+            todel = set()
+            if isinstance(jf, list):
+                for i, sub in enumerate(corpus.files):
+                    if sub.name not in jf:
+                        todel.add(i)
+            else:
+                for i, sub in enumerate(corpus.files):
+                    if not re.search(jf, sub.name):
+                        todel.add(i)
+
+            for i in sorted(todel, reverse=True):
+                del corpus.files[i]
+
+        else:
+            for sc in corpus.subcorpora:
+                todel = set()
+                if isinstance(jf, list):
+                    for i, sub in enumerate(corpus.files):
+                        if sub.name not in jf:
+                            todel.add(i)
+
+                else:
+                    for i, sub in enumerate(sc.files):
+                        if not re.search(jf, sub.name):
+                            todel.add(i)
+
+                for i in sorted(todel, reverse=True):
+                    del sc.files[i]
+
+    return corpus
