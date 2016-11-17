@@ -257,12 +257,17 @@ def make_corpus(unparsed_corpus_path,
                     fgen = chunks(fs, divl)
                 
                     # for each list, make new file
+                    from corpkit.constants import OPENER
                     for index, flist in enumerate(fgen):
                         as_str = '\n'.join(flist) + '\n'
                         new_fpath = filelist.replace('.txt', '-%s.txt' % str(index).zfill(4))
                         filelists.append(new_fpath)
-                        with codecs.open(new_fpath, 'w', encoding='utf-8') as fo:
-                            fo.write(as_str.encode('utf-8'))
+                        with OPENER(new_fpath, 'w', encoding='utf-8') as fo:
+                            try:
+                                fo.write(as_str.encode('utf-8'))
+                            except TypeError:
+                                fo.write(as_str)
+
                     try:
                         os.remove(filelist)
                     except:
