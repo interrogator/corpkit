@@ -1238,6 +1238,28 @@ class Datalist(list):
         if ix is not None:
             return self[ix]
 
+    def __getitem__(self, key):
+        from corpkit.constants import STRINGTYPE
+        
+        if isinstance(key, slice):
+            return Datalist([self[i] for i in range(*key.indices(len(self)))])
+        
+        elif isinstance(key, list):
+            if isinstance(key[0], STRINGTYPE):
+                dats = [i for i in self if i.name in key]
+            else:
+                dats = [x for i, x in enumerate(self) if i in key]
+            return Datalist(dats)
+
+        elif isinstance(key, int):
+            return super(Datalist, self).__getitem__(key)
+
+        elif isinstance(key, STRINGTYPE):
+            ix = next((i for i in self if i.name == key), None)
+            if ix is not None:
+                return super(Datalist, self).__getitem__(ix)
+
+
     def __delitem__(self, key):
         from corpkit.constants import STRINGTYPE
         if isinstance(key, STRINGTYPE):
@@ -1245,7 +1267,7 @@ class Datalist(list):
             if key is None:
                 return
         super(Datalist, self).__delitem__(key)
-        
+
 
     def interrogate(self, *args, **kwargs):
         """

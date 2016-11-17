@@ -257,10 +257,10 @@ def pmultiquery(corpus,
     badtypes = (ModuleType, FunctionType, BuiltinFunctionType, BuiltinMethodType)
     qlocs = {k: v for k, v in locs.items() if not isinstance(v, badtypes)}
 
-    if hasattr(qlocs['corpus'], 'name'):
+    if hasattr(qlocs.get('corpus', False), 'name'):
         qlocs['corpus'] = qlocs['corpus'].path
     else:
-        qlocs['corpus'] = list([i.path for i in qlocs['corpus']])
+        qlocs['corpus'] = list([i.path for i in qlocs.get('corpus', [])])
 
     from corpkit.interrogation import Concordance
     if kwargs.get('conc') == 'only':
