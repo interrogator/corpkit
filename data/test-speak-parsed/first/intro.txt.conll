@@ -18,12 +18,12 @@
 # test=on
 # year=2004
 1	Not	not	RB	O	_	3	neg	0	_
-2	a	a	DT	O	_	3	det	0	_
-3	lot	lot	NN	O	_	7	nsubjpass	1,2,5	_
-4	of	of	IN	O	_	5	case	0	_
-5	data	datum	NNS	O	_	3	nmod:of	4	_
+2	a	a	DT	O	_	5	det:qmod	3,4	_
+3	lot	lot	NN	O	_	2	mwe	1	_
+4	of	of	IN	O	_	2	mwe	0	_
+5	data	datum	NNS	O	_	7	nsubjpass	2	_
 6	is	be	VBZ	O	_	7	auxpass	0	_
-7	required	require	VBN	O	_	0	ROOT	3,6,8	_
+7	required	require	VBN	O	_	0	ROOT	5,6,8	_
 8	.	.	.	O	_	7	punct	0	_
 
 # parse=(ROOT (S (ADVP (RB Here)) (, ,) (NP (PRP we)) (VP (VBP 're) (VP (VBG testing) (NP (DT the) (NN speaker_segmentation) (NN option)))) (. .)))

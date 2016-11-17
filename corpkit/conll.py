@@ -1326,6 +1326,12 @@ def convert_json_to_conll(path,
     import json
     import re
     from corpkit.build import get_filepaths
+    from corpkit.constants import CORENLP_VERSION, OPENER
+    
+    if CORENLP_VERSION == '3.7.0':
+        coldeps = 'enhancedPlusPlusDependencies'
+    else:
+        coldeps = coldeps
     
     if isinstance(path, list):
         files = path
@@ -1342,7 +1348,7 @@ def convert_json_to_conll(path,
         main_out = ''
         # if the file has already been converted, don't worry about it
         # untested?
-        with open(f, 'r') as fo:
+        with OPENER(f, 'r') as fo:
             #try:
             data = json.load(fo)
             # todo: differentiate between json errors
@@ -1377,12 +1383,12 @@ def convert_json_to_conll(path,
                 index = str(token['index'])
                 # this got a stopiteration on rsc data
                 governor, func = next(((i['governor'], i['dep']) \
-                                         for i in sent['collapsed-ccprocessed-dependencies'] \
+                                         for i in sent[coldeps] \
                                          if i['dependent'] == int(index)), ('_', '_'))
                 if governor is '_':
                     depends = False
                 else:
-                    depends = [str(i['dependent']) for i in sent['collapsed-ccprocessed-dependencies'] if i['governor'] == int(index)]
+                    depends = [str(i['dependent']) for i in sent[coldeps] if i['governor'] == int(index)]
                 if not depends:
                     depends = '0'
                 #offsets = '%d,%d' % (token['characterOffsetBegin'], token['characterOffsetEnd'])
