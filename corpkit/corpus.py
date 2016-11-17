@@ -298,12 +298,15 @@ class Corpus(object):
 
         elif getattr(self, 'files', False):
             get_from = self.files
+        
+        else:
+            get_from = self.document
+            try:
+                return get_from.loc[key]
+            except:
+                return get_from.__getitem__(key)
 
-        if isinstance(key, (int, slice)):
-            return get_from.__getitem__(key)
-
-        elif isinstance(key, STRINGTYPE):
-            return get_from.__getitem__(get_from.index(key))
+        return get_from.__getitem__(key)
 
     def __delitem__(self, key):
         from corpkit.constants import STRINGTYPE
