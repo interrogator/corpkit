@@ -437,8 +437,11 @@ def move_parsed_files(proj_path, old_corpus_path, new_corpus_path,
 def corenlp_exists(corenlppath=False):
     import corpkit
     import os
-    important_files = ['stanford-corenlp-3.6.0-javadoc.jar', 'stanford-corenlp-3.6.0-models.jar',
-                       'stanford-corenlp-3.6.0-sources.jar', 'stanford-corenlp-3.6.0.jar']
+    from corpkit.constants import CORENLP_VERSION
+    important_files = ['stanford-corenlp-%s-javadoc.jar' % CORENLP_VERSION,
+                       'stanford-corenlp-%s-models.jar' % CORENLP_VERSION,
+                       'stanford-corenlp-%s-sources.jar' % CORENLP_VERSION,
+                       'stanford-corenlp-%s.jar' % CORENLP_VERSION]
     if corenlppath is False:
         home = os.path.expanduser("~")
         corenlppath = os.path.join(home, 'corenlp')

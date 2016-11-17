@@ -65,5 +65,11 @@ MAX_SPEAKERNAME_SIZE = 40
 # parsing n times before giving up
 REPEAT_PARSE_ATTEMPTS = 3
 
-# location of the current corenlp
-CORENLP_URL = 'http://nlp.stanford.edu/software/stanford-corenlp-full-2015-12-09.zip'
+# location of the current corenlp and its version
+# old, stable
+#CORENLP_URL = 'http://nlp.stanford.edu/software/stanford-corenlp-full-2015-12-09.zip'
+#CORENLP_VERSION = '3.6.0'
+
+# newest, beta
+CORENLP_VERSION = '3.7.0'
+CORENLP_URL  = 'http://nlp.stanford.edu/software/stanford-corenlp-full-2016-10-31.zip'

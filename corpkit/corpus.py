@@ -65,6 +65,7 @@ class Corpus(object):
         # and singlefile status of the path is. it's messy because it shortcuts
         # full checking where possible some of the shortcutting could maybe be
         # moved into the determine_datatype() funct.
+        
         if self.level == 'd':
             self.singlefile = len(self._dlist) > 1
         else:
@@ -1261,7 +1262,6 @@ class Datalist(list):
             ix = next((i for i in self if i.name == key), None)
             if ix is not None:
                 return super(Datalist, self).__getitem__(ix)
-
 
     def __delitem__(self, key):
         from corpkit.constants import STRINGTYPE
