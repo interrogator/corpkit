@@ -1259,7 +1259,7 @@ class Datalist(list):
             return super(Datalist, self).__getitem__(key)
 
         elif isinstance(key, STRINGTYPE):
-            ix = next((i for i in self if i.name == key), None)
+            ix = next((i for i, x in enumerate(self) if x.name == key), None)
             if ix is not None:
                 return super(Datalist, self).__getitem__(ix)
 
@@ -1363,13 +1363,19 @@ class Corpora(Datalist):
             objs.append(v.parse(**kwargs))
         return Corpora(objs)
 
+    ### the below not working yet
+
     @lazyprop
     def features(self):
         """
         Generate features attribute for all corpora
         """
+        from corpkit.interrogation import Interrodict
+        feats = []
         for corpus in self:
-            corpus.features
+            feats.append(corpus.features)
+        feats = Interrodict(feats)
+        return feats.multiindex()
 
     @lazyprop
     def postags(self):
