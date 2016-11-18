@@ -147,8 +147,8 @@ def interrogator(corpus,
         """
         Take a single search/show_bit type, return match
         """
-        ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 's', 'a', 'e']
-        starts = ['d', 'g', 'm', 'b', 'h', '+', '-', 'r']
+        ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 's', 'a', 'e', 'c']
+        starts = ['d', 'g', 'm', 'b', 'h', '+', '-', 'r', 'c']
         show_bit = show_bit.lstrip('n')
         show_bit = show_bit.lstrip('b')
         show_bit = list(show_bit)
