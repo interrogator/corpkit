@@ -125,7 +125,7 @@ def concprinter(dataframe, kind='string', n=100,
     import pandas as pd
 
     # shitty thing to hardcode
-    pd.set_option('display.max_colwidth', 100)
+    pd.set_option('display.max_colwidth', -1)
 
     if isinstance(n, int):
         to_show = df.head(n)
@@ -138,11 +138,18 @@ def concprinter(dataframe, kind='string', n=100,
 
     def resize_by_window_size(df, window):
         df.is_copy = False
-        df['l'] = df['l'].str.slice(start=-window, stop=None)
-        df['l'] = df['l'].str.rjust(window)
-        df['r'] = df['r'].str.slice(start=0, stop=window)
-        df['r'] = df['r'].str.ljust(window)
-        df['m'] = df['m'].str.ljust(df['m'].str.len().max())
+        if isinstance(window, int):
+            df['l'] = df['l'].str.slice(start=-window, stop=None)
+            df['l'] = df['l'].str.rjust(window)
+            df['r'] = df['r'].str.slice(start=0, stop=window)
+            df['r'] = df['r'].str.ljust(window)
+            df['m'] = df['m'].str.ljust(df['m'].str.len().max())
+        else:
+            df['l'] = df['l'].str.slice(start=-window[0], stop=None)
+            df['l'] = df['l'].str.rjust(window[0])
+            df['r'] = df['r'].str.slice(start=0, stop=window[-1])
+            df['r'] = df['r'].str.ljust(window[-1])
+            df['m'] = df['m'].str.ljust(df['m'].str.len().max())            
         return df
 
     to_show.is_copy = False
