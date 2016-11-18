@@ -151,6 +151,9 @@ def _keyness(self, measure='ll', denominator='self', **kwargs):
     from corpkit.editor import editor
     return editor(self, 'k', denominator, **kwargs)
 
+def _plain(df):
+    return ' '.join(df['w'])
+
 # monkey patching things
 
 DataFrame.entropy = _entropy
@@ -191,6 +194,8 @@ Series.calculate = _calculate
 DataFrame.shuffle = _shuffle
 
 DataFrame.top = _top
+
+DataFrame.plain = _plain
 
 # Defining letters
 module = sys.modules[__name__]
