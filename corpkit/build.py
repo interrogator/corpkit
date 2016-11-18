@@ -348,6 +348,8 @@ def parse_corpus(proj_path=False,
     if copula_head:
         arglist.append('--parse.flags')
         arglist.append(' -makeCopulaHead')
+    print('Java command:')
+    print(arglist)
     try:
         proc = subprocess.Popen(arglist, stdout=sys.stdout)
     # maybe a problem with stdout. sacrifice it if need be
