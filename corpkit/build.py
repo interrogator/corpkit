@@ -160,7 +160,7 @@ def get_corpus_filepaths(projpath=False, corpuspath=False,
             if filename not in already_done:
                 matches.append(os.path.join(root, filename))
     if len(matches) == 0:
-        return False
+        return False, False
     matchstring = '\n'.join(matches)
 
     # maybe not good:
@@ -465,7 +465,9 @@ def corenlp_exists(corenlppath=False):
     return True
 
 def get_filepaths(a_path, ext='txt'):
-    """make list of txt files in a_path and remove non txt files"""
+    """
+    Make list of txt files in a_path and remove non txt files
+    """
     import os
     files = []
     if os.path.isfile(a_path):

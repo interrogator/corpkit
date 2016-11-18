@@ -180,13 +180,13 @@ def make_corpus(unparsed_corpus_path,
                     #newname = fp.replace('.txt', '-000.txt')
                     #os.rename(fp, newname)
 
+        if outname:
+            newpath = os.path.join(os.path.dirname(unparsed_corpus_path), outname)
+        else:
+            newpath = unparsed_corpus_path + '-parsed'
+        if restart:
+            restart = newpath
         if speaker_segmentation or metadata:
-            if outname:
-                newpath = os.path.join(os.path.dirname(unparsed_corpus_path), outname)
-            else:
-                newpath = unparsed_corpus_path + '-parsed'
-            if restart:
-                restart = newpath
             if isdir(newpath) and not root:
                 import __main__ as main
                 if not restart and not hasattr(main, '__file__'):
@@ -213,6 +213,13 @@ def make_corpus(unparsed_corpus_path,
         # now we enter a while loop while not all files are parsed
         #todo: these file lists are not necessary when not parsing
 
+        if outname:
+            newparsed = os.path.join(project_path, 'data', outname)
+        else:
+            basecp = os.path.basename(to_parse)
+            newparsed = os.path.join(project_path, 'data', '%s-parsed' % basecp)
+            newparsed = newparsed.replace('-stripped-', '-')
+
         while REPEAT_PARSE_ATTEMPTS:
 
             if not parse:
@@ -237,10 +244,14 @@ def make_corpus(unparsed_corpus_path,
                 if multiprocess is True:
                     import multiprocessing
                     multiprocess = multiprocessing.cpu_count()
+
                 from joblib import Parallel, delayed
                 # split old file into n parts
-                data, enc = saferead(filelist)
-                fs = [i for i in data.splitlines() if i]
+                if os.path.isfile(filelist):
+                    data, enc = saferead(filelist)
+                    fs = [i for i in data.splitlines() if i]
+                else:
+                    fs = []
                 # if there's nothing here, we're done
                 if not fs:
                     # double dutch
@@ -330,7 +341,9 @@ def make_corpus(unparsed_corpus_path,
 
         if parse and not newparsed:
             return 
+
         if parse and all(not x for x in newparsed):
+            print('Error after parsing.')
             return
 
         if parse and fileparse:
@@ -386,7 +399,7 @@ def make_corpus(unparsed_corpus_path,
             return newparsed
 
     rename_all_files(newparsed)
-
-    print('Done!\n')
+    print('Generating corpus metadata...')
     make_dotfile(newparsed)
+    print('Done!\n')
     return newparsed

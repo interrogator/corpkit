@@ -1328,11 +1328,14 @@ def convert_json_to_conll(path,
     from corpkit.build import get_filepaths
     from corpkit.constants import CORENLP_VERSION, OPENER
     
-    if CORENLP_VERSION == '3.7.0':
-        coldeps = 'enhancedPlusPlusDependencies'
-    else:
-        coldeps = coldeps
-    
+    # todo: stabilise this
+    #if CORENLP_VERSION == '3.7.0':
+    #    coldeps = 'enhancedPlusPlusDependencies'
+    #else:
+    #    coldeps = 'collapsed-ccprocessed-dependencies'
+
+    print('Converting files to CONLL-U...')
+
     if isinstance(path, list):
         files = path
     else:
@@ -1350,7 +1353,11 @@ def convert_json_to_conll(path,
         # untested?
         with OPENER(f, 'r') as fo:
             #try:
-            data = json.load(fo)
+
+            try:
+                data = json.load(fo)
+            except ValueError:
+                continue
             # todo: differentiate between json errors
             # rsc corpus had one json file with an error
             # outputted by corenlp, and the conversion
@@ -1383,12 +1390,14 @@ def convert_json_to_conll(path,
                 index = str(token['index'])
                 # this got a stopiteration on rsc data
                 governor, func = next(((i['governor'], i['dep']) \
-                                         for i in sent[coldeps] \
+                                         for i in sent.get('enhancedPlusPlusDependencies',
+                                                  sent.get('collapsed-ccprocessed-dependencies')) \
                                          if i['dependent'] == int(index)), ('_', '_'))
                 if governor is '_':
                     depends = False
                 else:
-                    depends = [str(i['dependent']) for i in sent[coldeps] if i['governor'] == int(index)]
+                    depends = [str(i['dependent']) for i in sent.get('enhancedPlusPlusDependencies',
+                               sent.get('collapsed-ccprocessed-dependencies')) if i['governor'] == int(index)]
                 if not depends:
                     depends = '0'
                 #offsets = '%d,%d' % (token['characterOffsetBegin'], token['characterOffsetEnd'])
