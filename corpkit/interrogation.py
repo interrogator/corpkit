@@ -821,7 +821,10 @@ class Interrodict(OrderedDict):
 
         data, conc = trav(self)
         index = [i.name for i in data]
-        conc = pd.concat(conc)
+        if conc:
+            conc = pd.concat(conc)
+        else:
+            conc = None
 
         # todo: better default for speakers?
         if isinstance(self.query, dict) and self.query.get('subcorpora'):
