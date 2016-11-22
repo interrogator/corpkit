@@ -232,9 +232,7 @@ def pmultiquery(corpus,
                 pass
 
     if not root and multiprocess:
-        #res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
         try:
-            #ds = sorted(ds, key=lambda k: k['paralleling'], reverse = True) 
             res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
             used_joblib = True
         except:
@@ -361,12 +359,13 @@ def pmultiquery(corpus,
                 out.concordance = None
 
         thetime = strftime("%H:%M:%S", localtime())
-        if terminal and print_info:
-            with terminal.location(0, terminal.height):
-                print('\n\n%s: Finished! %d unique results, %d total.%s' % (thetime, len(out.results.columns), out.totals.sum(), '\n'))
-        else:
-            if print_info:
-                print('\n\n%s: Finished! %d unique results, %d total.%s' % (thetime, len(out.results.columns), out.totals.sum(), '\n'))
+        if terminal:
+            terminal.move(0, terminal.height-1)
+        if print_info:
+            print('\n\n\n')
+            if terminal:
+                terminal.move(0, terminal.height-1)
+            print('%s: Finished! %s unique results, %s total.%s' % (thetime, format(len(out.results.columns), ','), format(out.totals.sum(), ','), '\n'))
         if save:
             out.save(save, print_info = print_info)
         return out
