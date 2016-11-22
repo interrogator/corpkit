@@ -786,10 +786,11 @@ class Interrodict(OrderedDict):
 
         query = self.query
 
-        def trav(dct, parents={}, level=0, colset=set(),
-                 results=list(), myparname=[]):
+        def trav(dct, parents={}, level=0, colset=set(), results=list(), conc_results=list(), myparname=[]):
+            """
+            Traverse the Interrodict and flatten it out
+            """
             from collections import defaultdict
-
             columns = False
             if hasattr(dct, 'items'):
                 parents[level] = list(dct.keys())
@@ -805,7 +806,10 @@ class Interrodict(OrderedDict):
                     parents[level] |= set(dct.results.index)
                 else:
                     parents[level] = set(dct.results.index)
+
                 if not dct.results.empty:
+                    if dct.concordance is not None:
+                      conc_results.append(dct.concordance)
                     for n, ser in dct.results.iterrows():
                         ser.name = tuple(myparname + [ser.name])
                         #ser.name = (*myparname, ser.name)
@@ -813,10 +817,11 @@ class Interrodict(OrderedDict):
                     for c in list(dct.results.columns):
                         colset.add(c)
                     level += 1
-            return results
+            return results, conc_results
 
-        data = trav(self)
+        data, conc = trav(self)
         index = [i.name for i in data]
+        conc = pd.concat(conc)
 
         # todo: better default for speakers?
         if isinstance(self.query, dict) and self.query.get('subcorpora'):
@@ -830,7 +835,7 @@ class Interrodict(OrderedDict):
         df = df.fillna(0).astype(int)
         df = df[df.sum().sort_values(ascending=False).index]
         totals = df.sum(axis=1)
-        return Interrogation(results=df, totals=totals, query=query)
+        return Interrogation(results=df, totals=totals, query=query, concordance=conc)
 
     def save(self, savename, savedir='saved_interrogations', **kwargs):
         """

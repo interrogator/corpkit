@@ -621,8 +621,10 @@ def make_multi(interrogation, indexnames=None):
         flat[1] = np.array(flat[1])
 
         df = pd.DataFrame(flat[2], index=flat[:2])
+
         if indexnames is None:
             indexnames = ['Corpus', 'Subcorpus']
+        
         df.index.names = indexnames
         df = df.fillna(0)
         df = df.T

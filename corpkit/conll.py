@@ -654,6 +654,7 @@ def fast_simple_conc(dfss, idxs, show,
     
     # get rid of (e.g.) nan caused by no_punct=True
     matches = matches.dropna(axis=0, how='all')
+    
     if not preserve_case:
         matches = matches.str.lower()
 
