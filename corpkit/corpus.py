@@ -1285,7 +1285,7 @@ class Datalist(list):
         interro = interrogator(self, *args, **kwargs)
         from corpkit.interrogation import Interrodict
         if isinstance(interro, Interrodict):
-            interro = interro.multiindex()
+            interro = interro.multiindex(indexnames=['corpus', 'subcorpus'])
         return interro
 
     def concordance(self, *args, **kwargs):
