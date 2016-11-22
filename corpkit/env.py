@@ -227,6 +227,8 @@ class Objects(object):
         self.skip = {}
         self.symbolic = False
         self._docker = False
+        self.max_cols = None
+        self.max_rows = None
 
         # system toggles and references to older data
         self._in_a_project = None
@@ -444,16 +446,15 @@ def interpreter(debug=False,
         obj = getattr(obj, 'results', obj)
         if isinstance(obj, (pd.DataFrame, pd.Series)):
             df = obj.round(objs._decimal)
-            df = df.rename_axis(None)
+            df = df.iloc[:objs.max_rows,:objs.max_cols]
             showfunc(df, **kwa)
             return
         elif obj:
             try:
                 df = obj.round(objs._decimal)
-                df = df.rename_axis(None)
             except:
                 df = obj
-            showfunc(df, **kwa)
+            showfunc(df[:objs.max_rows,:objs.max_cols], **kwa)
             return
         #else:
         #    if isinstance(objs._get(command)[1], (pd.DataFrame, pd.Series)):
@@ -551,6 +552,12 @@ def interpreter(debug=False,
         if tokens and tokens[0].startswith('decimal'):
             objs._decimal = int(tokens[2])
             print('Decimal places set to %d.' % objs._decimal) 
+            return
+
+        if tokens and tokens[0] in ['max_cols', 'max_rows']:
+            setattr(objs, tokens[0], int(tokens[-1]))
+            dim = 'rows' if tokens[0].endswith('rows') else 'columns'
+            print('Max %s set to %s.' % (dim, format(int(tokens[-1]), ',')))
             return
 
         # set subcorpora as attribute of corpus object ... is this ideal?
@@ -967,9 +974,9 @@ def interpreter(debug=False,
 
         kwargs['show_conc_metadata'] = True
 
-        objs.corpus.just = objs.just
-        objs.corpus.skip = objs.skip
-        objs.corpus.symbolic = objs.symbolic
+        #objs.corpus.just = objs.just
+        #objs.corpus.skip = objs.skip
+        #objs.corpus.symbolic = objs.symbolic
         
         sch = kwargs.get('search', False)
         if sch in ['features', 'postags', 'wordclasses']:
