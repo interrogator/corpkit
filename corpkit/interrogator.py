@@ -94,7 +94,7 @@ def interrogator(corpus,
     from corpkit.process import delete_files_and_subcorpora
     
     # remake corpus without bad files and folders 
-    corpus = delete_files_and_subcorpora(corpus, skip_metadata, just_metadata)
+    corpus, skip_metadata, just_metadata = delete_files_and_subcorpora(corpus, skip_metadata, just_metadata)
 
     import re
     if regex_nonword_filter:
@@ -454,16 +454,13 @@ def interrogator(corpus,
             return
         thetime = strftime("%H:%M:%S", localtime())
         if only_conc:
-            
-            show_me = (thetime, len(conc_df))
-            finalstring = '\n\n%s: Concordancing finished! %d results.' % show_me
+            finalstring = '\n\n%s: Concordancing finished! %s results.' % (thetime, format(len(conc_df), ','))
         else:
             finalstring = '\n\n%s: Interrogation finished!' % thetime
             if countmode:
-                finalstring += ' %d matches.' % tot
+                finalstring += ' %s matches.' % format(tot, ',')
             else:
-                dat = (numentries, total_total)
-                finalstring += ' %d unique results, %d total occurrences.' % dat
+                finalstring += ' %s unique results, %s total occurrences.' % (format(numentries, ','), format(total_total, ','))
         if return_it:
             return finalstring
         else:
@@ -530,20 +527,14 @@ def interrogator(corpus,
 
                 all_conc_lines.append(Series(lin, index=conc_col_names))
 
-        conc_df = pd.concat(all_conc_lines, axis=1).T
-
+        try:
+            conc_df = pd.concat(all_conc_lines, axis=1).T
+        except ValueError:
+            return
+        
         if all(x == '' for x in list(conc_df['s'].values)) or \
            all(x == 'none' for x in list(conc_df['s'].values)):
             conc_df.drop('s', axis=1, inplace=True)
-        
-        # count each thing that occurs in the middle col
-        # remove things that only appear once?!
-        # i have no idea what this was doing in here.
-        #if not language_model:
-        #    counted = Counter(conc_df['m'])
-        #    indices = [l for l in list(conc_df.index) if counted[conc_df.ix[l]['m']] > 1] 
-        #    conc_df = conc_df.ix[indices]
-        #    conc_df = conc_df.reset_index(drop=True)
 
         locs['corpus'] = corpus.name
 
@@ -978,8 +969,8 @@ def interrogator(corpus,
             except AttributeError:
                 return conc_df
             if save and not kwargs.get('outname'):
-                print('\n')
-                conc_df.save(savename)
+                if conc_df is not None:
+                    conc_df.save(savename)
             goodbye_printer(only_conc=True)
             if not root:
                 signal.signal(signal.SIGINT, original_sigint)            
