@@ -151,7 +151,7 @@ def plotter(df,
                 continue
             if kwargs.get('name_format'):
                 name = kwargs.get('name_format').format(name)
-            data = Interrogation(results=data, totals=data.totals(axis=1), query=None)
+            data = Interrogation(results=data, totals=data.sum(axis=1), query=None)
             data.visualise(title=name,
             ax=ax,
             kind=kind,
