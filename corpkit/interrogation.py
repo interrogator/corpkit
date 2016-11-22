@@ -749,7 +749,7 @@ class Interrodict(OrderedDict):
         from corpkit.editor import editor
         return editor(self, *args, **kwargs)
 
-    def multiindex(self):
+    def multiindex(self, indexnames=False):
 
         """Create a `pandas.MultiIndex` version of results.
 
@@ -821,6 +821,8 @@ class Interrodict(OrderedDict):
         # todo: better default for speakers?
         if isinstance(self.query, dict) and self.query.get('subcorpora'):
             nms = {'names': self.query['subcorpora']}
+        elif indexnames:
+            nms = {'names': indexnames}
         else:
             nms = {} 
         ix = pd.MultiIndex.from_tuples(index, **nms)
