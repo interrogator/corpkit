@@ -1456,27 +1456,32 @@ def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
     """
 
     import re
-    from corpkit.corpus import Corpus
+    from corpkit.corpus import Corpus, Subcorpus
     
-    # return if nothing to do
-    if not isinstance(corpus, Corpus):
-        return corpus
+    # we use type here because subcorpora don't have subcorpora, but Subcorpus
+    # inherits from Corpus
+    if not type(corpus) == Corpus:
+        return corpus, skip_metadata, just_metadata
         
     if not skip_metadata and not just_metadata:
-        return corpus
+        return corpus, skip_metadata, just_metadata
 
-    sd = skip_metadata.get('folders', None) if isinstance(skip_metadata, dict) else None
-    sf = skip_metadata.get('files', None) if isinstance(skip_metadata, dict) else None
-    jd = just_metadata.get('folders', None) if isinstance(just_metadata, dict) else None
-    jf = just_metadata.get('files', None) if isinstance(just_metadata, dict) else None
+    sd = skip_metadata.pop('folders', None) if isinstance(skip_metadata, dict) else None
+    sf = skip_metadata.pop('files', None) if isinstance(skip_metadata, dict) else None
+    jd = just_metadata.pop('folders', None) if isinstance(just_metadata, dict) else None
+    jf = just_metadata.pop('files', None) if isinstance(just_metadata, dict) else None
+    sd = str(sd) if isinstance(sd, (int, float)) else sd
+    sf = str(sf) if isinstance(sf, (int, float)) else sf
+    jd = str(jd) if isinstance(jd, (int, float)) else jd
+    jf = str(jf) if isinstance(jf, (int, float)) else jf
 
     if not any([sd, sf, jd, jf]):
-        return corpus
+        return corpus, skip_metadata, just_metadata
 
     # now, the real processing begins
     # the code has to be this way, sorry.
 
-    if sd is not None:
+    if sd not in [None, False, {}]:
         todel = set()
         if isinstance(sd, list):
             for i, sub in enumerate(corpus.subcorpora):
@@ -1490,7 +1495,7 @@ def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
         for i in sorted(todel, reverse=True):
             del corpus.subcorpora[i]
 
-    if sf is not None:
+    if sf not in [None, False, {}]:
         if not getattr(corpus, 'subcorpora', False):
             todel = set()
             if isinstance(sf, list):
@@ -1521,7 +1526,7 @@ def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
                 for i in sorted(todel, reverse=True):
                     del sc.files[i]
 
-    if jd is not None:
+    if jd not in [None, False, {}]:
         todel = set()
         if isinstance(jd, list):
             for i, sub in enumerate(corpus.subcorpora):
@@ -1535,7 +1540,7 @@ def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
         for i in sorted(todel, reverse=True):
             del corpus.subcorpora[i]
 
-    if jf is not None:
+    if jf not in [None, False, {}]:
         if not getattr(corpus, 'subcorpora', False):
             todel = set()
             if isinstance(jf, list):
@@ -1566,4 +1571,4 @@ def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
                 for i in sorted(todel, reverse=True):
                     del sc.files[i]
 
-    return corpus
+    return corpus, skip_metadata, just_metadata
