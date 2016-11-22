@@ -274,7 +274,7 @@ def pmultiquery(corpus,
             lines.save(save, print_info=print_info)
 
         if print_info:
-            print('\n\n%s: Finished! %d results.\n\n' % (thetime, len(concs.index)))
+            print('\n\n%s: Finished! %d results.\n\n' % (thetime, format(len(concs.index), ',')))
 
         return lines
 
