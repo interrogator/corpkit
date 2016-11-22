@@ -791,7 +791,7 @@ def determine_adjacent(original):
     return adj, original
 
 def process_df_for_speakers(df, metadata, criteria, coref=False,
-                            feature='speakers', method='just'):
+                            feature='speaker', method='just'):
     """
     Keep or remove parts of the DataFrame based on metadata criteria
     """
@@ -811,8 +811,9 @@ def process_df_for_speakers(df, metadata, criteria, coref=False,
         meta_value = data.get(feature, 'none')
         lst_met_vl = meta_value.split(';')
         if isinstance(criteria, (list, set, tuple)):
+            criteria = [i.lower() for i in criteria]
             if method == 'just':
-                if any(i in criteria for i in lst_met_vl):
+                if any(i.lower() in criteria for i in lst_met_vl):
                     good_sents.append(sentid)
                     new_metadata[sentid] = data
             elif method == 'skip':

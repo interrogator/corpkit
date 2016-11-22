@@ -612,8 +612,11 @@ def interpreter(debug=False,
             print('KWARGS', kwargs)
 
         if os.path.exists(path) or os.path.exists(os.path.join('data', path)):
-            from corpkit.corpus import Corpus
-            objs.corpus = Corpus(path, load_saved=loadsaved, **kwargs)
+            from corpkit.corpus import Corpus, Corpora
+            if tokens[-1] == 'corpora':
+                objs.corpus = Corpora(path, load_saved=loadsaved, **kwargs)
+            else:
+                objs.corpus = Corpus(path, load_saved=loadsaved, **kwargs)
         else:
             dirs = [x for x in os.listdir('data') if os.path.isdir(os.path.join('data', x))]
             corpname = dirs[int(tokens[0])-1]

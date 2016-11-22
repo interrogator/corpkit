@@ -1324,6 +1324,8 @@ class Corpora(Datalist):
 
     def __init__(self, data=False, **kwargs):
 
+        self.name = None
+
         # if no arg, load every corpus in data dir
         if not data:
             data = 'data'
@@ -1333,11 +1335,19 @@ class Corpora(Datalist):
             import os
             from os.path import join, isfile, isdir
             if not os.path.isdir(data):
-                raise ValueError('Corpora(str) needs to point to a directory.')
+                if not os.path.isdir(os.path.join('data', data)):
+                    raise ValueError('Corpora(str) needs to point to a directory.')
+                else:
+                    data = os.path.join('data', data)
+            self.name = os.path.basename(data)
             data = sorted([join(data, d) for d in os.listdir(data)
                            if isdir(join(data, d)) and not d.startswith('.')])
-        
+
         # otherwise, make a list of Corpus objects
+
+        if not self.name:
+            self.name = ','.join([os.path.basename(str(i)) for i in data])
+    
         for index, i in enumerate(data):
             if isinstance(i, STRINGTYPE):
                 data[index] = Corpus(i, **kwargs)
