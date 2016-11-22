@@ -360,11 +360,10 @@ def pmultiquery(corpus,
 
         thetime = strftime("%H:%M:%S", localtime())
         if terminal:
-            terminal.move(0, terminal.height-1)
+            print(terminal.move(terminal.height-1, 0))
         if print_info:
-            print('\n\n\n')
             if terminal:
-                terminal.move(0, terminal.height-1)
+                print(terminal.move(terminal.height-1, 0))
             print('%s: Finished! %s unique results, %s total.%s' % (thetime, format(len(out.results.columns), ','), format(out.totals.sum(), ','), '\n'))
         if save:
             out.save(save, print_info = print_info)
