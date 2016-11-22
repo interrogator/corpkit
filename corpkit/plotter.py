@@ -101,17 +101,15 @@ def plotter(df,
 
     xtickspan = kwargs.pop('xtickspan', False)
 
-    import matplotlib as mpl
-    from matplotlib import rc
-
     # prefer seaborn plotting
     try:
         import seaborn as sns
-    except ImportError:
+    except (ImportError, AttributeError):
         pass
-    except AttributeError:
-        pass   
-    
+
+    import matplotlib as mpl
+    from matplotlib import rc
+
     if interactive:
         import matplotlib.pyplot as plt, mpld3
     else:
@@ -120,7 +118,7 @@ def plotter(df,
     import matplotlib.ticker as ticker
     
     import pandas
-    from pandas import DataFrame, Series
+    from pandas import DataFrame, Series, MultiIndex
 
     from time import localtime, strftime
     from process import checkstack
@@ -137,6 +135,56 @@ def plotter(df,
         have_mpldc = True
     except ImportError:
         pass
+
+    # if the data was multiindexed, the default is a little different!
+    from corpkit.interrogation import Interrogation
+    if isinstance(df.index, MultiIndex):
+        import matplotlib.pyplot as nplt
+        shape = kwargs.get('shape', 'auto')
+        truncate = kwargs.get('truncate', 8)
+        if shape == 'auto':
+            shape = (int(len(df.index.levels[0]) / 2), 2)
+        f, axes = nplt.subplots(*shape)
+        for i, ((name, data), ax) in enumerate(zip(df.groupby(level=0), axes.flatten())):
+            data = data.loc[name]
+            if isinstance(truncate, int) and i > truncate:
+                continue
+            if kwargs.get('name_format'):
+                name = kwargs.get('name_format').format(name)
+            data = Interrogation(results=data, totals=data.totals(axis=1), query=None)
+            data.visualise(title=name,
+            ax=ax,
+            kind=kind,
+            x_label=x_label,
+            y_label=y_label,
+            style=style,
+            figsize=figsize,
+            save=save,
+            legend_pos=legend_pos,
+            reverse_legend=reverse_legend,
+            num_to_plot=num_to_plot,
+            tex=tex,
+            colours=colours,
+            cumulative=cumulative,
+            pie_legend=pie_legend,
+            partial_pie=partial_pie,
+            show_totals=show_totals,
+            transparent=transparent,
+            output_format=output_format,
+            interactive=interactive,
+            black_and_white=black_and_white,
+            show_p_val=show_p_val,
+            indices=indices,
+            transpose=transpose,
+            rot=rot)
+        return nplt
+
+    def copy(self):
+        from corpkit.interrogation import Interrodict
+        copied = {}
+        for k, v in self.items():
+            copied[k] = v
+        return Interrodict(copied)
 
     # check what environment we're in
     tk = checkstack('tkinter')
