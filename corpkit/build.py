@@ -621,7 +621,7 @@ def get_speaker_names_from_parsed_corpus(corpus, feature='speaker'):
     list_of_files = []
     names = []
 
-    speakid = re.compile(r'^# %s=(.*)' % re.escape(feature))
+    speakid = re.compile(r'^# %s=(.*)' % re.escape(feature), re.MULTILINE)
     
     # if passed a dir, do it for every file
     if os.path.isdir(path):
