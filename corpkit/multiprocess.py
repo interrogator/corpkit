@@ -29,7 +29,7 @@ def pmultiquery(corpus,
     from time import strftime, localtime
     import corpkit
     from corpkit.interrogator import interrogator
-    from corpkit.interrogation import Interrogation
+    from corpkit.interrogation import Interrogation, Interrodict
     from corpkit.process import canpickle
     try:
         from joblib import Parallel, delayed
@@ -261,6 +261,7 @@ def pmultiquery(corpus,
     else:
         qlocs['corpus'] = list([i.path for i in qlocs.get('corpus', [])])
 
+    # return just a concordance
     from corpkit.interrogation import Concordance
     if kwargs.get('conc') == 'only':
         concs = pd.concat([x for x in res])
@@ -278,8 +279,7 @@ def pmultiquery(corpus,
 
         return lines
 
-    from corpkit.interrogation import Interrodict
-
+    # return interrodict (to become multiindex)
     if isinstance(res[0], Interrodict) or not all(isinstance(i.results, Series) for i in res):
         out = OrderedDict()
         for interrog, d in zip(res, ds):
@@ -304,6 +304,7 @@ def pmultiquery(corpus,
 
     # make query and total branch, save, return
     # todo: standardise this so we don't have to guess transposes
+    # 
     else:
         if multiple == 'multiplecorpora' and not mult_corp_are_subs:
             sers = [i.results for i in res]
@@ -313,40 +314,52 @@ def pmultiquery(corpus,
             out = out.astype(int) # float to int
             out = out.T            
         else:
-            try:
-                out = pd.concat([r.results for r in res], axis=1)
-                out = out.T
-                out.index = [i.query['outname'] for i in res]
-            except ValueError:
-                return None
-            # format like normal
-            # this sorts subcorpora, which are cls
-            out = out[sorted(list(out.columns))]
-            # puts subcorpora in the right place
-            if not mult_corp_are_subs and multiple != 'subcorpora':
-                out = out.T
-            if multiple == 'subcorpora':
+            # make a series from counts
+            if all(len(i.results) == 1 for i in res):
+                out = pd.concat([r.results for r in res])
                 out = out.sort_index()
-            out = out.fillna(0) # nan to zero
-            out = out.astype(int)
-            if 'c' in show and mult_corp_are_subs:
-                out = out.sum()
-                out.index = sorted(list(out.index))
+            else:
+                try:
+                    out = pd.concat([r.results for r in res], axis=1)
+                    out = out.T
+                    out.index = [i.query['outname'] for i in res]
+                except ValueError:
+                    return None
+                # format like normal
+                # this sorts subcorpora, which are cls
+                out = out[sorted(list(out.columns))]
+                # puts subcorpora in the right place
+                if not mult_corp_are_subs and multiple != 'subcorpora':
+                    out = out.T
+                if multiple == 'subcorpora':
+                    out = out.sort_index()
+                out = out.fillna(0) # nan to zero
+                out = out.astype(int)
+                if 'c' in show and mult_corp_are_subs:
+                    out = out.sum()
+                    out.index = sorted(list(out.index))
 
         # sort by total
         if isinstance(out, DataFrame):
+
             out = out[list(out.sum().sort_values(ascending=False).index)]
 
             # really need to figure out the deal with tranposing!
             if all(x.endswith('.xml') for x in list(out.columns)) \
-            or all(x.endswith('.txt') for x in list(out.columns)):
+            or all(x.endswith('.txt') for x in list(out.columns)) \
+            or all(x.endswith('.conll') for x in list(out.columns)):
                 out = out.T
-        out = out.edit(sort_by=sort_by, print_info=False, keep_stats=False, \
-                      df1_always_df=kwargs.get('df1_always_df'))
-        out.query = qlocs
+                
+            if kwargs.get('nosubmode'):
+                out = out.sum()
+    
+        from corpkit.interrogation import Interrogation
+        tt = out.sum(axis=1) if isinstance(out, DataFrame) else out.sum()
+        out = Interrogation(results=out, totals=tt, query=qlocs)
 
-        if len(out.results.columns) == 1:
-            out.results = out.results.sort_index()   
+        if hasattr(out, 'columns') and len(out.columns) == 1:
+            out = out.sort_index()   
+
         if kwargs.get('conc') is True:
             try:
                 concs = pd.concat([x.concordance for x in res], ignore_index=True)
@@ -364,7 +377,13 @@ def pmultiquery(corpus,
         if print_info:
             if terminal:
                 print(terminal.move(terminal.height-1, 0))
-            print('%s: Finished! %s unique results, %s total.%s' % (thetime, format(len(out.results.columns), ','), format(out.totals.sum(), ','), '\n'))
+            if hasattr(out.results, 'columns'):
+                print('%s: Interrogation finished! %s unique results, %s total.' % (thetime, format(len(out.results.columns), ','), format(out.totals.sum(), ',')))
+            else:
+                print('%s: Interrogation finished! %s matches.' % (thetime, format(tt, ',')))
         if save:
             out.save(save, print_info = print_info)
+
+        if list(out.results.index) == ['0'] and not kwargs.get('df1_always_df'):
+            out.results = out.results.ix[0].sort_index()
         return out

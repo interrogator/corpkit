@@ -650,6 +650,7 @@ def interrogator(corpus,
     from corpkit.process import searchfixer
     search = searchfixer(search, query)
     show = fix_show(show, gramsize)
+    locs['show'] = show
 
     # instantiate lemmatiser if need be
     lem_instance = False
@@ -689,6 +690,7 @@ def interrogator(corpus,
     locs['print_info'] = kwargs.get('printstatus', True)
     locs['multiple'] = im
     locs['subcorpora'] = subcorpora
+    locs['nosubmode'] = nosubmode
 
     # send to multiprocess function
     if im:
@@ -790,7 +792,7 @@ def interrogator(corpus,
     # Iterate over data, doing interrogations
     for (subcorpus_name, subcorpus_path), files in sorted(to_iterate_over.items()):
         if nosubmode:
-            subcorpus_name = '_nosubmode'
+            subcorpus_name = 'Total'
 
         # results for subcorpus go here
         #conc_results[subcorpus_name] = []
@@ -1004,7 +1006,7 @@ def interrogator(corpus,
     conds = [countmode,
              files_as_subcorpora,
              subcorpora,
-             kwargs.get('df1_always_df')]
+             kwargs.get('df1_always_df', False)]
     anyxs = [level == 's',
              singlefile,
              nosubmode]
@@ -1016,7 +1018,7 @@ def interrogator(corpus,
         total_total = tot
 
     # turn data into DF for GUI if need be
-    if isinstance(df, Series) and kwargs.get('df1_always_df'):
+    if isinstance(df, Series) and kwargs.get('df1_always_df', False):
         total_total = df.sum()
         df = DataFrame(df)
         tot = Series(total_total, index=['Total'])
@@ -1043,6 +1045,8 @@ def interrogator(corpus,
     # make interrogation object
     locs['corpus'] = corpus.path
     locs = sanitise_dict(locs)
+    if nosubmode and isinstance(df, pd.DataFrame):
+        df = df.sum()
     interro = Interrogation(results=df, totals=tot, query=locs, concordance=conc_df)
 
     # save it
