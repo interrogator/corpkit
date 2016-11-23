@@ -440,25 +440,37 @@ def interpreter(debug=False,
         if objs._interactive:
             import tabview
             showfunc = tabview.view
-            kwa = {'column_width': 10}
+            kwa = {'column_width': 10, 'align_right': True}
         else:
             showfunc = print
             kwa = {}
         obj = getattr(obj, 'results', obj)
         if isinstance(obj, (pd.DataFrame, pd.Series)):
             df = obj.round(objs._decimal)
-            df = df.iloc[:objs.max_rows,:objs.max_cols]
+            if isinstance(obj, pd.DataFrame):
+                df = df.iloc[:objs.max_rows,:objs.max_cols]
+            else:
+                df = df[:objs.max_rows]
+
             if objs._comma:
-                df = df.applymap(lambda x: '{:,}'.format(x))
+                if isinstance(obj, pd.DataFrame):
+                    df = df.applymap(lambda x: '{:,}'.format(x))
+                else:
+                    df = df.apply(lambda x: '{:,}'.format(x))
+            #if showfunc == tabview.view:
+            #    df = df.astype(str).apply(lambda x: x.str.rjust(len(x.name), ' '))
             showfunc(df, **kwa)
             return
+        # not sure what might be here
         elif obj:
             try:
                 df = obj.round(objs._decimal)
             except:
                 df = obj
-            if objs._comma:
-                df = df.applymap(lambda x: '{:,}'.format(x))
+            try:
+                df = df[:objs.max_rows,:objs.max_cols]
+            except:
+                pass
             showfunc(df[:objs.max_rows,:objs.max_cols], **kwa)
             return
         #else:
@@ -960,7 +972,7 @@ def interpreter(debug=False,
 
         withs = process_kwargs(tokens)
 
-        kwargs = {'search': search, 'exclude': exclude, 'df1_always_df': True,
+        kwargs = {'search': search, 'exclude': exclude,
                   'show': show, 'cql': cqlmode, 'conc': objs._do_conc, 'searchmode': searchmode}
         kwargs.update(withs)
         return kwargs
@@ -1262,6 +1274,7 @@ def interpreter(debug=False,
 
         if tokens[0] in ['result', 'edited']:
             obj = getattr(obj, 'results', obj)
+        
         if len(tokens) == 1:
             print(obj.to_string())
             return
@@ -1273,8 +1286,11 @@ def interpreter(debug=False,
         else:
             formt = 'c'
 
-        buf = tokens[-1]
-
+        if tokens:
+            buf = tokens[-1]
+        else:
+            buf = None
+        
         if buf == formt:
             buf = None
         
