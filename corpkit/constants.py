@@ -33,6 +33,7 @@ transshow = {'f': 'Function',
              'n': 'N-grams',
              'p': 'POS',
              'e': 'NER',
+             'c': 'Count',
              'x': 'Word class',
              's': 'Sentence index'}
 
