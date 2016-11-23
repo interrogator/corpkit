@@ -1,5 +1,5 @@
--e git+https://github.com/interrogator/tkintertable.git@e983dea6565d583439cbe04034774944388213ae#egg=tkintertable
--e git+https://github.com/interrogator/tabview@93644dd1f410de4e47466ea8083bb628b9ccc471#egg=tabview
+git+https://github.com/interrogator/tkintertable.git@e983dea6565d583439cbe04034774944388213ae#egg=tkintertable
+git+https://github.com/interrogator/tabview#egg=tabview-1.4.0
 matplotlib >= 1.5.1
 nltk >= 3.0.0
 joblib
