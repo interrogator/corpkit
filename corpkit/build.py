@@ -557,7 +557,7 @@ def get_all_metadata_fields(corpus, include_speakers=False):
     This could take a while for very little infor
     """
     from corpkit.corpus import Corpus
-    from corpkit.constants import OPENER, PYTHON_VERSION
+    from corpkit.constants import OPENER, PYTHON_VERSION, MAX_METADATA_FIELDS
 
     # allow corpus object
     if not isinstance(corpus, Corpus):
@@ -593,6 +593,8 @@ def get_all_metadata_fields(corpus, include_speakers=False):
         for l in lines:
             if l not in fields and l not in badfields:
                 fields.add(l)
+        if len(fields) > MAX_METADATA_FIELDS:
+            break
     return list(fields)
 
 def get_names(filepath, speakid):
@@ -612,13 +614,14 @@ def get_speaker_names_from_parsed_corpus(corpus, feature='speaker'):
     """
     import os
     import re
+    from corpkit.constants import MAX_METADATA_VALUES
 
     path = corpus.path if hasattr(corpus, 'path') else corpus
     
     list_of_files = []
     names = []
 
-    speakid = re.compile(r'^# %s=(.*)' % re.escape(feature), re.MULTILINE)
+    speakid = re.compile(r'^# %s=(.*)' % re.escape(feature))
     
     # if passed a dir, do it for every file
     if os.path.isdir(path):
@@ -635,6 +638,8 @@ def get_speaker_names_from_parsed_corpus(corpus, feature='speaker'):
         for i in res:
             if i not in names:
                 names.append(i)
+        if len(names) > MAX_METADATA_VALUES:
+            break
     return list(sorted(set(names)))
 
 def rename_all_files(dirs_to_do):

@@ -573,7 +573,7 @@ def parse_just_speakers(just_speakers, corpus):
         just_speakers = [just_speakers]
     if isinstance(just_speakers, list):
         if just_speakers == ['each']:
-            from build import get_speaker_names_from_parsed_corpus
+            from corpkit.build import get_speaker_names_from_parsed_corpus
             just_speakers = get_speaker_names_from_parsed_corpus(corpus)
     return just_speakers
 
@@ -1018,7 +1018,7 @@ def fix_search(search, case_sensitive=False, root=False):
     """
     If search has nested dicts, translate them
     """
-    ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 's']
+    ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 's', 'c']
     
     # handle the possibility of nesting queries
     nestq = False

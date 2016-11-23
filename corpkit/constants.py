@@ -74,3 +74,7 @@ REPEAT_PARSE_ATTEMPTS = 3
 # newest, beta
 CORENLP_VERSION = '3.7.0'
 CORENLP_URL  = 'http://nlp.stanford.edu/software/stanford-corenlp-full-2016-10-31.zip'
+
+# it can be very slow to load a bunch of unused metadata categories
+MAX_METADATA_FIELDS = 99
+MAX_METADATA_VALUES = 99
