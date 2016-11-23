@@ -1,4 +1,4 @@
-git+https://github.com/interrogator/tkintertable.git@e983dea6565d583439cbe04034774944388213ae#egg=tkintertable
+git+https://github.com/interrogator/tkintertable.git#egg=tkintertable-1.2
 git+https://github.com/interrogator/tabview#egg=tabview-1.4.0
 matplotlib >= 1.5.1
 nltk >= 3.0.0

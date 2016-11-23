@@ -377,7 +377,6 @@ def pmultiquery(corpus,
         if print_info:
             if terminal:
                 print(terminal.move(terminal.height-1, 0))
-            
             if hasattr(out.results, 'columns'):
                 print('%s: Interrogation finished! %s unique results, %s total.' % (thetime, format(len(out.results.columns), ','), format(out.totals.sum(), ',')))
             else:
