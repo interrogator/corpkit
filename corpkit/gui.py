@@ -475,8 +475,11 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         #root.overrideredirect(True)
         root.resizable(FALSE,FALSE)
         note_height = 600 if small_screen else 660
-        #wid = 1365
-        note = Notebook(root, width=root.winfo_screenwidth(), height=note_height,
+        note_width = root.winfo_screenwidth()
+        if note_width > note_height * 1.62:
+            note_width = note_height * 1.62
+        note_width = int(note_width)
+        note = Notebook(root, width=note_width, height=note_height,
                         activefg='#000000', inactivefg='#585555', debug=debug)  #Create a Note book Instance
         note.grid()
         tab0 = note.add_tab(text="Build")
@@ -994,16 +997,28 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             except:
                 args[0].widget.tag_add("sel","1.0","end")
 
-        def update_available_corpora(delete = False):
+        def get_all_corpora():
+            import os
+            all_corpora = []
+            for root, ds, fs in os.walk(corpora_fullpath.get()):
+                for d in ds:
+                    path = os.path.join(root, d)
+                    if any(os.path.isdir(os.path.join(path, x)) for x in os.listdir(path)):
+                        all_corpora.append(os.path.relpath(path, start=corpora_fullpath.get()))
+            return sorted(all_corpora)            
+
+        def update_available_corpora(delete=False):
             """updates corpora in project, and returns a list of them"""
             import os
             fp = corpora_fullpath.get()
-            all_corpora = sorted([d for d in os.listdir(fp) if os.path.isdir(os.path.join(fp, d)) and '/' not in d])
+            all_corpora = get_all_corpora()
             for om in [available_corpora, available_corpora_build]:
                 om.config(state=NORMAL)
                 om['menu'].delete(0, 'end')
                 if not delete:
                     for corp in all_corpora:
+                        if corp.startswith('data/'):
+                            corp = corp.replace('data/', '', 1)
                         if not corp.endswith('parsed') and not corp.endswith('tokenised') and om == available_corpora:
                             continue
                         om['menu'].add_command(label=corp, command=_setit(current_corpus, corp))
@@ -1597,6 +1612,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             #    corp_to_search = os.path.join(corpus_fullpath.get(), subc_pick.get())
 
             # do interrogation, return if empty
+            if debug:
+                print('CORPUS:', corp_to_search)
             interrodata = interrogator(corp_to_search, **interrogator_args)
             if isinstance(interrodata, Interrogation):
                 if hasattr(interrodata, 'results') and interrodata.results is not None:
@@ -1735,10 +1752,12 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             """
             if current_corpus.get() == '':
                 return
-            corpus_name = current_corpus.get()
-
-            fp = os.path.join(corpora_fullpath.get(), corpus_name)
-            corpus_fullpath.set(fp)
+            corpus_name = os.path.basename(current_corpus.get())
+            if current_corpus.get().startswith('data'):
+                corpus_fullpath.set(os.path.join(project_fullpath.get(), current_corpus.get()))
+            else:
+                corpus_fullpath.set(os.path.join(corpora_fullpath.get(), current_corpus.get()))
+            fp = corpus_fullpath.get()
 
             from corpkit.corpus import Corpus
             corpus = Corpus(fp, print_info=False)
@@ -2289,7 +2308,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         tmp.grid(row=6, column=0, sticky=W, pady=(5,0))
 
         global ngmsize
-        Label(interro_opt, text='N-gram size:').grid(row=5, column=0, sticky=W, padx=(240,0), columnspan=2, pady=(5,0)) 
+        Label(interro_opt, text='N-gram size:').grid(row=5, column=0, sticky=W, padx=(220,0), columnspan=2, pady=(5,0)) 
         ngmsize = MyOptionMenu(interro_opt, 'Size','1', '2','3','4','5','6','7','8')
         ngmsize.configure(width=12)
         ngmsize.grid(row=5, column=1, sticky=E, pady=(5,0))
@@ -2298,7 +2317,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         global collosize
         Label(interro_opt, text='Collocation window:').grid(row=5, column=0, sticky=W, pady=(5,0)) 
         collosize = MyOptionMenu(interro_opt, 'Size','1', '2','3','4','5','6','7','8')
-        collosize.configure(width=12)
+        collosize.configure(width=8)
         collosize.grid(row=5, column=0, sticky=W, padx=(140,0), pady=(5,0))
         #collosize.config(state=DISABLED)
 
@@ -2575,25 +2594,25 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         return_ngm = StringVar()
         return_ngm.set('')
         ck17 = Checkbutton(interro_return_frm, variable=return_ngm, 
-                          onvalue='mw', offvalue = '')
+                          onvalue='w', offvalue = '')
         ck17.grid(row=4, column=1, sticky=E)
 
         return_ngm_lemma = StringVar()
         return_ngm_lemma.set('')
         ck18 = Checkbutton(interro_return_frm, variable=return_ngm_lemma, 
-                          onvalue='ml', offvalue = '')
+                          onvalue='l', offvalue = '')
         ck18.grid(row=4, column=2, sticky=E)
 
         return_ngm_pos = StringVar()
         return_ngm_pos.set('')
         ck19 = Checkbutton(interro_return_frm, variable=return_ngm_pos, 
-                          onvalue='mp', offvalue = '')
+                          onvalue='p', offvalue = '')
         ck19.grid(row=4, column=3, sticky=E)
 
         return_ngm_func = StringVar()
         return_ngm_func.set('')
         ck20 = Checkbutton(interro_return_frm, variable=return_ngm_func, 
-                          onvalue='mf', offvalue = '', state=DISABLED)
+                          onvalue='f', offvalue = '', state=DISABLED)
         ck20.grid(row=4, column=4, sticky=E)
 
         def q_callback(*args):
@@ -2627,7 +2646,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         # query help, interrogate button
         #Button(interro_opt, text='Query help', command=query_help).grid(row=14, column=0, sticky=W)
         interrobut = Button(interro_opt, text='Interrogate')
-        interrobut.config(command=lambda: runner(interrobut, do_interrogation, conc = True), state=DISABLED)
+        interrobut.config(command=lambda: runner(interrobut, do_interrogation, conc=True), state=DISABLED)
         interrobut.grid(row=18, column=1, sticky=E)
 
         # name to show above spreadsheet 0
@@ -2648,7 +2667,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         
         # make spreadsheet frames for interrogate pane
 
-        wdth = int(root.winfo_width() * 0.50)
+        wdth = int(note_width * 0.50)
         interro_right = Frame(tab1, width=wdth)
         interro_right.grid(row=0, column=1, sticky=N)
 
@@ -3199,7 +3218,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
 
         # show spreadsheets
-        e_wdth = int(root.winfo_width() * 0.55)
+        e_wdth = int(note_width * 0.55)
         editor_sheets = Frame(tab2)
         editor_sheets.grid(column=1, row=0, sticky='NE')
         resultname = StringVar()
@@ -4687,7 +4706,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         fsize = IntVar()
         fsize.set(12)
         conc_height = 510 if small_screen else 565
-        cfrm = Frame(tab4, height=conc_height, width=root.winfo_width() - 10)
+        cfrm = Frame(tab4, height=conc_height, width=note_width - 10)
         cfrm.grid(column=0, row=0, sticky='nw')
         cscrollbar = Scrollbar(cfrm)
         cscrollbarx = Scrollbar(cfrm, orient=HORIZONTAL)
@@ -4695,7 +4714,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         cscrollbarx.pack(side=BOTTOM, fill=X)
         conclistbox = Listbox(cfrm, yscrollcommand=cscrollbar.set, relief=SUNKEN, bg='#F4F4F4',
                               xscrollcommand=cscrollbarx.set, height=conc_height, 
-                              width=root.winfo_width() - 10, font=('Courier New', fsize.get()), 
+                              width=note_width - 10, font=('Courier New', fsize.get()), 
                               selectmode = EXTENDED)
         conclistbox.pack(fill=BOTH)
         cscrollbar.config(command=conclistbox.yview)
@@ -5103,7 +5122,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         # everything, so instead, we figure out the best distance by math
 
         # width of window - width of left buttons - with of prev conc and 'stored concordances' label (approx)
-        padd = root.winfo_width() - showbuts.winfo_width() - (prev_conc.winfo_width() * 2)
+        padd = note_width - showbuts.winfo_width() - (prev_conc.winfo_width() * 2)
 
         # for now, just a guess!
         if padd < 0:
@@ -5685,7 +5704,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                     else:
                         first = False
                 if first:
-                    corpus_fullpath.set(os.path.join(corpora_fullpath.get(), first))
+                    if first.startswith('data/'):
+                        first = first.replace('data/', '', 1)
+                    corpus_fullpath.set(os.path.abspath(first))
                     try:
                         current_corpus.set(first)
                     except:
@@ -5697,14 +5718,17 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 #else:
                 #    current_corpus.set(os.path.basename(corpus_fullpath.get()))
                 
-            corpus_name = os.path.basename(corpus_fullpath.get())
+            corpus_name = os.path.relpath(corpus_fullpath.get())
             try:
                 current_corpus.set(corpus_name)
             except:
                 pass
 
             if corpus_fullpath.get() != '':
-                subdrs = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
+                try:
+                    subdrs = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
+                except FileNotFoundError:
+                    subdrs = []
             else:
                 subdrs = []       
 
@@ -6946,7 +6970,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                         lab = os.path.join(os.path.basename(os.path.dirname(c)), os.path.basename(c))
                         recentmenu.add_radiobutton(label=lab, variable=recent_project, value = c)
             if os.path.isdir(fp):
-                all_corpora = sorted([d for d in os.listdir(fp) if os.path.isdir(os.path.join(fp, d)) and '/' not in d])
+                all_corpora = get_all_corpora()
                 if len(all_corpora) > 0:
                     filemenu.entryconfig("Select corpus", state="normal")
                     selectmenu.delete(0, END)
@@ -7166,22 +7190,21 @@ if __name__ == "__main__":
     except:
         exc_type, exc_value, exc_traceback=sys.exc_info()
         print("*** print_tb:")
-        traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
+        print(traceback.print_tb(exc_traceback, limit=1, file=sys.stdout))
         print("*** print_exception:")
-        traceback.print_exception(exc_type, exc_value, exc_traceback,
-                                  limit=2, file=sys.stdout)
+        print(traceback.print_exception(exc_type, exc_value, exc_traceback,
+                                  limit=2, file=sys.stdout))
         print("*** print_exc:")
-        traceback.print_exc()
+        print(traceback.print_exc())
         print("*** format_exc, first and last line:")
-        formatted_lines = traceback.format_exc().splitlines()
-        print(formatted_lines[0])
-        print(formatted_lines[-1])
+        formatted_lines = traceback.format_exc()
+        print(formatted_lines)
         print("*** format_exception:")
-        print(repr(traceback.format_exception(exc_type, exc_value,
+        print('\n'.join(traceback.format_exception(exc_type, exc_value,
                                               exc_traceback)))
         print("*** extract_tb:")
-        print(repr(traceback.extract_tb(exc_traceback)))
+        print('\n'.join([str(i) for i in traceback.extract_tb(exc_traceback)]))
         print("*** format_tb:")
-        print(repr(traceback.format_tb(exc_traceback)))
+        print(traceback.format_tb(exc_traceback))
         print("*** tb_lineno:", exc_traceback.tb_lineno)
 
