@@ -1489,7 +1489,7 @@ def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
                     todel.add(i)
         else:
             for i, sub in enumerate(corpus.subcorpora):
-                if re.search(sd, sub.name):
+                if re.search(sd, sub.name, re.IGNORECASE):
                     todel.add(i)
 
         for i in sorted(todel, reverse=True):
@@ -1504,7 +1504,7 @@ def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
                         todel.add(i)
             else:
                 for i, sub in enumerate(corpus.files):
-                    if re.search(sf, sub.name):
+                    if re.search(sf, sub.name, re.IGNORECASE):
                         todel.add(i)
 
             for i in sorted(todel, reverse=True):
@@ -1520,7 +1520,7 @@ def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
 
                 else:
                     for i, sub in enumerate(sc.files):
-                        if re.search(sf, sub.name):
+                        if re.search(sf, sub.name, re.IGNORECASE):
                             todel.add(i)
 
                 for i in sorted(todel, reverse=True):
@@ -1534,7 +1534,7 @@ def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
                     todel.add(i)
         else:
             for i, sub in enumerate(corpus.subcorpora):
-                if not re.search(jd, sub.name):
+                if not re.search(jd, sub.name, re.IGNORECASE):
                     todel.add(i)
 
         for i in sorted(todel, reverse=True):
@@ -1549,7 +1549,7 @@ def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
                         todel.add(i)
             else:
                 for i, sub in enumerate(corpus.files):
-                    if not re.search(jf, sub.name):
+                    if not re.search(jf, sub.name, re.IGNORECASE):
                         todel.add(i)
 
             for i in sorted(todel, reverse=True):
@@ -1565,7 +1565,7 @@ def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
 
                 else:
                     for i, sub in enumerate(sc.files):
-                        if not re.search(jf, sub.name):
+                        if not re.search(jf, sub.name, re.IGNORECASE):
                             todel.add(i)
 
                 for i in sorted(todel, reverse=True):
