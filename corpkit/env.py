@@ -513,7 +513,13 @@ def interpreter(debug=False,
             print('\n'.join(os.listdir('.')))
 
         if objtype == 'clear':
-            print(chr(27) + "[2J")
+            try:
+                from blessings import Terminal
+                terminal = Terminal()
+                print(terminal.clear())
+                print(terminal.move(0,0))
+            except:
+                print(chr(27) + "[2J")
 
         if objtype == 'history':
             import readline
