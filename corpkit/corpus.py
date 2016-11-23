@@ -688,10 +688,10 @@ class Corpus(object):
             raise ValueError('You need to parse or tokenise the corpus before searching.')
         
         # handle symbolic structures
-        subcorpora = False
+        subcorpora = kwargs.get('subcorpora', False)
         if self.symbolic:
             subcorpora = self.symbolic
-        if kwargs.get('subcorpora', False):
+        if 'subcorpora' in kwargs:
             subcorpora = kwargs.pop('subcorpora')
         if subcorpora in ['default', 'folder', 'folders']:
             subcorpora = False
@@ -745,7 +745,18 @@ class Corpus(object):
             if all(i == 'none' or str(i).isdigit() for i in ind):
                 longest = max([len(str(i)) if str(i).isdigit() else 1 for i in ind])
                 res.results.index = [str(i).zfill(longest) for i in ind]
-                res.results = res.results.sort_index().astype(int)        
+                res.results = res.results.sort_index().astype(int)
+        else:
+            show = res.query.get('show', [])
+            outs = []
+            from corpkit.constants import transshow, transobjs
+            for bit in show:
+                name = transobjs.get(bit[0], bit[0]) + '-' + transshow.get(bit[-1], bit[-1])
+                name = name.replace('Match-', '').lower()
+                outs.append(name)
+            name = '/'.join(outs)
+            if name:
+                res.results.name = name
         return res
 
     def sample(self, n, level='f'):
