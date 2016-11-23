@@ -84,6 +84,7 @@ def pmultiquery(corpus,
             import re
             subcorpora = re.compile(r'.*')
         else:
+            # strange travis error happened here
             subcorpora = corpus.metadata['fields'][subval]
             if len(subcorpora) == 0:
                 print('No %s metadata found.' % str(subval))
