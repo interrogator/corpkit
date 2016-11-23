@@ -229,6 +229,7 @@ class Objects(object):
         self._docker = False
         self.max_cols = None
         self.max_rows = None
+        self._comma = False
 
         # system toggles and references to older data
         self._in_a_project = None
@@ -447,6 +448,8 @@ def interpreter(debug=False,
         if isinstance(obj, (pd.DataFrame, pd.Series)):
             df = obj.round(objs._decimal)
             df = df.iloc[:objs.max_rows,:objs.max_cols]
+            if objs._comma:
+                df = df.applymap(lambda x: '{:,}'.format(x))
             showfunc(df, **kwa)
             return
         elif obj:
@@ -454,6 +457,8 @@ def interpreter(debug=False,
                 df = obj.round(objs._decimal)
             except:
                 df = obj
+            if objs._comma:
+                df = df.applymap(lambda x: '{:,}'.format(x))
             showfunc(df[:objs.max_rows,:objs.max_cols], **kwa)
             return
         #else:
@@ -543,11 +548,16 @@ def interpreter(debug=False,
 
     def set_something(tokens):
         """
-        Set the active corpus:
+        Set the active corpus, a corpus filter, subcorpus structure, or option:
 
-        :Example:
+        :Examples:
 
            `set junglebook-parsed`
+           `set decimal as 3`
+           `set just topic as freedom|democracy`
+           `set max_rows as 1000`
+           `set papers as corpora`
+
         """
         if tokens and tokens[0].startswith('decimal'):
             objs._decimal = int(tokens[2])
@@ -555,10 +565,16 @@ def interpreter(debug=False,
             return
 
         if tokens and tokens[0] in ['max_cols', 'max_rows']:
-            setattr(objs, tokens[0], int(tokens[-1]))
             dim = 'rows' if tokens[0].endswith('rows') else 'columns'
-            print('Max %s set to %s.' % (dim, format(int(tokens[-1]), ',')))
-            return
+    
+            if tokens[-1] in ['off', 'all', 'false', 'False', 'None', 'none']:
+                setattr(objs, tokens[0], None)
+                print("Max %s turned off." % dim)
+                return
+            else:
+                setattr(objs, tokens[0], int(tokens[-1]))
+                print('Max %s set to %s.' % (dim, format(int(tokens[-1]), ',')))
+                return
 
         # set subcorpora as attribute of corpus object ... is this ideal?
         if tokens and tokens[0].startswith('subcorp'):
@@ -571,12 +587,26 @@ def interpreter(debug=False,
             print('Set subcorpora to "%s".' % (tokens[-1]))
             return
 
+        # setting skipping and just filters
         if tokens and tokens[0] in ['skip', 'just']:
             attr = tokens[0]
-            if tokens[-1] in ['none', 'None', 'off', 'default']:
+            # if the filter is already in the dict
+            if isinstance(getattr(objs, tokens[0]), dict) and tokens[1] in getattr(objs, tokens[0]).keys():
+                oldd = getattr(objs, tokens[0])
+                # delete it
+                if tokens[-1] in ['none', 'None', 'off', 'default']:
+                    oldd.pop(tokens[1], None)
+                    setattr(objs, tokens[0], oldd)
+                # modify it
+                else:
+                    oldd[tokens[1]] = parse_pattern(tokens[-1])
+                    setattr(objs, tokens[0], oldd)
+            # delete the entire filter dict
+            elif tokens[-1] in ['none', 'None', 'off', 'default']:
                 setattr(objs, attr, False)
                 print("Reset %s filter." % attr)
                 return
+            # if not in dict, add it
             metfeat = tokens[1]
             crit = tokens[-1]
             if crit.startswith('tag'):
@@ -1908,8 +1938,10 @@ def interpreter(debug=False,
 
         Currently available:
 
-        - toggle conc
-        - toggle interactive
+        - toggle conc (does concordancing when searching)
+        - toggle interactive (shows results and concordances after running)
+        - toggle annotation (allows the user to annotate the real corpus)
+        - toggle comma (shows thousands comma in results)
 
         """
         if tokens[0].startswith('conc'):
@@ -1924,6 +1956,10 @@ def interpreter(debug=False,
             objs._annotation_unlocked = not objs._annotation_unlocked
             s = 'on' if objs._annotation_unlocked else 'off'
             print('Annotation mode %s.' % s)
+        if tokens[0].startswith('comma'):
+            objs._comma = not objs._comma
+            s = 'on' if objs._comma else 'off'
+            print('Thousand separator in results turned %s.' % s)
 
     def remove_something(tokens):
         if len(tokens) == 1:
