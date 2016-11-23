@@ -654,7 +654,7 @@ def fast_simple_conc(dfss, idxs, show,
     
     # get rid of (e.g.) nan caused by no_punct=True
     matches = matches.dropna(axis=0, how='all')
-    
+
     if not preserve_case:
         matches = matches.str.lower()
 
@@ -791,7 +791,7 @@ def determine_adjacent(original):
         adj = False
     return adj, original
 
-def process_df_for_speakers(df, metadata, criteria, coref=False,
+def cut_df_by_metadata(df, metadata, criteria, coref=False,
                             feature='speaker', method='just'):
     """
     Keep or remove parts of the DataFrame based on metadata criteria
@@ -823,11 +823,11 @@ def process_df_for_speakers(df, metadata, criteria, coref=False,
                     new_metadata[sentid] = data
         elif isinstance(criteria, (re._pattern_type, STRINGTYPE)):
             if method == 'just':
-                if any(re.search(criteria, i) for i in lst_met_vl):
+                if any(re.search(criteria, i, re.IGNORECASE) for i in lst_met_vl):
                     good_sents.append(sentid)
                     new_metadata[sentid] = data
             elif method == 'skip':
-                if not any(re.search(criteria, i) for i in lst_met_vl):
+                if not any(re.search(criteria, i, re.IGNORECASE) for i in lst_met_vl):
                     good_sents.append(sentid)
                     new_metadata[sentid] = data
 
@@ -843,10 +843,10 @@ def cut_df_by_meta(df, just_metadata, skip_metadata):
     if df is not None:
         if just_metadata:
             for k, v in just_metadata.items():
-                df = process_df_for_speakers(df, df._metadata, v, feature=k)
+                df = cut_df_by_metadata(df, df._metadata, v, feature=k)
         if skip_metadata:
             for k, v in skip_metadata.items():
-                df = process_df_for_speakers(df, df._metadata, v, feature=k, method='skip')
+                df = cut_df_by_metadata(df, df._metadata, v, feature=k, method='skip')
     return df
 
 
@@ -1153,7 +1153,7 @@ def pipeline(f=False,
         # get all the possible values in the df for the feature of interest
         all_cats = set([i.get(feature, 'none') for i in list(df._metadata.values())])
         for category in all_cats:
-            new_df = process_df_for_speakers(df, df._metadata, category, feature=feature, method='just')
+            new_df = cut_df_by_metadata(df, df._metadata, category, feature=feature, method='just')
             r, c = searcher(f=False,
                             fname=f,
                             search=search,
@@ -1183,7 +1183,7 @@ def pipeline(f=False,
 
     kwargs['ngram_mode'] = any(x.startswith('n') for x in show)
 
-    #df = process_df_for_speakers(df, df._metadata, kwargs.get('just_speakers'), coref=coref)
+    #df = cut_df_by_metadata(df, df._metadata, kwargs.get('just_speakers'), coref=coref)
     metadata = df._metadata
 
     if kwargs.get('no_punct', True):
