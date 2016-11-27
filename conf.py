@@ -261,10 +261,11 @@ latex_elements = {
 #'pointsize': '10pt',
 
 # Additional stuff for the LaTeX preamble.
+# This should help with line breaks in code cells
 'preamble': '\\setcounter{tocdepth}{3} \\usepackage{pmboxdraw} \\usepackage[draft]{minted}\\fvset{breaklines=true, breakanywhere=true}',
 
 # Latex figure (float) alignment
-#'figure_align': 'htbp',
+'figure_align': 'htbp',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
