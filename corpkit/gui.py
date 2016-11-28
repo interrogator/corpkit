@@ -523,8 +523,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         all_interrogations['None'] = 'None'
 
         # corpus path setter
+
         corpus_fullpath = StringVar()
         corpus_fullpath.set('')
+
         corenlppath = StringVar()
         corenlppath.set(os.path.join(os.path.expanduser("~"), 'corenlp'))
 
@@ -997,14 +999,21 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             except:
                 args[0].widget.tag_add("sel","1.0","end")
 
+
+        def make_corpus_name_from_abs(pfp, cfp):
+            if pfp in cfp:
+                return cfp.replace(pfp.rstrip('/') + '/', '')
+            else:
+                return cfp
+
         def get_all_corpora():
             import os
             all_corpora = []
             for root, ds, fs in os.walk(corpora_fullpath.get()):
                 for d in ds:
                     path = os.path.join(root, d)
-                    if any(os.path.isdir(os.path.join(path, x)) for x in os.listdir(path)):
-                        all_corpora.append(os.path.relpath(path, start=corpora_fullpath.get()))
+                    relpath = path.replace(corpora_fullpath.get(), '', 1).lstrip('/')
+                    all_corpora.append(relpath)
             return sorted(all_corpora)            
 
         def update_available_corpora(delete=False):
@@ -1017,8 +1026,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 om['menu'].delete(0, 'end')
                 if not delete:
                     for corp in all_corpora:
-                        if corp.startswith('data/'):
-                            corp = corp.replace('data/', '', 1)
                         if not corp.endswith('parsed') and not corp.endswith('tokenised') and om == available_corpora:
                             continue
                         om['menu'].add_command(label=corp, command=_setit(current_corpus, corp))
@@ -1750,15 +1757,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             On selecting a corpus, set everything appropriately.
             also, disable some kinds of search based on the name
             """
-            if current_corpus.get() == '':
-                return
-            corpus_name = os.path.basename(current_corpus.get())
-            if current_corpus.get().startswith('data'):
-                corpus_fullpath.set(os.path.join(project_fullpath.get(), current_corpus.get()))
-            else:
-                corpus_fullpath.set(os.path.join(corpora_fullpath.get(), current_corpus.get()))
+            import os
+            from os.path import join, isdir, isfile, exists
+            corpus_fullpath.set(join(corpora_fullpath.get(), current_corpus.get()))
             fp = corpus_fullpath.get()
-
             from corpkit.corpus import Corpus
             corpus = Corpus(fp, print_info=False)
             dtype = corpus.datatype
@@ -1770,8 +1772,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 except KeyError:
                     pass
 
-            subdrs = sorted([d for d in os.listdir(corpus_fullpath.get()) \
-                            if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
+            try:
+                subdrs = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
+            except FileNotFoundError:
+                subdrs = []
             
             if len(subdrs) == 0:
                 charttype.set('bar')
@@ -1792,11 +1796,11 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             convert_name_to_query = make_name_to_query_dict(exist, cols, dtype)
 
             # allow tokenising/parsing of plaintext
-            if not corpus_name.endswith('-parsed') and not corpus_name.endswith('-tokenised'):
+            if not fp.endswith('-parsed') and not fp.endswith('-tokenised'):
                 parsebut.config(state=NORMAL)
                 tokbut.config(state=NORMAL)
                 parse_button_text.set('Parse: %s' % os.path.basename(fp))
-                tokenise_button_text.set('Tokenise: %s' % corpus_name)
+                tokenise_button_text.set('Tokenise: %s' % current_corpus.get())
             # disable tokenising and parsing of non plaintxt
             else:
                 parsebut.config(state=NORMAL)
@@ -1806,7 +1810,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 parsebut.config(state=DISABLED)
                 tokbut.config(state=DISABLED)
             # no corefs
-            if not corpus_name.endswith('-parsed') and not corpus_name.endswith('tokenised'):
+            if not fp.endswith('-parsed') and not fp.endswith('tokenised'):
                 #pick_dep_type.config(state=DISABLED)
                 coref_but.config(state=DISABLED)
                 #parsebut.config(state=NORMAL)
@@ -1836,7 +1840,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 #parsebut.config(state=DISABLED)
                 #speakcheck_build.config(state=DISABLED)
                 datatype_picked.set('Word')
-            if not corpus_name.endswith('-tokenised') and not corpus_name.endswith('-parsed'):
+            if not fp.endswith('-tokenised') and not fp.endswith('-parsed'):
                     pick_a_datatype['menu'].add_command(label='Word', command=_setit(datatype_picked, 'Word'))
                     
 
@@ -1847,13 +1851,13 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
             note.progvar.set(0)
             
-            if corpus_name in list(corpus_names_and_speakers.keys()):
+            if current_corpus.get() in list(corpus_names_and_speakers.keys()):
                 refresh_by_metadata()
                 #speakcheck.config(state=NORMAL)
             else:
                 pass
                 #speakcheck.config(state=DISABLED)
-            timestring('Set corpus directory: "%s"' % corpus_name)
+            timestring('Set corpus directory: "%s"' % fp)
             editf.set('Edit file: ')
             parse_only = [ck4, ck5, ck6, ck7, ck9, ck10, ck11, ck12, ck13, ck14, ck15, ck16]
             non_parsed = [ck1, ck8]
@@ -1862,7 +1866,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             if 'p' in cols:
                 non_parsed.append(ck3)
             
-            if not corpus_name.endswith('-parsed'):
+            if not current_corpus.get().endswith('-parsed'):
                 for but in parse_only:
                     desel_and_turn_off(but)
                 for but in non_parsed:
@@ -1888,37 +1892,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         current_corpus.trace("w", corpus_callback)
         available_corpora.grid(row=0, column=0, columnspan=2, padx=(135,0))
 
-        # todo: implement this
-        #subc_pick = StringVar()
-        #subc_pick.set('Subcorpus')
-        #if os.path.isdir(corpus_fullpath.get()):
-        #    current_subcorpora = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
-        #else:
-        #    current_subcorpora = []
-        #pick_subcorpora = OptionMenu(interro_opt, subc_pick, *tuple(['All'] + current_subcorpora))
-        #pick_subcorpora.configure(width=12)
-        #pick_subcorpora.grid(row=0, column=1, sticky=E)
-
-        # for build tab
-        #Label(interro_opt, text='Corpus:').grid(row=0, column=0, sticky=W)
-        #current_corpus = StringVar()
-        #current_corpus.set('Select corpus')
 
         available_corpora_build = OptionMenu(tab0, current_corpus, *tuple(('Select corpus')))
         available_corpora_build.config(width=25, justify=CENTER, state=DISABLED)
         available_corpora_build.grid(row=4, column=0, sticky=W)
-
-        # Secondary match
-        #secondary_op = StringVar()
-        #secondary_op.set('None')
-        #Label(interro_opt, text='Refine:').grid(row=10, column=0, sticky=W)
-        #sec_match = OptionMenu(interro_opt, secondary_op, *tuple(('None', 'Word', 'POS', 'Lemma', 'Function', 'Index')))
-        #sec_match.grid(row=10, column=0, sticky=W, padx=(90, 0))
-        #secondary_str = StringVar()
-        #secondary_str.set('')
-        #q = Entry(interro_opt, textvariable=secondary_str, width=22, state=DISABLED)
-        #q.grid(row=10, column=0, columnspan=2, sticky=E)
-        #all_text_widgets.append(q)
 
         ex_additional_criteria = {}
         ex_anyall = StringVar()
@@ -4470,7 +4447,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 Checkbutton(poptions, text='POS tag', variable=tokenise_pos, onvalue=True, offvalue=False).grid(sticky=W)
                 Checkbutton(poptions, text='Lemmatise', variable=tokenise_lem, onvalue=True, offvalue=False).grid(sticky=W)
             Checkbutton(poptions, text='Speaker segmentation', variable=speakseg, onvalue=True, offvalue=False).grid(sticky=W)
-            Checkbutton(poptions, texwt='XML metadata', variable=parse_with_metadata, onvalue=True, offvalue=False).grid(sticky=W)
+            Checkbutton(poptions, text='XML metadata', variable=parse_with_metadata, onvalue=True, offvalue=False).grid(sticky=W)
 
             def optionspicked(*args):
                 vals = [i.get() for i in list(butvar.values()) if i.get() is not False and i.get() != 0 and i.get() != '0']
@@ -5170,7 +5147,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             #load_project(path = os.path.join(fp, name))
             timestring('Project "%s" created.' % name)
             note.focus_on(tab0)
-            #current_corpus.set('Select corpus')
             update_available_corpora()
 
         def get_saved_results(kind='interrogation', add_to=False):
@@ -5615,8 +5591,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             except KeyError:
                 files_as_subcorpora.set(False)
             if rel_corpuspath:
-                corpa = os.path.join(project_fullpath.get(), rel_corpuspath)
-                current_corpus.set(os.path.basename(corpa))
+                current_corpus.get(relcorpuspath)
             #corpus_fullpath.set(corpa)
             
             spk = conmap(Config, "Interrogate")['speakers']
@@ -5689,41 +5664,22 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             # reset tool:
             root.title("corpkit: %s" % os.path.basename(fp))
 
-            #if corpus_fullpath.get() == '':
-                # check if there are already (parsed) corpora
-            
+            # check for parsed corpora
             if not current_corpus.get():
                 parsed_corp = [d for d in list_of_corpora if d.endswith('-parsed')]
                 # select 
                 first = False
                 if len(parsed_corp) > 0:
                     first = parsed_corp[0]
-                else:
-                    if len(list_of_corpora) > 0:
-                        first = list_of_corpora[0]
-                    else:
-                        first = False
                 if first:
-                    if first.startswith('data/'):
-                        first = first.replace('data/', '', 1)
                     corpus_fullpath.set(os.path.abspath(first))
-                    try:
-                        current_corpus.set(first)
-                    except:
-                        pass
+                    name = make_corpus_name_from_abs(project_fullpath.get(), first)
+                    current_corpus.set(name)
                 else:
                     corpus_fullpath.set('')
                     # no corpora, so go to build...
                     note.focus_on(tab0)
-                #else:
-                #    current_corpus.set(os.path.basename(corpus_fullpath.get()))
-                
-            corpus_name = os.path.relpath(corpus_fullpath.get())
-            try:
-                current_corpus.set(corpus_name)
-            except:
-                pass
-
+            
             if corpus_fullpath.get() != '':
                 try:
                     subdrs = sorted([d for d in os.listdir(corpus_fullpath.get()) if os.path.isdir(os.path.join(corpus_fullpath.get(),d))])
@@ -6077,6 +6033,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         selected_corpus_has_no_subcorpora.set(0)
 
         def add_subcorpora_to_build_box(path_to_corpus):
+            if not path_to_corpus:
+                return
             import os
             subc_listbox_build.configure(state=NORMAL)
             subc_listbox_build.delete(0, 'end')
@@ -6145,8 +6103,12 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 for f in fs:
                     fpath = os.path.join(rootdir, f)
                     data, enc = saferead(fpath)
-                    with open(fpath, "w") as f:
-                        f.write(data.encode('utf-8', errors='ignore'))
+                    from corpkit.constants import OPENER, PYTHON_VERSION
+                    with OPENER(fpath, "w") as f:
+                        if PYTHON_VERSION == 2:
+                            f.write(data.encode('utf-8', errors='ignore'))
+                        else:
+                            f.write(data)
                     # rename file
                     #dname = '-' + os.path.basename(rootdir)
                     #newname = fpath.replace('.txt', dname + '.txt')
