@@ -1757,6 +1757,8 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             On selecting a corpus, set everything appropriately.
             also, disable some kinds of search based on the name
             """
+            if not current_corpus.get():
+                return
             import os
             from os.path import join, isdir, isfile, exists
             corpus_fullpath.set(join(corpora_fullpath.get(), current_corpus.get()))
@@ -3372,6 +3374,13 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
                 d['show_totals'] = showtot.get()
 
             d['figsize'] = (int(figsiz1.get()), int(figsiz2.get()))
+
+            if len(what_to_plot.index) == 1:
+                what_to_plot = what_to_plot.ix[what_to_plot.index[0]]
+            
+            if debug:
+                print('Plotter args:', what_to_plot, plotnametext.get(), d)
+            
             f = plotter(what_to_plot, plotnametext.get(), **d)
             
             # latex error
@@ -3397,9 +3406,9 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
 
             def getScrollingCanvas(frame):
                 """
-                    Adds a new canvas with scroll bars to the argument frame
-                    NB: uses grid layout
-                    @return: the newly created canvas
+                Adds a new canvas with scroll bars to the argument frame
+                NB: uses grid layout
+                return: the newly created canvas
                 """
 
                 frame.grid(column=1, row=0, rowspan = 1, padx=(15, 15), pady=(40, 0), columnspan=3, sticky='NW')
@@ -3424,7 +3433,7 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
             mplCanvas = FigureCanvasTkAgg(f.gcf(), frame_for_fig)
             mplCanvas._tkcanvas.config(highlightthickness=0)
             canvas = mplCanvas.get_tk_widget()
-            canvas.grid(sticky=NSEW)
+            canvas.pack()
             if frame_for_fig not in boxes:
                 boxes.append(frame_for_fig)
 
