@@ -55,23 +55,6 @@ def interrogator(corpus,
     locs.update(kwargs)
     locs.pop('kwargs', None)
 
-    # so you can do corpus.interrogate('features/postags/wordclasses/lexicon')
-    if search == 'features':
-        search = 'v'
-        query = 'any'
-    if search in ['postags', 'wordclasses']:
-        query = 'any'
-        preserve_case = True
-        show = 'p' if search == 'postags' else 'x'
-        # use tregex if simple because it's faster
-        # but use dependencies otherwise
-        search = 't' if not subcorpora and not just_metadata and not skip_metadata else {'w': 'any'}
-    if search == 'lexicon':
-        search = {'w': 'any'}
-
-    if not kwargs.get('cql') and isinstance(search, STRINGTYPE) and len(search) > 3:
-        raise ValueError('search argument not recognised.')
-
     import codecs
     import signal
     import os
@@ -93,8 +76,29 @@ def interrogator(corpus,
     from corpkit.conll import pipeline
     from corpkit.process import delete_files_and_subcorpora
     
+    have_java = check_jdk()
+
     # remake corpus without bad files and folders 
     corpus, skip_metadata, just_metadata = delete_files_and_subcorpora(corpus, skip_metadata, just_metadata)
+
+    # so you can do corpus.interrogate('features/postags/wordclasses/lexicon')
+    if search == 'features':
+        search = 'v'
+        query = 'any'
+    if search in ['postags', 'wordclasses']:
+        query = 'any'
+        preserve_case = True
+        show = 'p' if search == 'postags' else 'x'
+        # use tregex if simple because it's faster
+        # but use dependencies otherwise
+        search = 't' if not subcorpora and not just_metadata and not skip_metadata and have_java else {'w': 'any'}
+    if search == 'lexicon':
+        search = 't' if not subcorpora and not just_metadata and not skip_metadata and have_java else {'w': 'any'}
+        query = 'any'
+        show = ['w']
+
+    if not kwargs.get('cql') and isinstance(search, STRINGTYPE) and len(search) > 3:
+        raise ValueError('search argument not recognised.')
 
     import re
     if regex_nonword_filter:
@@ -103,8 +107,6 @@ def interrogator(corpus,
         is_a_word = re.compile(r'.*')
 
     from traitlets import TraitError
-    
-    have_java = check_jdk()
 
     # convert cql-style queries---pop for the sake of multiprocessing
     cql = kwargs.pop('cql', None)
