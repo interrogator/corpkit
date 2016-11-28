@@ -433,7 +433,7 @@ def interpreter(debug=False,
             else:
                 print(formatted)
 
-    def show_table(obj, objtype=False):
+    def show_table(obj, objtype=False, start_pos=False):
         """
         Print or tabview a Pandas object
         """
@@ -444,6 +444,10 @@ def interpreter(debug=False,
         else:
             showfunc = print
             kwa = {}
+
+        if start_pos:
+            kwa['start_pos'] = start_pos
+
         obj = getattr(obj, 'results', obj)
         if isinstance(obj, (pd.DataFrame, pd.Series)):
             df = obj.round(objs._decimal)
@@ -645,6 +649,7 @@ def interpreter(debug=False,
         
         from corpkit.other import load
         if not tokens:
+            # todo: pick first one if only one
             show_this(['corpora'])
             selected = INPUTFUNC('Pick a corpus by name or number: ')
             selected = selected.strip()
@@ -676,6 +681,44 @@ def interpreter(debug=False,
             dirs = [x for x in os.listdir('data') if os.path.isdir(os.path.join('data', x))]
             corpname = dirs[int(tokens[0])-1]
             set_something([corpname] + tokens[1:])
+
+
+    def get_something(tokens):
+        """
+        Get a subcorpus or file of a corpus
+
+        :Example:
+
+        get file 1 from corpus
+
+        """
+        # if the user wants to start at a sentence
+        start_pos = False
+        six = next((i for i, w in enumerate(tokens) if w.startswith('sent')), -1) + 1
+        if six:
+            start_pos = int(tokens[six])
+            tokens = [t for i, t in enumerate(tokens) if i != six and i != six-1]
+
+        target_corpus = 'corpus'
+        if len(tokens) > 2:
+            target_corpus = tokens[-1]
+        corpp = objs._get(target_corpus)[1]
+        getwhat = 'files' if tokens[0] == 'file' else 'subcorpora'
+        dlist = getattr(corpp, getwhat)
+        try:
+            ix = int(tokens[1])
+        except:
+            ix = tokens[1]
+        ob = dlist[ix]
+        if objs._interactive and hasattr(ob, 'document'):
+            ndf = ob.document
+            ndf.columns = ['Word', 'Lemma', 'POS', 'NER', 'Morphology', 'Governor', 'Function', 'Dependents', 'Co-reference']
+            ndf.index.names = ['Sentence', 'Token']
+            start_pos = next((i for i, l in enumerate(ndf.index.labels[0]) if l == start_pos), 0)
+            show_table(ndf, objtype=False, start_pos=start_pos)
+        objs.sampled = ob
+        print('Sample created.')
+        return
 
     def parse_search_related(search_related):
         """
@@ -1043,6 +1086,9 @@ def interpreter(debug=False,
         """
         Show any object in a human-readable form
         """
+        if tokens[0].startswith('file'):
+            get_something[tokens]
+            return
         if tokens[0] == 'corpora':
             dirs = [x for x in os.listdir('data') if \
                      os.path.isdir(os.path.join('data', x))]
@@ -2084,6 +2130,7 @@ def interpreter(debug=False,
         print('\n'.join(nonhidden))
 
     get_command = {'set': set_something,
+                   'get': get_something,
                    'show': show_this,
                    'search': search_corpus,
                    'info': get_info,
