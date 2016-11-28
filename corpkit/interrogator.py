@@ -65,7 +65,7 @@ def interrogator(corpus,
         show = 'p' if search == 'postags' else 'x'
         # use tregex if simple because it's faster
         # but use dependencies otherwise
-        search = 't' if subcorpora else {'w': 'any'}
+        search = 't' if not subcorpora and not just_metadata and not skip_metadata else {'w': 'any'}
     if search == 'lexicon':
         search = {'w': 'any'}
 
