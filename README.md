@@ -91,6 +91,12 @@ cd corpkit
 python setup.py install
 ```
 
+Via Anaconda:
+
+```shell
+conda install -c interro_gator corpkit
+```
+
 ## Creating a project
 
 Once you've got everything installed, you'll want to create a project---this is just a folder hierarchy that stores your corpora, saved results, figures and so on. You can do this in a number of ways:
