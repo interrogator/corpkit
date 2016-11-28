@@ -262,7 +262,7 @@ latex_elements = {
 
 # Additional stuff for the LaTeX preamble.
 # This should help with line breaks in code cells
-'preamble': '\\setcounter{tocdepth}{3} \\usepackage{pmboxdraw} \\usepackage[draft,breaklines,breakanywhere]{minted}',
+'preamble': '\\setcounter{tocdepth}{3} \\usepackage{pmboxdraw}',
 
 # Latex figure (float) alignment
 'figure_align': 'htbp',

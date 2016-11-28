@@ -1225,9 +1225,15 @@ def multiplotter(df, leftdict={},rightdict={}, **kwargs):
                 for r in rects:
                     if r._facecolor not in colmap:
                         colmap.append(r._facecolor)
-                colmap = {list(df.columns)[i]: x for i, x in enumerate(colmap[:len(df.columns)])}
+                try:
+                    colmap = {list(df.columns)[i]: x for i, x in enumerate(colmap[:len(df.columns)])}
+                except AttributeError:
+                    colmap = {list(df.index)[i]: x for i, x in enumerate(colmap[:len(df.index)])}
             else:
-                colmap = {list(df.columns)[i]: l.get_color() for i, l in enumerate(ax.get_lines())}
+                try:
+                    colmap = {list(df.columns)[i]: l.get_color() for i, l in enumerate(ax.get_lines())}
+                except AttributeError:
+                    colmap = {list(df.index)[i]: l.get_color() for i, l in enumerate(ax.get_lines())}
         else:
             if colmap and kindb != 'pie':
                 try:
