@@ -1064,6 +1064,9 @@ def interpreter(debug=False,
             print(kwargs)
 
         kwargs['show_conc_metadata'] = True
+        if corpp.level == 's' and not 'subcorpora' in kwargs \
+            and not corpus.symbolic:
+            kwargs['files_as_subcorpora'] = True
 
         #objs.corpus.just = objs.just
         #objs.corpus.skip = objs.skip

@@ -689,6 +689,8 @@ class Corpus(object):
         
         # handle symbolic structures
         subcorpora = kwargs.get('subcorpora', False)
+        if self.level == 's':
+            subcorpora = 'file'
         if self.symbolic:
             subcorpora = self.symbolic
         if 'subcorpora' in kwargs:

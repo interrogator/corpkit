@@ -1009,9 +1009,11 @@ def interrogator(corpus,
              files_as_subcorpora,
              subcorpora,
              kwargs.get('df1_always_df', False)]
+
     anyxs = [level == 's',
              singlefile,
              nosubmode]
+
     if all(not x for x in conds) and any(x for x in anyxs):
         df = Series(df.ix[0])
         df.sort_values(ascending=False, inplace=True)
@@ -1027,13 +1029,8 @@ def interrogator(corpus,
 
     # if we're doing files as subcorpora,  we can remove the extension etc
     if isinstance(df, DataFrame) and files_as_subcorpora:
-        cname = corpus.name.replace('-stripped', '').replace('-parsed', '')
-        edits = [(r'(-[0-9][0-9][0-9])?\.txt\.conllu?', ''),
-                 (r'-%s(-stripped)?(-parsed)?' % cname, '')]
-        from corpkit.editor import editor
-        df = editor(df, replace_subcorpus_names=edits).results
-        tot = df.sum(axis=1)
-        total_total = df.sum().sum()
+        df.index = df.index.str.replace(r'(?:-[0-9][0-9][0-9]|)\.txt\.conll.*', '')
+        df = df.groupby(level=0,sort=True).sum()
 
     if conc_df is not None and conc_df is not False:
         # removed 'f' from here for now
