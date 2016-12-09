@@ -473,10 +473,10 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         root.title("corpkit")
         root.imagewatched = StringVar()
         #root.overrideredirect(True)
-        root.resizable(FALSE,FALSE)
+        #root.resizable(False,False)
         note_height = 600 if small_screen else 660
         note_width = root.winfo_screenwidth()
-        if note_width > note_height * 1.62:
+        if note_width > note_height * 1.62 and not small_screen:
             note_width = note_height * 1.62
         note_width = int(note_width)
         note = Notebook(root, width=note_width, height=note_height,
