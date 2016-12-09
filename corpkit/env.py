@@ -706,7 +706,7 @@ def interpreter(debug=False,
         getwhat = 'files' if tokens[0] == 'file' else 'subcorpora'
         dlist = getattr(corpp, getwhat)
         try:
-            ix = int(tokens[1])
+            ix = int(tokens[1]) - 1
         except:
             ix = tokens[1]
         ob = dlist[ix]
@@ -1075,7 +1075,10 @@ def interpreter(debug=False,
         sch = kwargs.get('search', False)
         if sch in ['features', 'postags', 'wordclasses']:
             objs.result = getattr(corpp, sch)
-            objs.totals = getattr(corpp, sch).sum(axis=1)
+            try:
+                objs.totals = getattr(corpp, sch).sum(axis=1)
+            except:
+                objs.totals = None
             #if objs._interactive:
             #    show_this([sch])
         else:
@@ -1258,7 +1261,7 @@ def interpreter(debug=False,
             objs.result = out
             objs.previous = out
             show_this(['result'])
-            objs.query = out.query
+            objs.query = getattr(out, 'query', None)
             if objs._do_conc and (hasattr(out, 'concordance') and out.concordance is not None):
                 objs.concordance = out.concordance
                 objs._old_concs.append(objs.concordance)
@@ -1424,9 +1427,16 @@ def interpreter(debug=False,
                     val = 'x'
                     num_col = objs._conc_colours[len(objs._old_concs)-1]
                     series = []
+                    # todo: fix this!
                     for i in range(len(thing_to_edit)):
-                        series.append(num_col.get(str(i), 'zzzzz'))
+                        bit = num_col.get(str(i), 'zzzzz')
+                        if isinstance(bit, dict):
+                            bit = bit.get('Fore', bit.get('Back', 'zzzzz'))
+                        series.append(bit)
+                    #print(series)
                     thing_to_edit['x'] = series
+
+               # print(thing_to_edit)
                 sorted_lines = thing_to_edit.sort_values(val, axis=0, na_position='first')
             
             if val == 'x':
@@ -1490,13 +1500,15 @@ def interpreter(debug=False,
         # todo: use real syntax for keyness
         if 'k' in tokens or 'keyness' in tokens:
             operation = 'k'
+        else:
+            operation = False
 
         dd = {'percentage': '%',
               'key': 'k',
               'keyness': 'k'}
 
         calcs = ['k', '%', '+', '/', '-', '*', 'percentage', 'keyness']
-        operation = next((i for i in tokens if any(i.startswith(x) for x in calcs)), False)
+        operation = next((i for i in tokens if any(i.startswith(x) for x in calcs)), operation)
         if not operation:
             if tokens[-1].startswith('conc'):
                 res = objs.concordance.calculate()
@@ -1516,6 +1528,9 @@ def interpreter(debug=False,
         operation = dd.get(operation, operation)
 
         the_obj = objs._get(tokens[0])[1]
+        if not the_obj:
+            the_obj = objs._get(tokens[-1])[1]
+
         objs.edited = the_obj.edit(operation, denominator)
         if hasattr(objs.edited, 'totals'):
             objs.totals = objs.edited.totals
