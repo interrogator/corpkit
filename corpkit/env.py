@@ -1401,16 +1401,24 @@ def interpreter(debug=False,
             if val.startswith('i'):
                 sorted_lines = thing_to_edit.sort_index()
             else:
-                if val.startswith('l') or val.startswith('r') or val.startswith('m'):
-                    val = val[0]
+                if val[0] in ['l', 'm', 'r']:
+                    
                     l_or_r = thing_to_edit[val[0]]
+                    
+                    if len(val) == 1:
+                        val = val + '1'
+
                     ind = int(val[1:])
-                    if val[0] == 'l':
+
+                    val = val[0]
+
+                    if val == 'l':
                         ind = -ind
                     else:
-                        ind = ind-1
+                        ind = ind - 1
+
                     import numpy as np
-                    
+
                     # bad arg parsing here!
                     if 'slashsplit' in tokens:
                         splitter = '/'
@@ -1418,7 +1426,12 @@ def interpreter(debug=False,
                         splitter = ' '
 
                     to_sort_on = l_or_r.str.split(splitter).tolist()
-                    to_sort_on = [i[ind].lower() if i and len(i) >= abs(ind) \
+                    if val == 'l':
+                        # todo: this is broken on l2,l3 etc
+                        to_sort_on = [i[ind].lower() if i and len(i) >= abs(ind) \
+                                  else np.nan for i in to_sort_on]
+                    else:
+                        to_sort_on = [i[ind].lower() if i and len(i) > abs(ind) \
                                   else np.nan for i in to_sort_on]
                     thing_to_edit['x'] = to_sort_on
                     val = 'x'
@@ -1433,11 +1446,9 @@ def interpreter(debug=False,
                         if isinstance(bit, dict):
                             bit = bit.get('Fore', bit.get('Back', 'zzzzz'))
                         series.append(bit)
-                    #print(series)
                     thing_to_edit['x'] = series
 
-               # print(thing_to_edit)
-                sorted_lines = thing_to_edit.sort_values(val, axis=0, na_position='first')
+                sorted_lines = thing_to_edit.sort_values(val, axis=0, na_position='last')
             
             if val == 'x':
                 sorted_lines = sorted_lines.drop('x', axis=1)
@@ -2358,6 +2369,10 @@ def interpreter(debug=False,
         except SystemExit:
             raise
         except Exception:
+            if python_c_mode:
+                import sys
+                print('Error in "%s":\n' % ' '.join(tokens), file=sys.stderr)
+                raise
             traceback.print_exc()
 
 if __name__ == '__main__':
