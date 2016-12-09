@@ -81,6 +81,12 @@ You can run it from the terminal with:
 
 which will leave you with a CSV file at ``exported/part.csv``. This approach can be handy if you need to pipe ``stdout`` or ``stderr``, or if you want to call *corpkit* within a shell script.
 
+Finally, just like Python, you can use the ``-c`` flag to pass code in on the command line:
+
+.. code-block:: bash
+
+   corpkit -c "set 2 ; search corpus for features ; export result as csv to feat.csv"
+
 .. note::
 
    When running a script, interactivity will automatically be switched off, and concordancing disabled if the script does not appear to need it.
