@@ -760,15 +760,19 @@ def interrogator(corpus,
     to_iterate_over = make_search_iterable(corpus)
 
     try:
-        from ipywidgets import IntProgress
-        _ = IntProgress(min=0, max=10, value=1)
-        in_notebook = True
+        nam = get_ipython().__class__.__name__
+        if nam == 'ZMQInteractiveShell':
+            in_notebook = True
+        else:
+            in_notebook = False
     except TraitError:
         in_notebook = False
     except ImportError:
         in_notebook = False
     # caused in newest ipython
     except AttributeError:
+        in_notebook = False
+    except NameError:
         in_notebook = False
 
     lemtag = False
