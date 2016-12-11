@@ -394,7 +394,10 @@ class Corpus(object):
 
         if name in md:
             import pandas as pd
-            return pd.DataFrame(md[name])
+            try:
+                return pd.DataFrame(md[name])
+            except ValueError:
+                return pd.Series(md[name])
         else:
             feat = self.interrogate('features', **kwa)
             from corpkit.interrogation import Interrodict
@@ -422,7 +425,11 @@ class Corpus(object):
         
         if pname in md and wname in md:
             import pandas as pd
-            return pd.DataFrame(md[pname]), pd.DataFrame(md[wname])
+            try:
+                return pd.DataFrame(md[pname]), pd.DataFrame(md[wname])
+            except ValueError:
+                return pd.Series(md[pname]), pd.Series(md[wname])
+
         else:
             postags = self.interrogate('postags', **kwa)
             from corpkit.interrogation import Interrodict
@@ -730,6 +737,8 @@ class Corpus(object):
         
         # handle symbolic structures
         subcorpora = kwargs.get('subcorpora', False)
+        if self.level == 's':
+            subcorpora = 'file'
         if self.symbolic:
             subcorpora = self.symbolic
         if 'subcorpora' in kwargs:

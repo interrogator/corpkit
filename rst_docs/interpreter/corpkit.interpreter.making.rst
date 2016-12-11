@@ -91,6 +91,25 @@ The parser output will look something like:
    1   11  .         .         .   O   2   punct      0       _
 
 
+Viewing corpus data
+--------------------
+
+You can interactively work with the parser output.
+
+.. code-block:: bash
+
+   > get file <n> of corpus
+
+Or, if your corpus has subcorpora:
+
+.. code-block:: bash
+
+   > get subcorpus <n> of corpus
+   > get file <n> of sampled
+
+This view can be surprisingly powerful: sorting by lemma, POS or dependency function can show you some recurring lexicogrammatical patterns in a file without the need for searching.
+
+
 The next page will show you how to search the corpus you've built, and to work with metadata if you've added it.
 
 

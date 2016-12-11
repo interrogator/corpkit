@@ -44,7 +44,12 @@ Toggles and settings
 
 * Using ``toggle interactive``, You can switch between interactive mode, where results and concordances are shown in a way that you can manipulate directly, and non-interactive mode, where results and concordances are simply printed to the console.
 * Using ``toggle conc``, you can tell *corpkit* not to produce concordances. This can be much faster, especially when there are a lot of results.
+* ``toggle comma`` will display thousands separators in results
+* ``toggle annotation`` is used to switch from dry-run to actual modification of corpus files when annotating
+
 * You can set the number of decimals displayed when viewing results with ``set decimal to <n>``
+* ``set max_rows to <n>`` and ``set max_cols to <n>`` limit the amount of data loaded into results lists. This can speed up interactive viewing.
+
 
 Switching to IPython
 ---------------------
@@ -75,6 +80,12 @@ You can run it from the terminal with:
 
 
 which will leave you with a CSV file at ``exported/part.csv``. This approach can be handy if you need to pipe ``stdout`` or ``stderr``, or if you want to call *corpkit* within a shell script.
+
+Finally, just like Python, you can use the ``-c`` flag to pass code in on the command line:
+
+.. code-block:: bash
+
+   corpkit -c "set 2 ; search corpus for features ; export result as csv to feat.csv"
 
 .. note::
 

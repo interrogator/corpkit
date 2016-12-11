@@ -55,23 +55,6 @@ def interrogator(corpus,
     locs.update(kwargs)
     locs.pop('kwargs', None)
 
-    # so you can do corpus.interrogate('features/postags/wordclasses/lexicon')
-    if search == 'features':
-        search = 'v'
-        query = 'any'
-    if search in ['postags', 'wordclasses']:
-        query = 'any'
-        preserve_case = True
-        show = 'p' if search == 'postags' else 'x'
-        # use tregex if simple because it's faster
-        # but use dependencies otherwise
-        search = 't' if subcorpora else {'w': 'any'}
-    if search == 'lexicon':
-        search = {'w': 'any'}
-
-    if not kwargs.get('cql') and isinstance(search, STRINGTYPE) and len(search) > 3:
-        raise ValueError('search argument not recognised.')
-
     import codecs
     import signal
     import os
@@ -93,8 +76,29 @@ def interrogator(corpus,
     from corpkit.conll import pipeline
     from corpkit.process import delete_files_and_subcorpora
     
+    have_java = check_jdk()
+
     # remake corpus without bad files and folders 
     corpus, skip_metadata, just_metadata = delete_files_and_subcorpora(corpus, skip_metadata, just_metadata)
+
+    # so you can do corpus.interrogate('features/postags/wordclasses/lexicon')
+    if search == 'features':
+        search = 'v'
+        query = 'any'
+    if search in ['postags', 'wordclasses']:
+        query = 'any'
+        preserve_case = True
+        show = 'p' if search == 'postags' else 'x'
+        # use tregex if simple because it's faster
+        # but use dependencies otherwise
+        search = 't' if not subcorpora and not just_metadata and not skip_metadata and have_java else {'w': 'any'}
+    if search == 'lexicon':
+        search = 't' if not subcorpora and not just_metadata and not skip_metadata and have_java else {'w': 'any'}
+        query = 'any'
+        show = ['w']
+
+    if not kwargs.get('cql') and isinstance(search, STRINGTYPE) and len(search) > 3:
+        raise ValueError('search argument not recognised.')
 
     import re
     if regex_nonword_filter:
@@ -103,8 +107,6 @@ def interrogator(corpus,
         is_a_word = re.compile(r'.*')
 
     from traitlets import TraitError
-    
-    have_java = check_jdk()
 
     # convert cql-style queries---pop for the sake of multiprocessing
     cql = kwargs.pop('cql', None)
@@ -758,15 +760,19 @@ def interrogator(corpus,
     to_iterate_over = make_search_iterable(corpus)
 
     try:
-        from ipywidgets import IntProgress
-        _ = IntProgress(min=0, max=10, value=1)
-        in_notebook = True
+        nam = get_ipython().__class__.__name__
+        if nam == 'ZMQInteractiveShell':
+            in_notebook = True
+        else:
+            in_notebook = False
     except TraitError:
         in_notebook = False
     except ImportError:
         in_notebook = False
     # caused in newest ipython
     except AttributeError:
+        in_notebook = False
+    except NameError:
         in_notebook = False
 
     lemtag = False
@@ -1007,9 +1013,11 @@ def interrogator(corpus,
              files_as_subcorpora,
              subcorpora,
              kwargs.get('df1_always_df', False)]
+
     anyxs = [level == 's',
              singlefile,
              nosubmode]
+
     if all(not x for x in conds) and any(x for x in anyxs):
         df = Series(df.ix[0])
         df.sort_values(ascending=False, inplace=True)
@@ -1025,13 +1033,8 @@ def interrogator(corpus,
 
     # if we're doing files as subcorpora,  we can remove the extension etc
     if isinstance(df, DataFrame) and files_as_subcorpora:
-        cname = corpus.name.replace('-stripped', '').replace('-parsed', '')
-        edits = [(r'(-[0-9][0-9][0-9])?\.txt\.conllu?', ''),
-                 (r'-%s(-stripped)?(-parsed)?' % cname, '')]
-        from corpkit.editor import editor
-        df = editor(df, replace_subcorpus_names=edits).results
-        tot = df.sum(axis=1)
-        total_total = df.sum().sum()
+        df.index = df.index.str.replace(r'(?:-[0-9][0-9][0-9]|)\.txt\.conll.*', '')
+        df = df.groupby(level=0,sort=True).sum()
 
     if conc_df is not None and conc_df is not False:
         # removed 'f' from here for now

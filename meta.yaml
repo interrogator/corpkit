@@ -1,0 +1,82 @@
+package:
+  name: corpkit
+  version: "2.3.8"
+
+source:
+  fn: corpkit-2.3.8.tar.gz
+  url: https://pypi.python.org/packages/d1/20/ee1ebd50a3c067d60a863a2afaaa2ed02f012858c005706f08c4540317d3/corpkit-2.3.8.tar.gz
+  md5: 4bf94ac616419b51f8b28ea6a12447ee
+#  patches:
+   # List any patch files here
+   # - fix.patch
+
+build:
+  # noarch_python: True
+  # preserve_egg_dir: True
+  entry_points:
+    # Put any entry points (scripts to be generated automatically) here. The
+    # syntax is module:function.  For example
+    #
+    - gui = corpkit:gui
+    - corpkit = corpkit:env
+    #
+    # Would create an entry point called corpkit that calls corpkit.main()
+
+
+  # If this is a new build for the same version, increment the build
+  # number. If you do not include this key, it defaults to 0.
+  number: 1
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - matplotlib >=1.4.3
+    - nltk >=3.0.0
+    - joblib
+    - pandas >=0.18.1
+    - requests
+    - tabview >=1.4.0
+    - chardet
+    - blessings >=1.6
+    - traitlets >=4.1.0
+
+  run:
+    - python
+    - matplotlib >=1.4.3
+    - nltk >=3.0.0
+    - joblib
+    - pandas >=0.18.1
+    - requests
+    - tabview >=1.4.0
+    - chardet
+    - blessings >=1.6
+    - traitlets >=4.1.0
+
+test:
+  # Python imports
+  imports:
+    - corpkit
+    - corpkit.download
+
+  # commands:
+    # You can put test commands to be run here.  Use this to test that the
+    # entry points work.
+
+
+  # You can also put a file called run_test.py in the recipe that will be run
+  # at test time.
+
+  # requires:
+    # Put any additional test requirements here.  For example
+    # - nose
+
+about:
+  home: http://github.com/interrogator/corpkit
+  license: MIT
+  summary: 'A toolkit for working with linguistic corpora'
+  license_family: MIT
+
+# See
+# http://docs.continuum.io/conda/build.html for
+# more information about meta.yaml

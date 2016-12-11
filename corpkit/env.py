@@ -433,7 +433,7 @@ def interpreter(debug=False,
             else:
                 print(formatted)
 
-    def show_table(obj, objtype=False):
+    def show_table(obj, objtype=False, start_pos=False):
         """
         Print or tabview a Pandas object
         """
@@ -444,6 +444,10 @@ def interpreter(debug=False,
         else:
             showfunc = print
             kwa = {}
+
+        if start_pos:
+            kwa['start_pos'] = start_pos
+
         obj = getattr(obj, 'results', obj)
         if isinstance(obj, (pd.DataFrame, pd.Series)):
             df = obj.round(objs._decimal)
@@ -645,6 +649,7 @@ def interpreter(debug=False,
         
         from corpkit.other import load
         if not tokens:
+            # todo: pick first one if only one
             show_this(['corpora'])
             selected = INPUTFUNC('Pick a corpus by name or number: ')
             selected = selected.strip()
@@ -676,6 +681,44 @@ def interpreter(debug=False,
             dirs = [x for x in os.listdir('data') if os.path.isdir(os.path.join('data', x))]
             corpname = dirs[int(tokens[0])-1]
             set_something([corpname] + tokens[1:])
+
+
+    def get_something(tokens):
+        """
+        Get a subcorpus or file of a corpus
+
+        :Example:
+
+        get file 1 from corpus
+
+        """
+        # if the user wants to start at a sentence
+        start_pos = False
+        six = next((i for i, w in enumerate(tokens) if w.startswith('sent')), -1) + 1
+        if six:
+            start_pos = int(tokens[six])
+            tokens = [t for i, t in enumerate(tokens) if i != six and i != six-1]
+
+        target_corpus = 'corpus'
+        if len(tokens) > 2:
+            target_corpus = tokens[-1]
+        corpp = objs._get(target_corpus)[1]
+        getwhat = 'files' if tokens[0] == 'file' else 'subcorpora'
+        dlist = getattr(corpp, getwhat)
+        try:
+            ix = int(tokens[1]) - 1
+        except:
+            ix = tokens[1]
+        ob = dlist[ix]
+        if objs._interactive and hasattr(ob, 'document'):
+            ndf = ob.document
+            ndf.columns = ['Word', 'Lemma', 'POS', 'NER', 'Morphology', 'Governor', 'Function', 'Dependents', 'Co-reference']
+            ndf.index.names = ['Sentence', 'Token']
+            start_pos = next((i for i, l in enumerate(ndf.index.labels[0]) if l == start_pos), 0)
+            show_table(ndf, objtype=False, start_pos=start_pos)
+        objs.sampled = ob
+        print('Sample created.')
+        return
 
     def parse_search_related(search_related):
         """
@@ -1021,6 +1064,9 @@ def interpreter(debug=False,
             print(kwargs)
 
         kwargs['show_conc_metadata'] = True
+        if corpp.level == 's' and not kwargs.get('subcorpora', False) \
+            and not corpp.symbolic:
+            kwargs['files_as_subcorpora'] = True
 
         #objs.corpus.just = objs.just
         #objs.corpus.skip = objs.skip
@@ -1029,7 +1075,10 @@ def interpreter(debug=False,
         sch = kwargs.get('search', False)
         if sch in ['features', 'postags', 'wordclasses']:
             objs.result = getattr(corpp, sch)
-            objs.totals = getattr(corpp, sch).sum(axis=1)
+            try:
+                objs.totals = getattr(corpp, sch).sum(axis=1)
+            except:
+                objs.totals = None
             #if objs._interactive:
             #    show_this([sch])
         else:
@@ -1043,6 +1092,9 @@ def interpreter(debug=False,
         """
         Show any object in a human-readable form
         """
+        if tokens[0].startswith('file'):
+            get_something[tokens]
+            return
         if tokens[0] == 'corpora':
             dirs = [x for x in os.listdir('data') if \
                      os.path.isdir(os.path.join('data', x))]
@@ -1209,7 +1261,7 @@ def interpreter(debug=False,
             objs.result = out
             objs.previous = out
             show_this(['result'])
-            objs.query = out.query
+            objs.query = getattr(out, 'query', None)
             if objs._do_conc and (hasattr(out, 'concordance') and out.concordance is not None):
                 objs.concordance = out.concordance
                 objs._old_concs.append(objs.concordance)
@@ -1349,16 +1401,24 @@ def interpreter(debug=False,
             if val.startswith('i'):
                 sorted_lines = thing_to_edit.sort_index()
             else:
-                if val.startswith('l') or val.startswith('r') or val.startswith('m'):
-                    val = val[0]
+                if val[0] in ['l', 'm', 'r']:
+                    
                     l_or_r = thing_to_edit[val[0]]
+                    
+                    if len(val) == 1:
+                        val = val + '1'
+
                     ind = int(val[1:])
-                    if val[0] == 'l':
+
+                    val = val[0]
+
+                    if val == 'l':
                         ind = -ind
                     else:
-                        ind = ind-1
+                        ind = ind - 1
+
                     import numpy as np
-                    
+
                     # bad arg parsing here!
                     if 'slashsplit' in tokens:
                         splitter = '/'
@@ -1366,7 +1426,12 @@ def interpreter(debug=False,
                         splitter = ' '
 
                     to_sort_on = l_or_r.str.split(splitter).tolist()
-                    to_sort_on = [i[ind].lower() if i and len(i) >= abs(ind) \
+                    if val == 'l':
+                        # todo: this is broken on l2,l3 etc
+                        to_sort_on = [i[ind].lower() if i and len(i) >= abs(ind) \
+                                  else np.nan for i in to_sort_on]
+                    else:
+                        to_sort_on = [i[ind].lower() if i and len(i) > abs(ind) \
                                   else np.nan for i in to_sort_on]
                     thing_to_edit['x'] = to_sort_on
                     val = 'x'
@@ -1375,10 +1440,15 @@ def interpreter(debug=False,
                     val = 'x'
                     num_col = objs._conc_colours[len(objs._old_concs)-1]
                     series = []
+                    # todo: fix this!
                     for i in range(len(thing_to_edit)):
-                        series.append(num_col.get(str(i), 'zzzzz'))
+                        bit = num_col.get(str(i), 'zzzzz')
+                        if isinstance(bit, dict):
+                            bit = bit.get('Fore', bit.get('Back', 'zzzzz'))
+                        series.append(bit)
                     thing_to_edit['x'] = series
-                sorted_lines = thing_to_edit.sort_values(val, axis=0, na_position='first')
+
+                sorted_lines = thing_to_edit.sort_values(val, axis=0, na_position='last')
             
             if val == 'x':
                 sorted_lines = sorted_lines.drop('x', axis=1)
@@ -1441,13 +1511,15 @@ def interpreter(debug=False,
         # todo: use real syntax for keyness
         if 'k' in tokens or 'keyness' in tokens:
             operation = 'k'
+        else:
+            operation = False
 
         dd = {'percentage': '%',
               'key': 'k',
               'keyness': 'k'}
 
         calcs = ['k', '%', '+', '/', '-', '*', 'percentage', 'keyness']
-        operation = next((i for i in tokens if any(i.startswith(x) for x in calcs)), False)
+        operation = next((i for i in tokens if any(i.startswith(x) for x in calcs)), operation)
         if not operation:
             if tokens[-1].startswith('conc'):
                 res = objs.concordance.calculate()
@@ -1467,6 +1539,9 @@ def interpreter(debug=False,
         operation = dd.get(operation, operation)
 
         the_obj = objs._get(tokens[0])[1]
+        if not the_obj:
+            the_obj = objs._get(tokens[-1])[1]
+
         objs.edited = the_obj.edit(operation, denominator)
         if hasattr(objs.edited, 'totals'):
             objs.totals = objs.edited.totals
@@ -2084,6 +2159,7 @@ def interpreter(debug=False,
         print('\n'.join(nonhidden))
 
     get_command = {'set': set_something,
+                   'get': get_something,
                    'show': show_this,
                    'search': search_corpus,
                    'info': get_info,
@@ -2293,6 +2369,10 @@ def interpreter(debug=False,
         except SystemExit:
             raise
         except Exception:
+            if python_c_mode:
+                import sys
+                print('Error in "%s":\n' % ' '.join(tokens), file=sys.stderr)
+                raise
             traceback.print_exc()
 
 if __name__ == '__main__':
