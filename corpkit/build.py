@@ -134,10 +134,16 @@ def extract_cnlp(fullfilepath, corenlppath=False, root=False):
     if corenlppath is False:
         home = os.path.expanduser("~")
         corenlppath = os.path.join(home, 'corenlp')
-    with zipfile.ZipFile(fullfilepath) as zf:
-        zf.extractall(corenlppath)
+    from zipfile import BadZipfile
+    try:
+        with zipfile.ZipFile(fullfilepath) as zf:
+            zf.extractall(corenlppath)
+    except BadZipfile:
+        os.remove(corenlppath)
+        return False
     time = strftime("%H:%M:%S", localtime())
     print('%s: CoreNLP extracted. ' % time)
+    return True
 
 def get_corpus_filepaths(projpath=False, corpuspath=False,
                          restart=False, out_ext='conll'):
@@ -269,8 +275,11 @@ def parse_corpus(proj_path=False,
          
     corenlppath = get_corenlp_path(corenlppath)
 
+    success = bool(corenlppath)
+
     if not corenlppath:
-        print("CoreNLP not found. Auto-installing.")
+        from corpkit.constants import CORENLP_VERSION
+        print("CoreNLP not found. Auto-installing CoreNLP v%s..." % CORENLP_VERSION)
         cnlp_dir = os.path.join(os.path.expanduser("~"), 'corenlp')
         corenlppath, fpath = download_large_file(cnlp_dir, url,
                                                  root=root,
@@ -284,14 +293,17 @@ def parse_corpus(proj_path=False,
             shutil.rmtree(new_corpus_path.replace('-parsed', '-stripped'))
             os.remove(new_corpus_path.replace('-parsed', '-filelist.txt'))
             raise ValueError('CoreNLP needed to parse texts.')
-        extract_cnlp(fpath)
+        success = extract_cnlp(fpath)
+        if not success:
+            raise ValueError('CoreNLP installation failed for some reason. Try deleting the ~/corenlp directory and starting over.')
+        
         import glob
         globpath = os.path.join(corenlppath, 'stanford-corenlp*')
         corenlppath = [i for i in glob.glob(globpath) if os.path.isdir(i)]
         if corenlppath:
             corenlppath = corenlppath[-1]
         else:
-            raise ValueError('CoreNLP installation failed for some reason. Try manual download.')
+            raise ValueError('CoreNLP installation failed for some reason. Try deleting the ~/corenlp directory and starting over.')
 
     # if not gui, don't mess with stdout
     if stdout is False:
@@ -583,7 +595,7 @@ def get_all_metadata_fields(corpus, include_speakers=False):
             from corpkit.process import saferead
             lines = saferead(f)[0].splitlines()
         else:
-            with open(f, 'rb') as fo:
+            with OPENER(f, 'rb') as fo:
                 lines = fo.read().decode('utf-8', errors='ignore')
                 lines = lines.strip('\n')
                 lines = lines.splitlines()
@@ -621,6 +633,8 @@ def get_speaker_names_from_parsed_corpus(corpus, feature='speaker'):
     list_of_files = []
     names = []
 
+    # i am not really sure why we need multiline here
+    # is it because start of line char is just matching
     speakid = re.compile(r'^# %s=(.*)' % re.escape(feature), re.MULTILINE)
     
     # if passed a dir, do it for every file

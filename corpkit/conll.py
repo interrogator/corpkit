@@ -1186,8 +1186,16 @@ def pipeline(f=False,
     #df = cut_df_by_metadata(df, df._metadata, kwargs.get('just_speakers'), coref=coref)
     metadata = df._metadata
 
+    try:
+        df['w'].str
+    except AttributeError:
+        raise AttributeError("CONLL data doesn't match expectations. " \
+                             "Try the corpus.conll_conform() method to " \
+                             "convert the corpus to the latest format.")
+
     if kwargs.get('no_punct', True):
         df = df[df['w'].fillna('').str.contains(kwargs.get('is_a_word', r'[A-Za-z0-9]'))]
+            
         # remove brackets --- could it be done in one regex?
         df = df[~df['w'].str.contains(r'^-.*B-$')]
 
@@ -1316,7 +1324,8 @@ def get_speaker_from_offsets(stripped, plain, sent_offsets,
 def convert_json_to_conll(path,
                           speaker_segmentation=False,
                           coref=False,
-                          metadata=False):
+                          metadata=False,
+                          just_files=False):
     """
     take json corenlp output and convert to conll, with
     dependents, speaker ids and so on added.
@@ -1338,11 +1347,14 @@ def convert_json_to_conll(path,
 
     print('Converting files to CONLL-U...')
 
-    if isinstance(path, list):
-        files = path
+    if just_files:
+        files = just_files
     else:
-        files = get_filepaths(path, ext='conll')
-    
+        if isinstance(path, list):
+            files = path
+        else:
+            files = get_filepaths(path, ext='conll')
+        
     for f in files:
 
         if speaker_segmentation or metadata:

@@ -206,6 +206,47 @@ class Corpus(object):
                 fs.append(f.path)
         return fs
 
+    def conll_conform(self, errors='raise'):
+        """
+        This removes sent index column from old corpkit data
+        """
+        from corpkit.constants import OPENER
+        fs = self.all_filepaths
+        for i, f in enumerate(fs, start=1):
+            badfile = False
+            print('Doing %s/%s' % (i, len(fs)))
+            fdata = []
+            with OPENER(f, 'r', encoding='utf-8') as fo:
+                lines = fo.read().splitlines()
+                for line in lines:
+                    if line.startswith('# sent_id'):
+                        continue
+                    if line and not line.startswith('#'):
+                        try:
+                            splut = line.split('\t', 1)[1]
+                        except IndexError:
+                            raise IndexError('Failed on file %s' % f)
+                        if not splut[0].isdigit():
+                            if errors == 'raise':
+                                raise ValueError('File %s does not appear to be in old format.' % f)
+                            else:
+                                if badfile:
+                                    continue
+                                badfile = True
+                                continue
+                        else:
+                            line = splut
+                        # add v column with nothing in it
+                        line = line.split('\t')
+                        line.insert(5, '_')
+                        line = '\t'.join(line)
+                    fdata.append(line)
+                if badfile and errors != 'raise':
+                    print('Skipping %s' % f)
+                    continue
+            with OPENER(f, 'w', encoding='utf-8') as fo:
+                fo.write('\n'.join(fdata))
+
     @lazyprop
     def all_files(self):
         """
@@ -729,11 +770,12 @@ class Corpus(object):
         from corpkit.interrogation import Interrodict
         if isinstance(res, Interrodict) and kwargs.get('use_interrodict'):
             return res
-        elif isinstance(res, Interrodict) and not kwargs.get('use_interrodict'):
+        elif isinstance(res, Interrodict) and not kwargs.get('use_interrodict', False):
             return res.multiindex()
         else:
             if subcorpora:
                 res.results.index.name = subcorpora
+
 
         # sort by total
         ind = list(res.results.index)
