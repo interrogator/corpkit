@@ -61,7 +61,7 @@ def make_corpus(unparsed_corpus_path,
                                check_jdk, 
                                rename_all_files,
                                make_no_id_corpus, parse_corpus, move_parsed_files)
-    from corpkit.constants import REPEAT_PARSE_ATTEMPTS
+    from corpkit.constants import REPEAT_PARSE_ATTEMPTS, OPENER, PYTHON_VERSION
 
     if parse is True and tokenise is True:
         raise ValueError('Select either parse or tokenise, not both.')
@@ -148,37 +148,44 @@ def make_corpus(unparsed_corpus_path,
         for i in range(0, len(l), n):
             yield l[i:i+n]
 
-    if parse or tokenise:
-        
+    if (parse or tokenise) and coref:
+            
         # this loop shortens files containing more than 500 lines,
         # for corenlp memory's sake. maybe user needs a warning or
         # something in case s/he is doing coref?
-        for rootx, dirs, fs in os.walk(unparsed_corpus_path):
-            for f in fs:
-                if f.startswith('.'):
-                    continue
-                fp = join(rootx, f)
-                data, enc = saferead(fp)
-                data = data.splitlines()
-                if len(data) > split_texts:
-                    chk = chunks(data, split_texts)
-                    for index, c in enumerate(chk):
-                        newname = fp.replace('.txt', '-%s.txt' % str(index + 1).zfill(3))
-                        # does this work?
-                        if PYTHON_VERSION == 2:
-                            with codecs.open(newname, 'w', encoding=enc) as fo:
-                                txt = '\n'.join(c) + '\n'
-                                fo.write(txt.encode(enc))
-                        else:
-                            with open(newname, 'w', encoding=enc) as fo:
-                                txt = '\n'.join(c) + '\n'
-                                fo.write(txt)
 
-                    os.remove(fp)
-                else:
-                    pass
-                    #newname = fp.replace('.txt', '-000.txt')
-                    #os.rename(fp, newname)
+        # try block because it isn't necessarily essential that this works.
+        # just delete generated files if it fails part way
+        split_f_names = []
+        try:
+            for rootx, dirs, fs in os.walk(unparsed_corpus_path):
+                for f in fs:
+                    # skip hidden files
+                    if f.startswith('.'):
+                        continue
+                    fp = join(rootx, f)
+                    data, enc = saferead(fp)
+                    data = data.splitlines()
+                    if len(data) > split_texts:
+                        chk = chunks(data, split_texts)
+                        for index, c in enumerate(chk):
+                            newname = fp.replace('.txt', '-%s.txt' % str(index + 1).zfill(3))
+                            split_f_names.append(newname)
+                            data = '\n'.join(c) + '\n'
+                            # does this work?
+                            with OPENER(newname, 'w') as fo: 
+                                if PYTHON_VERSION == 2:
+                                    data = data.encode('utf-8', errors='ignore')
+                                fo.write(data)
+                        os.remove(fp)
+                    else:
+                        pass
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except:
+            for f in split_f_names:
+                os.remove(f)
+            pass
 
         if outname:
             newpath = os.path.join(os.path.dirname(unparsed_corpus_path), outname)
