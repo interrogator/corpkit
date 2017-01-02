@@ -4,7 +4,7 @@ corpkit: Corpus and Corpus-like objects
 
 from __future__ import print_function
 
-from lazyprop import lazyprop
+from corpkit.lazyprop import lazyprop
 from corpkit.process import classname
 from corpkit.constants import STRINGTYPE, PYTHON_VERSION
 
@@ -250,7 +250,7 @@ class Corpus(object):
     @lazyprop
     def all_files(self):
         """
-        Lazy-load a list of all filepaths in a corpus
+        Lazy-load a list of all files in a corpus
         """
         if self.level == 'f':
             return Datalist([self])
@@ -772,6 +772,8 @@ class Corpus(object):
             kwargs['multiprocess'] = par
             res = interrogator(self, search,
                                 subcorpora=subcorpora, *args, **kwargs)
+            from corpkit.matches import Matches
+            return Matches(res, self)
 
         if kwargs.get('conc', False) == 'only':
             return res

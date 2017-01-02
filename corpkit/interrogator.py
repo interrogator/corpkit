@@ -5,6 +5,58 @@ corpkit: Interrogate a parsed corpus
 from __future__ import print_function
 from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
 
+def make_result_from_counter(cntr, subcorpora, show=False):
+    import pandas as pd
+    index = []
+    data = []
+    for k, v in cntr.items():
+        index.append(tuple([k.metadata.get(x) for x in subcorpora]))
+        data.append(k)
+    ix = pd.MultiIndex.from_tuples(index)
+    return pd.DataFrame(data, index=ix)
+
+def fix_show_bit(show_bit):
+    """
+    Take a single search/show_bit type, return match
+    """
+    ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 's', 'a', 'e', 'c']
+    starts = ['d', 'g', 'm', 'b', 'h', '+', '-', 'r', 'c']
+    show_bit = show_bit.lstrip('n')
+    show_bit = show_bit.lstrip('b')
+    show_bit = list(show_bit)
+    if show_bit[-1] not in ends:
+        show_bit.append('w')
+    if show_bit[0] not in starts:
+        show_bit.insert(0, 'm')
+    return ''.join(show_bit)
+
+def add_adj_for_ngram(show, gramsize):
+    """
+    If there's a gramsize of more than 1, remake show
+    for ngramming
+    """
+    if gramsize == 1:
+        return show
+    out = []
+    for i in show:
+        out.append(i)
+    for i in range(1, gramsize):
+        for bit in show:
+            out.append('+%d%s' % (i, bit))
+    return out
+
+def fix_show(show, gramsize):
+    """
+    Lowercase anything in show and turn into list
+    """
+    if isinstance(show, list):
+        show = [i.lower() for i in show]
+    elif isinstance(show, STRINGTYPE):
+        show = show.lower()
+        show = [show]
+    show = [fix_show_bit(i) for i in show]
+    return add_adj_for_ngram(show, gramsize)
+
 def interrogator(corpus, 
     search='w', 
     query='any',
@@ -130,48 +182,6 @@ def interrogator(corpus,
         print('%s: Interrogation resumed.\n' % time)
         signal.signal(signal.SIGINT, signal_handler)
 
-    def add_adj_for_ngram(show, gramsize):
-        """
-        If there's a gramsize of more than 1, remake show
-        for ngramming
-        """
-        if gramsize == 1:
-            return show
-        out = []
-        for i in show:
-            out.append(i)
-        for i in range(1, gramsize):
-            for bit in show:
-                out.append('+%d%s' % (i, bit))
-        return out
-
-    def fix_show_bit(show_bit):
-        """
-        Take a single search/show_bit type, return match
-        """
-        ends = ['w', 'l', 'i', 'n', 'f', 'p', 'x', 's', 'a', 'e', 'c']
-        starts = ['d', 'g', 'm', 'b', 'h', '+', '-', 'r', 'c']
-        show_bit = show_bit.lstrip('n')
-        show_bit = show_bit.lstrip('b')
-        show_bit = list(show_bit)
-        if show_bit[-1] not in ends:
-            show_bit.append('w')
-        if show_bit[0] not in starts:
-            show_bit.insert(0, 'm')
-        return ''.join(show_bit)
-
-    def fix_show(show, gramsize):
-        """
-        Lowercase anything in show and turn into list
-        """
-        if isinstance(show, list):
-            show = [i.lower() for i in show]
-        elif isinstance(show, STRINGTYPE):
-            show = show.lower()
-            show = [show]
-        show = [fix_show_bit(i) for i in show]
-        return add_adj_for_ngram(show, gramsize)
-
     def is_multiquery(corpus, search, query, outname):
         """
         Determine if multiprocessing is needed/possibe, and 
@@ -184,11 +194,11 @@ def interrogator(corpus,
         if isinstance(query, Wordlist):
             query = list(query)
 
-        if subcorpora and multiprocess:
-            is_mul = 'subcorpora'
+        #if subcorpora and multiprocess:
+        #    is_mul = 'subcorpora'
 
-        if isinstance(subcorpora, (list, tuple)):
-            is_mul = 'subcorpora'
+        #if isinstance(subcorpora, (list, tuple)):
+        #    is_mul = 'subcorpora'
 
         if isinstance(query, (dict, OrderedDict)):
             is_mul = 'namedqueriessingle'
@@ -367,10 +377,12 @@ def interrogator(corpus,
         return r
 
     def make_search_iterable(corpus):
-        """determine how to structure the corpus for interrogation"""
+        """determine how to structure the corpus for interrogation
+
+        :return: a dict of {(subcorpus name, subcorpus path): subcorpus files}
+        """
         # skip file definitions if they are not needed
         if getattr(corpus, '_dlist', False):
-
             return {(i.name, i.path): [i] for i in list(corpus.files)}
             #return {('Sample', 'Sample'): list(corpus.files)}
 
@@ -429,6 +441,7 @@ def interrogator(corpus,
                     for subcorpus in corpus.subcorpora:
                         to_iterate_over[(subcorpus.name, subcorpus.path)] = subcorpus.files
         return to_iterate_over
+
 
     def welcome_printer(return_it=False):
         """Print welcome message"""
@@ -576,13 +589,10 @@ def interrogator(corpus,
             line[star:en] = [correct_spelling(str(b)) for b in line[star:en]]
         return line
 
-    def make_progress_bar():
+    def make_progress_bar(corpus_iter):
         """generate a progress bar"""
 
-        if simple_tregex_mode:
-            total_files = len(list(to_iterate_over.keys()))
-        else:
-            total_files = sum(len(x) for x in list(to_iterate_over.values()))
+        total_files = len(corpus_iter)
 
         par_args = {'printstatus': kwargs.get('printstatus', True),
                     'root': root, 
@@ -713,8 +723,8 @@ def interrogator(corpus,
     level = getattr(corpus, 'level', 'c')
         
     # store all results in here
-    from collections import defaultdict
-    results = defaultdict(Counter)
+    from collections import defaultdict, Counter
+    results = Counter()
     count_results = defaultdict(list)
     conc_results = defaultdict(list)
 
@@ -756,9 +766,6 @@ def interrogator(corpus,
         treg_q = search['t']
         op = ['-%s' % i for i in translated_option] + ['-o', '-f']
 
-    # make iterable object for corpus interrogation
-    to_iterate_over = make_search_iterable(corpus)
-
     try:
         nam = get_ipython().__class__.__name__
         if nam == 'ZMQInteractiveShell':
@@ -782,187 +789,97 @@ def interrogator(corpus,
 
     usecols = auto_usecols(search, exclude, show, kwargs.pop('usecols', None), coref=coref)
 
+    # make the iterable, which should be very simple now
+    corpus_iter = corpus.all_files
+
     # print welcome message
     welcome_message = welcome_printer(return_it=in_notebook)
 
     # create a progress bar
-    p, outn, total_files, par_args = make_progress_bar()
+    p, outn, total_files, par_args = make_progress_bar(corpus_iter)
 
     if conc:
         conc_col_names = get_conc_colnames(corpus,
                                            fsi_index=fsi_index,
                                            simple_tregex_mode=False)
 
- 
 
-    # Iterate over data, doing interrogations
-    for (subcorpus_name, subcorpus_path), files in sorted(to_iterate_over.items()):
-        if nosubmode:
-            subcorpus_name = 'Total'
+    for f in corpus_iter:
 
-        # results for subcorpus go here
-        #conc_results[subcorpus_name] = []
-        #count_results[subcorpus_name] = []
-        #results[subcorpus_name] = Counter()
+        filepath, corefs = f.path, coref
 
-        # get either everything (tree_to_text) or the search['t'] query
-        if tree_to_text or simple_tregex_mode:
-            result = tregex_engine(query=treg_q,
-                                   options=op,
-                                   corpus=subcorpus_path,
-                                   root=root,
-                                   preserve_case=preserve_case)
+        res = pipeline(filepath, search=search, show=show,
+                                 dep_type=dep_type,
+                                 exclude=exclude,
+                                 excludemode=excludemode,
+                                 searchmode=searchmode,
+                                 case_sensitive=case_sensitive,
+                                 conc=False,
+                                 only_format_match=only_format_match,
+                                 gramsize=gramsize,
+                                 no_punct=no_punct,
+                                 no_closed=no_closed,
+                                 window=window,
+                                 filename=f.path,
+                                 coref=corefs,
+                                 countmode=countmode,
+                                 maxconc=(maxconc, numconc),
+                                 is_a_word=is_a_word,
+                                 subcorpora=subcorpora,
+                                 show_conc_metadata=show_conc_metadata,
+                                 just_metadata=just_metadata,
+                                 skip_metadata=skip_metadata,
+                                 fsi_index=fsi_index,
+                                 translated_option=translated_option,
+                                 statsmode=statsmode,
+                                 preserve_case=preserve_case,
+                                 usecols=usecols,
+                                 search_trees=search_trees,
+                                 lem_instance=lem_instance,
+                                 lemtag=lemtag,
+                                 fobj=f,
+                                 **kwargs)
 
-            # format search results with slashes etc
-            if not countmode and not tree_to_text:
-                result = format_tregex(result, show, translated_option=translated_option,
-                            exclude=exclude, excludemode=excludemode, lemtag=lemtag,
-                            lem_instance=lem_instance, countmode=countmode, speaker_data=False)
+        results += res
 
-            # if concordancing, do the query again with 'whole' sent and fname
-            if not no_conc:
-                ops = ['-w'] + op
-                #ops = [i for i in ops if i != '-n']
-                whole_result = tregex_engine(query=search['t'],
-                                             options=ops,
-                                             corpus=subcorpus_path,
-                                             root=root,
-                                             preserve_case=preserve_case
-                                            )
-
-                # format match too depending on option
-                if not only_format_match:
-                    wholeresult = format_tregex(whole_result, show, translated_option=translated_option,
-                                exclude=exclude, excludemode=excludemode, lemtag=lemtag,
-                            lem_instance=lem_instance, countmode=countmode, speaker_data=False, whole=True)
-
-                # make conc lines from conc results
-                conc_result = make_conc_lines_from_whole_mid(whole_result, result, show=show)
-                for lin in conc_result:
-                    if maxconc is False or numconc < maxconc:
-                        conc_results[subcorpus_name].append(lin)
-                    numconc += 1
-
-            # add matches to ongoing counts
-            if countmode:
-                count_results[subcorpus_name] += [result]            
-            else:
-                if result:
-                    results[subcorpus_name] += Counter([i[-1] for i in result])
-                else:
-                    results[subcorpus_name] += Counter()
-
-            # update progress bar
+        if res is None and conc_res is None:
             current_iter += 1
             tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
             animator(p, current_iter, tstr, **par_args)
             continue
 
-        # todo: move this
-        kwargs.pop('by_metadata', None)
-        
-        # conll querying goes by file, not subcorpus
-        for f in files:
-            slow_treg_speaker_guess = kwargs.get('outname', '') if kwargs.get('multispeaker') else ''
-            filepath, corefs = f.path, coref
-            res, conc_res = pipeline(filepath, search=search, show=show,
-                                     dep_type=dep_type,
-                                     exclude=exclude,
-                                     excludemode=excludemode,
-                                     searchmode=searchmode,
-                                     case_sensitive=case_sensitive,
-                                     conc=conc,
-                                     only_format_match=only_format_match,
-                                     speaker=slow_treg_speaker_guess,
-                                     gramsize=gramsize,
-                                     no_punct=no_punct,
-                                     no_closed=no_closed,
-                                     window=window,
-                                     filename=f.path,
-                                     coref=corefs,
-                                     countmode=countmode,
-                                     maxconc=(maxconc, numconc),
-                                     is_a_word=is_a_word,
-                                     by_metadata=subcorpora,
-                                     show_conc_metadata=show_conc_metadata,
-                                     just_metadata=just_metadata,
-                                     skip_metadata=skip_metadata,
-                                     fsi_index=fsi_index,
-                                     category=subcorpus_name,
-                                     translated_option=translated_option,
-                                     statsmode=statsmode,
-                                     preserve_case=preserve_case,
-                                     usecols=usecols,
-                                     search_trees=search_trees,
-                                     lem_instance=lem_instance,
-                                     lemtag=lemtag,
-                                     **kwargs)
+        # deal with symbolic structures---that is, rather than adding
+        # results by subcorpora, add them by metadata value
+        # todo: sorting?
+        #if subcorpora:
+        #    for (k, v), concl in zip(res.items(), conc_res.values()):                            
+        #        v = lowercase_result(v)
+        #        results[k] += Counter(v)
+        #        for line in concl:
+        #            if maxconc is False or numconc < maxconc:
+        #                line = postprocess_concline(line,
+        #                    fsi_index=fsi_index, conc=conc)
+        #                conc_results[k].append(line)
+        #                numconc += 1
+        #    
+        #    current_iter += 1
+        #    tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+        #    animator(p, current_iter, tstr, **par_args)
+        #    continue
 
-            if res is None and conc_res is None:
-                current_iter += 1
-                tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
-                animator(p, current_iter, tstr, **par_args)
-                continue
+        # garbage collection needed?
+            
+        if res == 'Bad query':
+            return 'Bad query'
 
-            # deal with symbolic structures---that is, rather than adding
-            # results by subcorpora, add them by metadata value
-            # todo: sorting?
-            if subcorpora:
-                for (k, v), concl in zip(res.items(), conc_res.values()):                            
-                    v = lowercase_result(v)
-                    results[k] += Counter(v)
-                    for line in concl:
-                        if maxconc is False or numconc < maxconc:
-                            line = postprocess_concline(line,
-                                fsi_index=fsi_index, conc=conc)
-                            conc_results[k].append(line)
-                            numconc += 1
-                
-                current_iter += 1
-                tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
-                animator(p, current_iter, tstr, **par_args)
-                continue
+        # update progress bar
+        current_iter += 1
+        tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
+        animator(p, current_iter, tstr, **par_args)
 
-            # garbage collection needed?
-            sents = None
-            corefs = None
-                
-            if res == 'Bad query':
-                return 'Bad query'
+    return results
 
-            if countmode:
-                count_results[subcorpus_name] += [res]
-
-            else:
-                # add filename and do lowercasing for conc
-                if not no_conc:
-                    for line in conc_res:
-                        line = postprocess_concline(line,
-                            fsi_index=fsi_index, conc=conc)
-                        if maxconc is False or numconc < maxconc:
-                            conc_results[subcorpus_name].append(line)
-                            numconc += 1
-
-                # do lowercasing and spelling
-                if not only_conc:
-                    res = lowercase_result(res)
-                    # discard removes low results, helping with 
-                    # curse of dimensionality
-                    countres = Counter(res)
-                    if isinstance(discard, float):
-                        countres.most_common()
-                        nkeep = len(counter) - len(counter) * discard
-                        countres = Counter({k: v for i, (k, v) in enumerate(countres.most_common()) if i <= nkeep})
-                    elif isinstance(discard, int):
-                        countres = Counter({k: v for k, v in countres.most_common() if v >= discard})
-                    results[subcorpus_name] += countres
-                    #else:
-                    #results[subcorpus_name] += res
-
-            # update progress bar
-            current_iter += 1
-            tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
-            animator(p, current_iter, tstr, **par_args)
+    #return make_result_from_counter(results, subcorpora, show=False)
 
     # Get concordances into DataFrame, return if just conc
     if not no_conc:

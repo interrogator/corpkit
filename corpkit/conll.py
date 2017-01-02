@@ -2,6 +2,8 @@
 corpkit: process CONLL formatted data
 """
 
+from corpkit.matches import Match, Token
+
 def parse_conll(f,
                 first_time=False,
                 just_meta=False,
@@ -73,7 +75,7 @@ def parse_conll(f,
     # open with sent and token as multiindex
     try:
         df = pd.read_csv(StringIO(data), sep='\t', header=None,
-                         names=['s'] + head, index_col=['s', 'i'], usecols=usecols)
+                         names=['s'] + head, index_col=['s', 'i'], usecols=None)
         #df.index = pd.MultiIndex.from_tuples([(1, i) for i in df.index])
     except ValueError:
         return
@@ -113,14 +115,20 @@ def get_governors_of_id(idx, df=False, repeat=False, attr=False, coref=False):
         return getattr(df.loc[sent_id,govid], attr, 'root')
     return [(sent_id, govid)]
 
-def get_match(idx, df=False, repeat=False, attr=False, **kwargs):
+def get_match(idx, df=False, repeat=False, attr=False, metadata=False, subcorpora=False, fobj=False, **kwargs):
     """
-    Dummy function, for the most part
+    Return matches
     """
+
     sent_id, tok_id = getattr(idx, 'name', idx)
+    rel_metadata = metadata[sent_id]
+
     if attr:
-        return df[attr].ix[sent_id, tok_id]
-    return [(sent_id, tok_id)]
+        mtch = df[attr].ix[sent_id, tok_id]
+    else:
+        mtch = [(sent_id, tok_id)]
+
+    return [Token(tok_id, df.ix[sent_id], sent_id, fobj, metadata)]
 
 def get_head(idx, df=False, repeat=False, attr=False, **kwargs):
     """
@@ -194,9 +202,11 @@ def get_all_corefs(s, i, df, coref=False):
     except:
         return [(s, i)]
 
-def search_this(df, obj, attrib, pattern, adjacent=False, coref=False):
+def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, subcorpora=False, results=False, metadata=False, fobj=False):
     """
     Search the dataframe for a single criterion
+
+    :return: a defaultdict with subcorpora as keys and results as values
     """
     import re
     out = []
@@ -221,21 +231,33 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False):
 
     getfunc = revmapping.get(obj)
 
-    for idx in list(matches.index):
+    for sent_id, tok_id in list(matches.index):
 
         if adjacent:
             if adjacent[0] == '+':
                 tomove = -int(adj[1])
             elif adjacent[0] == '-':
                 tomove = int(adj[1])
-            idx = (idx[0], idx[1] + tomove)
-        
-        for mindex in getfunc(idx, df=df, coref=coref):
+            tok_id += tomove
 
-            if mindex:
-                out.append(mindex)
+        the_token = Token(tok_id, df.ix[sent_id], sent_id, fobj, metadata[sent_id])
 
-    return list(set(out))
+        if obj == 'g':
+            results[the_token.governor] += 1
+
+        elif obj == 'd':
+            pass
+
+        elif obj == 'm':
+            results[the_token] += 1
+
+        elif obj == 'h':
+            pass
+
+        elif obj == 'r':
+            pass
+
+    return results
 
 def show_fix(show):
     """show everything"""
@@ -331,7 +353,6 @@ def format_toks(to_process, show, df):
                 index.append(ix)
                 data.append('/'.join(tup))
         return pd.Series(data, index=pd.MultiIndex.from_tuples(index))
-
 
 def make_series(ser, df=False, obj=False,
                 att=False, adj=False):
@@ -692,7 +713,7 @@ def show_this(df, matches, show, metadata, conc=False,
     gramsize = kwargs.get('gramsize', 1)
     window = kwargs.get('window', None)
 
-    matches = sorted(list(matches))
+    #matches = sorted(list(matches))
 
     # add index as column if need be
     if any(i.endswith('s') for i in show):
@@ -702,7 +723,7 @@ def show_this(df, matches, show, metadata, conc=False,
     
     # attempt to leave really fast
     if kwargs.get('countmode'):
-        return len(matches), {}
+        return matches, {}
     if len(show) == 1 and not conc and gramsize == 1 and not window:
         if show[0] in ['ms', 'mi', 'mw', 'ml', 'mp', 'mf']:
             get_fast = df.loc[matches][show[0][-1]]
@@ -1078,6 +1099,7 @@ def get_stats(from_df=False, metadata=False, feature=False, root=False, **kwargs
             root.update()
     return result, {}
 
+#todo: move to dd type
 def get_corefs(df, matches):
     """
     Add corefs to a set of matches
@@ -1094,6 +1116,12 @@ def get_corefs(df, matches):
                 out.add(ix)
     return out
 
+def update_dd(res, all_res):
+    """Update a default dictionary"""
+    for k, v in res.items():
+        all_res[k] += v
+    return all_res
+
 def pipeline(f=False,
              search=False,
              show=False,
@@ -1105,11 +1133,12 @@ def pipeline(f=False,
              from_df=False,
              just_metadata=False,
              skip_metadata=False,
-             category=False,
              show_conc_metadata=False,
              statsmode=False,
              search_trees=False,
              lem_instance=False,
+             subcorpora=False,
+             fobj=False,
              **kwargs):
     """
     A basic pipeline for conll querying---some options still to do
@@ -1121,6 +1150,10 @@ def pipeline(f=False,
     all_matches = []
     all_exclude = []
 
+    from collections import Counter
+    all_res = Counter()
+
+    # todo: this could become obsolete
     if from_df is False or from_df is None:
         df = parse_conll(f, usecols=kwargs.get('usecols'))
         # can fail here if df is none
@@ -1131,9 +1164,8 @@ def pipeline(f=False,
     else:
         df = from_df
         metadata = kwargs.pop('metadata')
-    feature = kwargs.pop('by_metadata', False)
-    df = cut_df_by_meta(df, just_metadata, skip_metadata)
 
+    # determine which subsearcher to use
     searcher = pipeline
     if statsmode:
         searcher = get_stats
@@ -1142,50 +1174,13 @@ def pipeline(f=False,
     elif search_trees == 'tgrep':
         searcher = tgrep_searcher
 
-    if feature:
-        if df is None:
-            print('Problem reading data from %s.' % f)
-            return {}, {}
-
-        # determine searcher
-        resultdict = {}
-        concresultdict = {}
-        # get all the possible values in the df for the feature of interest
-        all_cats = set([i.get(feature, 'none') for i in list(df._metadata.values())])
-        for category in all_cats:
-            new_df = cut_df_by_metadata(df, df._metadata, category, feature=feature, method='just')
-            r, c = searcher(f=False,
-                            fname=f,
-                            search=search,
-                            exclude=exclude,
-                            show=show,
-                            searchmode=searchmode,
-                            excludemode=excludemode,
-                            conc=conc,
-                            coref=coref,
-                            from_df=new_df,
-                            by_metadata=False,
-                            category=category,
-                            show_conc_metadata=show_conc_metadata,
-                            lem_instance=lem_instance,
-                            root=kwargs.pop('root', False),
-                            subcorpora=feature,
-                            metadata=new_df._metadata,
-                            **kwargs)
-            
-            resultdict[category] = r
-            concresultdict[category] = c
-        return resultdict, concresultdict
-
     if df is None:
         print('Problem reading data from %s.' % f)
         return [], []
 
     kwargs['ngram_mode'] = any(x.startswith('n') for x in show)
 
-    #df = cut_df_by_metadata(df, df._metadata, kwargs.get('just_speakers'), coref=coref)
-    metadata = df._metadata
-
+    # first column should always be strings!
     try:
         df['w'].str
     except AttributeError:
@@ -1193,9 +1188,10 @@ def pipeline(f=False,
                              "Try the corpus.conll_conform() method to " \
                              "convert the corpus to the latest format.")
 
+    # strip out punctuation by regex
     if kwargs.get('no_punct', True):
         df = df[df['w'].fillna('').str.contains(kwargs.get('is_a_word', r'[A-Za-z0-9]'))]
-            
+    
         # remove brackets --- could it be done in one regex?
         df = df[~df['w'].str.contains(r'^-.*B-$')]
 
@@ -1204,8 +1200,10 @@ def pipeline(f=False,
         crit = wordlists.closedclass.as_regex(boundaries='l', case_sensitive=False)
         df = df[~df['w'].str.contains(crit)]
 
+    # todo: get these two to use same call sig
     if statsmode:
-        return get_stats(df, metadata, False, root=kwargs.pop('root', False), **kwargs)
+        return searcher(df, metadata, False, root=kwargs.pop('root', False), subcorpora=subcorpora, **kwargs)
+    
     elif search_trees:
         return searcher(from_df=df,
                         search=search,
@@ -1218,6 +1216,7 @@ def pipeline(f=False,
                         root=kwargs.pop('root', False),
                         fname=f,
                         show=show,
+                        subcorpora=subcorpora,
                         **kwargs)
 
     # do no searching if 'any' is requested
@@ -1228,23 +1227,22 @@ def pipeline(f=False,
     else:
         for k, v in search.items():
             adj, k = determine_adjacent(k)
-            res = search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref)
-            for r in res:
-                all_matches.append(r)
-        all_matches = remove_by_mode(all_matches, searchmode, search)
+            all_res = search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, results=all_res, metadata=metadata, fobj=fobj)
+
     if exclude:
         for k, v in exclude.items():
             adj, k = determine_adjacent(k)
-            res = search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref)
-            for r in res:
-                all_exclude.append(r)
+            all_exclude = search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, results=all_res, metadata=metadata, fobj=fobj)
         all_exclude = remove_by_mode(all_exclude, excludemode, exclude)
         all_matches = all_matches.difference(all_exclude)
 
-    if coref:
-        all_matches = get_corefs(df, all_matches)
+    # todo
+    #if coref:
+    #    all_res = get_corefs(df, all_res)
 
-    out, conc_out = show_this(df, all_matches, show, metadata, conc, 
+    return all_res
+
+    out, conc_out = show_this(df, all_res, show, metadata, conc, 
                               coref=coref, category=category, 
                               show_conc_metadata=show_conc_metadata,
                               **kwargs)
