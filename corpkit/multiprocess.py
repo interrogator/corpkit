@@ -1,4 +1,6 @@
-"""corpkit: multiprocessing of interrogations"""
+"""
+corpkit: multiprocessing of interrogations
+"""
 
 from __future__ import print_function
 
@@ -11,6 +13,8 @@ def pmultiquery(corpus,
                 root=False,
                 note=False,
                 print_info=True,
+                show=['mw'],
+                subcorpora=False,
                 **kwargs
                ):
     """
@@ -25,7 +29,7 @@ def pmultiquery(corpus,
     import collections
     from collections import namedtuple, OrderedDict
     from time import strftime, localtime
-    from corpkit.interrogator import interrogator
+    from corpkit.interrogator import interrogator, welcome_printer
     from corpkit.interrogation import Interrogation, Interrodict
     from corpkit.process import canpickle
     from corpkit.corpus import Corpus, Corpora, Datalist
@@ -40,6 +44,8 @@ def pmultiquery(corpus,
     for k, v in kwargs.items():
         locs[k] = v
     in_notebook = locs.get('in_notebook')
+    cname = kwargs.pop('cname')
+    optiontext = kwargs.pop('optiontext')
 
     if not isinstance(multiprocess, int):
         multiprocess = multiprocessing.cpu_count()
@@ -95,8 +101,7 @@ def pmultiquery(corpus,
     time = strftime("%H:%M:%S", localtime())
     from corpkit.process import dictformat
     
-    if print_info:
-        print('starting')
+    welcome_message = welcome_printer(search, cname, optiontext, return_it=in_notebook, printstatus=print_info)
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
@@ -143,7 +148,7 @@ def pmultiquery(corpus,
         except:
             pass
 
-    merged_res = { k: v for d in res for k, v in d.items() }
+    merged_res = [item for sublist in res for item in sublist]
     matches = Matches(merged_res, corpus)
     subc = subcorpora if kwargs.get('subcorpora') else 'default'
     resbranch = matches.table(subcorpora=subc, show=show)
@@ -157,5 +162,10 @@ def pmultiquery(corpus,
                   'show': show,
                   'subcorpora': subcorpora}
 
-    interro = Interrogation(data=matches, corpus=corpus, query=querybits)
+    interro = Interrogation(data=matches, corpus=corpus, query=querybits, totals=len(matches))
+
+    if print_info:
+        if terminal:
+            print(terminal.move(terminal.height-1, 0))
+            
     return interro

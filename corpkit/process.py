@@ -1572,3 +1572,11 @@ def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
                     del sc.files[i]
 
     return corpus, skip_metadata, just_metadata
+
+
+def timestring(inputx, blankfirst=0):
+    """print with time prepended"""
+    from time import localtime, strftime
+    thetime = strftime("%H:%M:%S", localtime())
+    blankfirst = '\n' * blankfirst
+    print('%s%s: %s' % (blankfirst, thetime, inputx.lstrip()))

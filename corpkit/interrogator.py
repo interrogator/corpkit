@@ -5,6 +5,22 @@ corpkit: Interrogate a parsed corpus
 from __future__ import print_function
 from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
 
+
+def welcome_printer(search, cname, optiontext, return_it=False, printstatus=True):
+    """Print welcome message"""
+    from time import localtime, strftime
+    if printstatus:
+        thetime = strftime("%H:%M:%S", localtime())
+        from corpkit.process import dictformat
+        sformat = dictformat(search)
+        welcome = ('\n%s: Interrogating %s ...\n          %s\n          ' \
+                    'Query: %s\n          Interrogating corpus ... \n' % \
+                  (thetime, cname, optiontext, sformat))
+        if return_it:
+            return welcome
+        else:
+            print(welcome)
+
 def make_result_from_counter(cntr, subcorpora, show=False):
     import pandas as pd
     index = []
@@ -356,26 +372,6 @@ def interrogator(corpus,
         r = '/'.join(bits)
         return r
 
-    def welcome_printer(return_it=False):
-        """Print welcome message"""
-        if no_conc:
-            message = 'Interrogating'
-        else:
-            message = 'Interrogating and concordancing'
-        if only_conc:
-            message = 'Concordancing'
-        if kwargs.get('printstatus', True):
-            thetime = strftime("%H:%M:%S", localtime())
-            from corpkit.process import dictformat
-            sformat = dictformat(search)
-            welcome = ('\n%s: %s %s ...\n          %s\n          ' \
-                        'Query: %s\n          %s corpus ... \n' % \
-                      (thetime, message, cname, optiontext, sformat, message))
-            if return_it:
-                return welcome
-            else:
-                print(welcome)
-
     def goodbye_printer(return_it=False, only_conc=False):
         """Say goodbye before exiting"""
         if not kwargs.get('printstatus', True):
@@ -586,13 +582,26 @@ def interrogator(corpus,
     search = fix_search(search, case_sensitive=case_sensitive, root=root)
     exclude = fix_search(exclude, case_sensitive=case_sensitive, root=root)
 
+    datatype = getattr(corpus, 'datatype', 'conll')
+    singlefile = getattr(corpus, 'singlefile', False)
+    level = getattr(corpus, 'level', 'c')
+
+
+    # Determine the search function to be used #
+    optiontext, simple_tregex_mode, statsmode, tree_to_text, search_trees = determine_search_func(show)
+
+    cname = corpus.name
+
     locs['search'] = search
     locs['exclude'] = exclude
     locs['query'] = query
+    locs['show'] = show
     locs['corpus'] = corpus
     locs['multiprocess'] = multiprocess
     locs['print_info'] = kwargs.get('printstatus', True)
     locs['subcorpora'] = subcorpora
+    locs['cname'] = cname
+    locs['optiontext'] = optiontext
 
     if multiprocess:
         signal.signal(signal.SIGINT, original_sigint)
@@ -600,16 +609,11 @@ def interrogator(corpus,
         return pmultiquery(**locs)
 
     # get corpus metadata
-    cname = corpus.name
+    
     if isinstance(save, STRINGTYPE):
         savename = corpus.name + '-' + save
     if save is True:
         raise ValueError('save must be str, not bool.')
-
-
-    datatype = getattr(corpus, 'datatype', 'conll')
-    singlefile = getattr(corpus, 'singlefile', False)
-    level = getattr(corpus, 'level', 'c')
         
     # store all results in here
     from collections import defaultdict, Counter
@@ -628,9 +632,6 @@ def interrogator(corpus,
     # multiprocessing progress bar
     denom = kwargs.get('denominator', 1)
     startnum = kwargs.get('startnum', 0)
-
-    # Determine the search function to be used #
-    optiontext, simple_tregex_mode, statsmode, tree_to_text, search_trees = determine_search_func(show)
     
     # no conc for statsmode
     if statsmode:
@@ -682,7 +683,7 @@ def interrogator(corpus,
     corpus_iter = corpus.all_files if corpus.all_files else corpus
 
     # print welcome message
-    welcome_message = welcome_printer(return_it=in_notebook)
+    welcome_message = welcome_printer(search, cname, optiontext, return_it=in_notebook, printstatus=kwargs.get('printstatus', True))
 
     # create a progress bar
     p, outn, total_files, par_args = make_progress_bar(corpus_iter)
@@ -751,4 +752,4 @@ def interrogator(corpus,
     
     signal.signal(signal.SIGINT, original_sigint)
 
-    return interro
+    return matches[:]

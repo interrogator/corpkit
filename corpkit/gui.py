@@ -47,6 +47,7 @@ except ImportError:
 
 # todo: delete from the rest of code
 from corpkit.corpus import Corpus
+from corpkit.process import timestring
 
 # determine path to gui resources:
 py_script = False
@@ -710,12 +711,6 @@ def corpkit_gui(noupdate=False, loadcurrent=False, debug=False):
         # this connects to matplotlib's save button, if the modified
         # matplotlib is installed. a better way to do this would be good!
         root.imagewatched.trace("w", refresh_images)
-
-        def timestring(input):
-            """print with time prepended"""
-            from time import localtime, strftime
-            thetime = strftime("%H:%M:%S", localtime())
-            print('%s: %s' % (thetime, input.lstrip()))
 
         def conmap(cnfg, section):
             """helper for load settings"""

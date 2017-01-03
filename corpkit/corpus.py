@@ -732,7 +732,9 @@ class Corpus(object):
         from corpkit.interrogator import interrogator
         from corpkit.matches import Matches
         from corpkit.interrogation import Interrogation
+        from corpkit.process import timestring
         import pandas as pd
+
         par = kwargs.pop('multiprocess', None)
         kwargs.pop('corpus', None)
 
@@ -753,6 +755,8 @@ class Corpus(object):
 
         kwargs['multiprocess'] = par
         res = interrogator(self, search, *args, **kwargs)
+        bf = 1 if multiprocess else 2
+        timestring("Finished! %s total results." % format(res.totals, ','), blankfirst=bf)
         return res
 
     def sample(self, n, level='f'):
@@ -1291,8 +1295,11 @@ class Datalist(list):
         #    kwargs['subcorpora'] = self.symbolic
 
         from corpkit.interrogator import interrogator
-        interro = interrogator(self, *args, **kwargs)
-        return interro
+        from corpkit.process import timestring
+        res = interrogator(self, *args, **kwargs)
+        bf = 1 if kwargs.get('multiprocess') else 2
+        timestring("Finished! %s total results." % format(res.totals, ','), blankfirst=bf)
+        return res
 
     def concordance(self, *args, **kwargs):
         """
