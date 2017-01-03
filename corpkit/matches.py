@@ -54,11 +54,12 @@ class Matches(list):
         except:
             all_meta_fields = list(Corpus(self.corpus, print_info=False).metadata['fields'].keys())
         fields = list(sorted(['parse', 'folder', 'file'] + all_meta_fields))
+        
         for k in self.data:
             line = [k.metadata.get(key, 'none') for key in fields]
-            line += [k.sent_id, k.idx, k, 1]
+            line += [k.sent_id, k.idx, k]
             record_data.append(line)
-        column_names = fields + ['sent_id', 'tok_id', 'entry', 'count']
+        column_names = fields + ['sent_id', 'tok_id', 'entry']
 
         df = pd.DataFrame(record_data)
         df.columns = column_names
@@ -94,7 +95,8 @@ class Matches(list):
             df = self.record()
             # should be apply
             df['entry'] = [x.display(show, preserve_case=preserve_case) for x in df['entry']]
-            df = df.pivot_table(columns='entry', values='count', index=subcorpora)
+            df['count'] = [1 for x in df.index]
+            df = df.pivot_table(index=subcorpora, columns='entry', values='count', aggfunc=sum)
             df = df.fillna(0.0).astype(int)
             df = df[df.sum().sort_values(ascending=False).index]
             return df
@@ -140,7 +142,13 @@ class Token(object):
         super(Token, self).__init__()
 
     def getter(self, att):
-        return self.sent.ix[self.idx][att]
+        """
+        Gets an att (word, lemma, etc) from a token
+        """
+        try:
+            return self.sent.ix[self.idx][att]
+        except (IndexError, TypeError, KeyError):
+            return 'root'
     
     def _i(self):
         return self.idx
@@ -182,8 +190,14 @@ class Token(object):
 
     @lazyprop
     def governor(self):
-        new_idx = self.sent.ix[self.idx]['g']
-        return Token(new_idx, self.sent, self.sent_id, self.fobj, self.metadata)
+        try:
+            new_idx = int(self.sent.ix[self.idx]['g'])
+        except:
+            print(self.fobj.path)
+            raise
+        new_word = self.sent.ix[new_idx]['w'] if new_idx else 'root'
+
+        return Token(new_idx, self.sent, self.sent_id, self.fobj, self.metadata, new_word)
 
     @lazyprop
     def dependents(self):
@@ -196,7 +210,7 @@ class Token(object):
         attrs = ['path', 'sent_id', 'idx']
         return all([getattr(self, a) == getattr(other, a) for a in attrs])
 
-    def display(self, show=['w'], preserve_case=False):
+    def display(self, show=['mw'], preserve_case=False):
         """
         Show token in a certain way
         """

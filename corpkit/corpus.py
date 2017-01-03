@@ -215,6 +215,8 @@ class Corpus(object):
     def conll_conform(self, errors='raise'):
         """
         This removes sent index column from old corpkit data
+
+        deprecated: do not use right now
         """
         from corpkit.constants import OPENER
         fs = self.all_filepaths
@@ -225,31 +227,25 @@ class Corpus(object):
             with OPENER(f, 'r', encoding='utf-8') as fo:
                 lines = fo.read().splitlines()
                 for line in lines:
+                    # skip old sent id lines
                     if line.startswith('# sent_id'):
                         continue
+                    # if it is a data line
                     if line and not line.startswith('#'):
-                        try:
-                            splut = line.split('\t', 1)[1]
-                        except IndexError:
-                            raise IndexError('Failed on file %s' % f)
-                        if not splut[0].isdigit():
-                            if errors == 'raise':
-                                raise ValueError('File %s does not appear to be in old format.' % f)
-                            else:
-                                if badfile:
-                                    continue
-                                badfile = True
-                                continue
-                        else:
-                            line = splut
+                        # replace hash and slash
+                        line = line.replace('#', '-hash-').replace('/', '-slash-')
+                        # handle sent tok index
+                        #fir, splut = line.split('\t', 1)
+                        #if fir[0].isdigit() and splut[0].isdigit():
+                        #    line = splut
                         # add v column with nothing in it
-                        line = line.split('\t')
-                        line.insert(5, '_')
-                        line = '\t'.join(line)
+                        #line = line.split('\t')
+                        #line.insert(5, '_')
+                        #line = '\t'.join(line)
                     fdata.append(line)
-                if badfile and errors != 'raise':
-                    print('Skipping %s' % f)
-                    continue
+                #if badfile and errors != 'raise':
+                #    print('Skipping %s' % f)
+                #    continue
             with OPENER(f, 'w', encoding='utf-8') as fo:
                 fo.write('\n'.join(fdata))
 

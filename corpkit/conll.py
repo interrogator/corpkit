@@ -56,12 +56,15 @@ def parse_conll(f,
     if not metadata:
         return
 
-    df = pd.read_csv(f, sep='\t', header=None, na_filter=False, memory_map=True, comment="#", names=head, usecols=None, index_col=['i'])
+    df = pd.read_csv(f, sep='\t', header=None, na_filter=False, memory_map=True, comment="#", names=head, usecols=None, index_col=['i'], engine='c')
     c = 0
     newlev = []
     for i in df.index:
-        if i == 1:
-            c += 1
+        try:
+            if int(i) == 1:
+                c += 1
+        except:
+            print(df, f)
         newlev.append((c, i))
     ix = pd.MultiIndex.from_tuples(newlev)
     df.index = ix
@@ -216,7 +219,6 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, subcorpor
 
     # todo: could we use apply here?
     for (sent_id, tok_id), word in zip(list(matches.index), matches['w']):
-
         metadd = metadata[sent_id]
         if corpus_name:
             metadd['corpus'] = corpus_name
@@ -1425,7 +1427,7 @@ def convert_json_to_conll(path,
                     except TypeError:
                         pass
                 
-                output += '\t'.join(line) + '\n'
+                output += '\t'.join(line).replace('#', '-hash-').replace('/', '-slash-') + '\n'
             main_out += output + '\n'
 
         # post process corefs

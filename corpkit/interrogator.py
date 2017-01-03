@@ -613,7 +613,7 @@ def interrogator(corpus,
         
     # store all results in here
     from collections import defaultdict, Counter
-    results = Counter()
+    results = []
     count_results = defaultdict(list)
     conc_results = defaultdict(list)
 
@@ -729,7 +729,6 @@ def interrogator(corpus,
                                  fobj=f,
                                  corpus_name=getattr(corpus, 'corpus_name', False),
                                  **kwargs)
-
             
         if res == 'Bad query':
             return 'Bad query'
@@ -749,109 +748,7 @@ def interrogator(corpus,
                   'subcorpora': subcorpora}
 
     interro = Interrogation(data=matches, corpus=corpus, totals=len(matches), query=querybits)
-    return interro
-
-    #return make_result_from_counter(results, subcorpora, show=False)
-
-    # Get concordances into DataFrame, return if just conc
-    if not no_conc:
-        # fail on this line with typeerror if no results?
-        conc_df = make_conc_obj_from_conclines(conc_results, fsi_index=fsi_index)
-        if only_conc and conc_df is None:
-            return
-        elif only_conc:
-            locs = sanitise_dict(locs)
-            try:
-                conc_df.query = locs
-            except AttributeError:
-                return conc_df
-            if save and not kwargs.get('outname'):
-                if conc_df is not None:
-                    conc_df.save(savename)
-            goodbye_printer(only_conc=True)
-            if not root:
-                signal.signal(signal.SIGINT, original_sigint)            
-            return conc_df
-    else:
-        conc_df = None
-
-    # Get interrogation into DataFrame
-    if countmode:
-        df = Series({k: sum(v) for k, v in sorted(count_results.items())})
-        tot = df.sum()
-    else:
-        the_big_dict = {}
-        unique_results = set(item for sublist in list(results.values()) for item in sublist)
-        sortres = sorted(results.items(), key=lambda x: x[0])
-        for word in unique_results:
-            the_big_dict[word] = [subcorp_result[word] for _, subcorp_result in sortres]
-        # turn master dict into dataframe, sorted
-        df = DataFrame(the_big_dict, index=sorted(results.keys()))
-
-        # for ngrams, remove hapaxes
-        #if show_ngram or show_collocates:
-        #    if not language_model:
-        #        df = df[[i for i in list(df.columns) if df[i].sum() > 1]]
-
-        numentries = len(df.columns)
-        tot = df.sum(axis=1)
-        total_total = df.sum().sum()
-
-    # turn df into series if all conditions met
-    conds = [countmode,
-             files_as_subcorpora,
-             subcorpora,
-             kwargs.get('df1_always_df', False)]
-
-    anyxs = [level == 's',
-             singlefile,
-             nosubmode]
-
-    if all(not x for x in conds) and any(x for x in anyxs):
-        df = Series(df.ix[0])
-        df.sort_values(ascending=False, inplace=True)
-        tot = df.sum()
-        numentries = len(df.index)
-        total_total = tot
-
-    # turn data into DF for GUI if need be
-    if isinstance(df, Series) and kwargs.get('df1_always_df', False):
-        total_total = df.sum()
-        df = DataFrame(df)
-        tot = Series(total_total, index=['Total'])
-
-    # if we're doing files as subcorpora,  we can remove the extension etc
-    if isinstance(df, DataFrame) and files_as_subcorpora:
-        df.index = df.index.str.replace(r'(?:-[0-9][0-9][0-9]|)\.txt\.conll.*', '')
-        df = df.groupby(level=0,sort=True).sum()
-
-    if conc_df is not None and conc_df is not False:
-        # removed 'f' from here for now
-        for col in ['c']:
-            for pat in ['.txt', '.conll', '.conllu']:
-                conc_df[col] = conc_df[col].str.replace(pat, '')
-            conc_df[col] = conc_df[col].str.replace(r'-[0-9][0-9][0-9]$', '')
-
-        #df.index = df.index.str.replace('w', 'this')
-
-    # make interrogation object
-    locs['corpus'] = corpus.path
-    locs = sanitise_dict(locs)
-    if nosubmode and isinstance(df, pd.DataFrame):
-        df = df.sum()
-    interro = Interrogation(results=df, totals=tot, query=locs, concordance=conc_df)
-
-    # save it
-    if save and not kwargs.get('outname'):
-        print('\n')
-        interro.save(savename)
     
-    goodbye = goodbye_printer(return_it=in_notebook)
-    if in_notebook:
-        try:
-            p.children[2].value = goodbye.replace('\n', '')
-        except AttributeError:
-            pass
-    if not root:
-        signal.signal(signal.SIGINT, original_sigint)
+    signal.signal(signal.SIGINT, original_sigint)
+
     return interro
