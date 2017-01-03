@@ -30,24 +30,28 @@ class Match(object):
             raise NotImplementedError("Matches do not come from the same file, so they cannot be compared.")
         return ((self.sent_id, self.tok_id) < (other.sent_id, other.tok_id))
 
-class Matches(object):
+from collections import Counter
+class Matches(Counter):
     """
     Store search results in an abstract, intermediate way
     """
 
     def __init__(self, data, corpus, **kwargs):
 
-        self.data = data
-        self.corpus = corpus
+        from corpkit.corpus import Corpus
 
-        super(Matches, self).__init__()
+        self.data = data
+        self.corpus = Corpus(corpus, print_info=False)
+
+        super(Matches, self).__init__(data)
 
     def record(self):
         import pandas as pd
         from corpkit.build import get_all_metadata_fields
         from corpkit.corpus import Corpora
         record_data = []
-        fields = list(sorted(['parse', 'folder', 'file'] + get_all_metadata_fields(self.corpus.path, include_speakers=True)))
+        all_meta_fields = list(self.corpus.metadata['fields'].keys())
+        fields = list(sorted(['parse', 'folder', 'file'] + all_meta_fields))
         for k, v in self.data.items():
             line = [k.metadata.get(key, 'none') for key in fields]
             line += [k.sent_id, k.idx, k, v]
@@ -68,6 +72,7 @@ class Matches(object):
         import pandas as pd
         from corpkit.corpus import Corpora
 
+        # wrong for datalists
         if subcorpora == 'default':
             if isinstance(self.corpus, Corpora):
                 subcorpora = 'corpus'
@@ -116,43 +121,66 @@ class Token(object):
     Model a token in the corpus
     """
 
-    def __init__(self, idx, sent, sent_id, path, metadata):
+    def __init__(self, idx, df, sent_id, fobj, metadata, word):
         self.idx = idx
-        self.sent = sent
         self.sent_id = sent_id
-        self.path = path
+        self.df = df
+        self.fobj = fobj
+        self.path = fobj.path
         self.metadata = metadata
+        self._w = word
         if self.idx != 0:
-            self.word = self.getter('w')
-            self.lemma = self.getter('l')
-            self.function = self.getter('f')
-            self.ner = self.getter('e')
             self.is_root = False
         else:
-            self.word =  None
-            self.lemma =  None
-            self.function = None
             self.is_root = True
-
-        self._w = self.word
-        self._l = self.lemma
-        self._f = self.function
-        self._e = self.ner
-        self._s = sent_id
-        self._i = idx
 
         super(Token, self).__init__()
 
     def getter(self, att):
-        try:
-            return self.sent.ix[self.idx][att]
-        except:
-            return 'stripped'
+        return self.sent.ix[self.idx][att]
+    
+    def _i(self):
+        return self.idx
+
+    def _s(self):
+        return self.sent_id
+
+    @lazyprop
+    def sent(self):
+        return self.df.ix[self.sent_id]
+
+    @lazyprop
+    def _l(self):
+        if self.idx != 0:
+            return self.getter('l')
+        else:
+            return 'root'
+
+    @lazyprop
+    def _p(self):
+        if self.idx != 0:
+            return self.getter('p')
+        else:
+            return 'root'
+
+    @lazyprop
+    def _f(self):
+        if self.idx != 0:
+            return self.getter('f')
+        else:
+            return 'root'
+
+    @lazyprop
+    def _e(self):
+        if self.idx != 0:
+            return self.getter('e')
+        else:
+            return 'root'
 
     @lazyprop
     def governor(self):
         new_idx = self.sent.ix[self.idx]['g']
-        return Token(new_idx, self.sent, self.sent_id, self.path, self.metadata)
+        return Token(new_idx, self.sent, self.sent_id, self.fobj, self.metadata)
 
     @lazyprop
     def dependents(self):
@@ -189,7 +217,7 @@ class Token(object):
             return out.lower()
 
     def __str__(self):
-        return self.word if self.word else '<root>'
+        return self._w
 
 
 def _concer(record, show):
@@ -197,10 +225,9 @@ def _concer(record, show):
     to use in a pandas apply function to make a concordance line
     """
     tok = record['m']
-    sent, s, i = tok.sent, tok._s, tok._i
     record['m'] = tok.display(show)
-    start = ' '.join(sent['w'].loc[:i-1].values)
-    end = ' '.join(sent['w'].loc[i+1:].values)
+    start = ' '.join(tok.sent['w'].loc[:tok.idx-1].values)
+    end = ' '.join(tok.sent['w'].loc[tok.idx+1:].values)
     record['r'] = end
     record['l'] = start 
     return record

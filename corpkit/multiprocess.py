@@ -29,13 +29,12 @@ def pmultiquery(corpus,
     from corpkit.interrogation import Interrogation, Interrodict
     from corpkit.process import canpickle
     from corpkit.corpus import Corpus, Corpora, Datalist
+    from corpkit.matches import Matches
     try:
         from joblib import Parallel, delayed
     except ImportError:
         pass
     import multiprocessing
-
-    corpus = Corpus(corpus)
 
     locs = locals()
     for k, v in kwargs.items():
@@ -140,7 +139,17 @@ def pmultiquery(corpus,
             pass
 
     merged_res = { k: v for d in res for k, v in d.items() }
-    return merged_res
+    matches = Matches(merged_res, corpus)
+    subc = subcorpora if kwargs.get('subcorpora') else 'default'
+    resbranch = matches.table(subcorpora=subc, show=show)
+    try:
+        totals = resbranch.sum(axis=1)
+    except:
+        totals = resbranch.sum()
+
+    interro = Interrogation(data=matches, corpus=corpus)
+
+    return interro
 
     # remove unpicklable bits from query
     from types import ModuleType, FunctionType, BuiltinMethodType, BuiltinFunctionType

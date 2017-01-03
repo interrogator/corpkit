@@ -90,6 +90,7 @@ def interrogator(corpus,
     See corpkit.interrogation.interrogate() for docstring
     """
 
+
     conc = kwargs.get('do_concordancing', conc)
     quiet = kwargs.get('quiet', False)
     coref = kwargs.pop('coref', False)
@@ -117,6 +118,7 @@ def interrogator(corpus,
     from pandas import DataFrame, Series
 
     from corpkit.interrogation import Interrogation, Interrodict
+    from corpkit.matches import Matches
     from corpkit.corpus import Datalist, Corpora, Corpus, File, Subcorpus
     from corpkit.process import (tregex_engine, get_deps, unsplitter, sanitise_dict, 
                                  animator, filtermaker, fix_search,
@@ -728,44 +730,26 @@ def interrogator(corpus,
                                  corpus_name=getattr(corpus, 'corpus_name', False),
                                  **kwargs)
 
-        results += res
-
-        if res is None and conc_res is None:
-            current_iter += 1
-            tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
-            animator(p, current_iter, tstr, **par_args)
-            continue
-
-        # deal with symbolic structures---that is, rather than adding
-        # results by subcorpora, add them by metadata value
-        # todo: sorting?
-        #if subcorpora:
-        #    for (k, v), concl in zip(res.items(), conc_res.values()):                            
-        #        v = lowercase_result(v)
-        #        results[k] += Counter(v)
-        #        for line in concl:
-        #            if maxconc is False or numconc < maxconc:
-        #                line = postprocess_concline(line,
-        #                    fsi_index=fsi_index, conc=conc)
-        #                conc_results[k].append(line)
-        #                numconc += 1
-        #    
-        #    current_iter += 1
-        #    tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
-        #    animator(p, current_iter, tstr, **par_args)
-        #    continue
-
-        # garbage collection needed?
             
         if res == 'Bad query':
             return 'Bad query'
+
+        results += res
 
         # update progress bar
         current_iter += 1
         tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
         animator(p, current_iter, tstr, **par_args)
 
-    return results
+    matches = Matches(results, corpus)
+
+    query_bits = {'search': search,
+                  'exclude': exclude,
+                  'show': show,
+                  'subcorpora': subcorpora}
+
+    interro = Interrogation(data=matches, corpus=corpus, totals=len(matches), query=query_bits)
+    return interro
 
     #return make_result_from_counter(results, subcorpora, show=False)
 

@@ -8,6 +8,7 @@ from collections import OrderedDict
 import pandas as pd
 from corpkit.process import classname
 from corpkit.matches import Matches
+from corpkit.lazyprop import lazyprop
 
 class Interrogation(object):
     """
@@ -18,14 +19,14 @@ class Interrogation(object):
 
     def __init__(self, results=None, totals=None, query=None, concordance=None, data=None, corpus=None):
         """Initialise the class"""
-        self.results = results
-        """pandas `DataFrame` containing counts for each subcorpus"""
+        #self.results = results
+        #"""pandas `DataFrame` containing counts for each subcorpus"""
         self.totals = totals
         """pandas `Series` containing summed results"""
         self.query = query
         """`dict` containing values that generated the result"""
-        self.concordance = concordance
-        """pandas `DataFrame` containing concordance lines, if concordance lines were requested."""
+        #self.concordance = concordance
+        #"""pandas `DataFrame` containing concordance lines, if concordance lines were requested."""
         self.corpus = corpus
         """The corpus interrogated"""
         self.data = data
@@ -57,6 +58,17 @@ class Interrogation(object):
 
     def conc(self, **kwargs):
         return self.data.conc(**kwargs)
+
+    @lazyprop
+    def results(self):
+        subcorpora = self.query.get('subcorpora', 'default')
+        show = self.query.get('show', ['mw'])
+        return self.data.table(subcorpora=subcorpora, show=show)
+
+    @lazyprop
+    def concordance(self):
+        show = self.query.get('show', ['mw'])
+        return self.data.conc(show=show)
 
     def edit(self, *args, **kwargs):
         """

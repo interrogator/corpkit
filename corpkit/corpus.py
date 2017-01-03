@@ -759,16 +759,7 @@ class Corpus(object):
 
         kwargs['multiprocess'] = par
         res = interrogator(self, search, *args, **kwargs)
-        matches = Matches(res, self)
-        subc = subcorpora if kwargs.get('subcorpora') else 'default'
-        resbranch = matches.table(subcorpora=subc, show=kwargs.get('show', ['mw']))
-        try:
-            totals = resbranch.sum(axis=1)
-        except:
-            totals = resbranch.sum()
-
-        interro = Interrogation(results=resbranch, totals=totals, concordance=matches.conc(), data=matches, corpus=self)
-        return interro
+        return res
 
     def sample(self, n, level='f'):
         """
@@ -1305,9 +1296,6 @@ class Datalist(list):
 
         from corpkit.interrogator import interrogator
         interro = interrogator(self, *args, **kwargs)
-        from corpkit.interrogation import Interrodict
-        if isinstance(interro, Interrodict):
-            interro = interro.multiindex(indexnames=['corpus', 'subcorpus'])
         return interro
 
     def concordance(self, *args, **kwargs):

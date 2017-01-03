@@ -222,21 +222,12 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, subcorpor
     else:
         matches = df[df[attrib].fillna('').str.contains(pattern)]
 
-    # functions for getting the needed object
-    revmapping = {'g': get_dependents_of_id,
-                  'd': get_governors_of_id,
-                  'm': get_match,
-                  'h': get_all_corefs,
-                  'r': get_representative}
-
-    getfunc = revmapping.get(obj)
-   
     corp_folder = False
     if getattr(fobj, 'parent', False):
         corp_folder = fobj.parent
     corp_file = fobj.name
 
-    for sent_id, tok_id in list(matches.index):
+    for (sent_id, tok_id), word in zip(list(matches.index), matches['w']):
 
         metadd = metadata[sent_id]
         if corpus_name:
@@ -253,7 +244,7 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, subcorpor
                 tomove = int(adj[1])
             tok_id += tomove
 
-        the_token = Token(tok_id, df.ix[sent_id], sent_id, fobj, metadd)
+        the_token = Token(tok_id, df, sent_id, fobj, metadd, word)
 
         if obj == 'g':
             results[the_token.governor] += 1
