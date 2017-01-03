@@ -44,26 +44,31 @@ class Matches(list):
     def table(self, subcorpora='default', preserve_case=False, show=['w']):
 
         import pandas as pd
-        from corpkit.corpus import Corpora, Datalist
+        from corpkit.corpus import Corpora, Datalist, Subcorpus
 
         # wrong for datalists
         if subcorpora == 'default':
+
+            subcorpora = False
+            lev = getattr(self.corpus, 'level', False)
             if isinstance(self.corpus, Corpora):
                 subcorpora = 'corpus'
-            if getattr(self.corpus, 'level', 'c') and not isinstance(self.corpus, Datalist):
+            elif lev == 'd' or isinstance(self.corpus, Datalist):
+                if isinstance(self.corpus[0], Subcorpus):
+                    subcorpora = 'folder'
+                else:
+                    subcorpora = 'file'
+            elif lev == 'c':
                 subcorpora = 'folder'
-            elif getattr(self.corpus, 'level', 's') or isinstance(self.corpus, Datalist):
+            elif lev == 's':
                 subcorpora = 'file'
-            else:
-                subcorpora = False
-
+    
         from corpkit.interrogator import fix_show
         show = fix_show(show, 1)
 
         if not subcorpora:
-            ser = pd.Series(self.data)
-            ser.index = [k.display(show) for k in ser.index]
-            return ser.groupby(ser.index).sum().sort_values(ascending=False)
+            from collections import Counter
+            return pd.Series(Counter([k.display(show) for k in self.data])).sort_values(ascending=False)
         else:
             df = self.record()
             # should be apply
@@ -128,6 +133,12 @@ class Token(object):
         except KeyError:
             return
         return Token(self.g, self.df, self.s, self.fobj, self.metadata, **row)
+
+    @lazyprop
+    def x(self):
+        """Get wordclass"""
+        from corpkit.dictionaries.word_transforms import taglemma
+        return taglemma.get(self.p.lower(), self.p.lower())
 
     @lazyprop
     def dependents(self):

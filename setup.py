@@ -64,4 +64,3 @@ setup(name='corpkit',
                         "traitlets>=4.1.0"],
       dependency_links=['git+https://github.com/interrogator/tabview.git#egg=tabview-1.4.0',
                         'git+https://github.com/interrogator/tkintertable.git#egg=tkintertable-1.2'])
-  

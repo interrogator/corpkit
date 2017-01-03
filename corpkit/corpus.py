@@ -68,7 +68,7 @@ class Corpus(object):
         # moved into the determine_datatype() funct.
         
         if self.level == 'd':
-            self.singlefile = len(self._dlist) > 1
+            self.singlefile = len(self._dlist) == 1
         else:
             self.singlefile = False
             if os.path.isfile(self.path):
@@ -305,8 +305,8 @@ class Corpus(object):
             showing = 'files'
             sclen = len(self.files)
 
-        show = 'Corpus at %s:\n\nData type: %s\nNumber of %s: %d\n' % (
-            self.path, self.datatype, showing, sclen)
+        show = 'Corpus at %s:\n\nNumber of %s: %d\n' % (
+            self.path, showing, sclen)
         val = self.symbolic if self.symbolic else 'default'
         show += 'Subcorpora: %s\n' % val
         if self.singlefile:
@@ -757,7 +757,7 @@ class Corpus(object):
 
         kwargs['multiprocess'] = par
         res = interrogator(self, search, *args, **kwargs)
-        bf = 1 if multiprocess else 2
+        bf = 1 if kwargs.get('multiprocess') else 2
         timestring("Finished! %s total results." % format(res.totals, ','), blankfirst=bf)
         return res
 

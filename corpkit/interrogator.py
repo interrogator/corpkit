@@ -752,4 +752,8 @@ def interrogator(corpus,
     
     signal.signal(signal.SIGINT, original_sigint)
 
-    return matches[:]
+    if kwargs.get('paralleling', None) is None:
+        return interro
+    else:
+        return matches[:]
+        

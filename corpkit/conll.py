@@ -202,10 +202,66 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False,
         corp_folder = fobj.parent
     corp_file = fobj.name
 
+    # this apply code seems to be slower! still, cython could happen one day.
+    #def make_tok(row, df=False, metadata=False, fobj=False, corpus_name=False, corp_folder=False, corp_file=False, adjacent=False):
+    #    from corpkit.matches import Token
+    #    s, i = row.name
+    #    if adjacent:
+    #        if adjacent[0] == '+':
+    #            tomove = -int(i)
+    #        elif adjacent[0] == '-':
+    #            tomove = int(i)
+    #        i += tomove
+    #    md = metadata[s]
+    #    if corp_folder:
+    #        md['folder'] = corp_folder
+    #    if corpus_name:
+    #        md['corpus'] = corpus_name
+    #    md['file'] = corp_file
+    #    return Token(i, df, s, fobj, md, **row.to_dict())
+
+    #applied = matches.apply(make_tok, axis=1, df=df, metadata=metadata, fobj=fobj,
+    #                        corpus_name=False, corp_folder=False, corp_file=False,
+    #                        adjacent=adjacent)
+#
+    #for t in applied.values:
+#
+    #    if coref:
+    #        the_tokens = t.corefs()
+    #    else:
+    #        the_tokens = [t]
+#
+    #    for tok in the_tokens:
+#
+    #        if obj == 'g':
+    #            for depe in tok.dependents:
+    #                out.append(depe)
+#
+    #        if obj == 'a':
+    #            for depe in tok.descendents:
+    #                out.append(depe)
+#
+    #        elif obj == 'd':
+    #            out.append(tok.governor)
+#
+    #        elif obj == 'p':
+    #            for govo in tok.ancestors:
+    #                out.append(govo)
+#
+    #        elif obj == 'm':
+    #            out.append(tok)
+#
+    #        elif obj == 'h':
+    #            out.append(tok.head())
+    #
+    #        elif obj == 'r':
+    #           out.append(tok(representative()))
+    #
+    #return out
+
     # todo: could we use apply here?
     for (sent_id, tok_id), dat in matches.iterrows():
         #_w, _l, _p, _e, _m, _f, _d, _c = dat.values
-
 
         metadd = metadata[sent_id]
 
