@@ -30,8 +30,7 @@ class Match(object):
             raise NotImplementedError("Matches do not come from the same file, so they cannot be compared.")
         return ((self.sent_id, self.tok_id) < (other.sent_id, other.tok_id))
 
-from collections import Counter
-class Matches(Counter):
+class Matches(list):
     """
     Store search results in an abstract, intermediate way
     """
@@ -53,11 +52,11 @@ class Matches(Counter):
         try:
             all_meta_fields = list(self.corpus.metadata['fields'].keys())
         except:
-            all_meta_fields = list(Corpus(self.corpus).metadata['fields'].keys())
+            all_meta_fields = list(Corpus(self.corpus, print_info=False).metadata['fields'].keys())
         fields = list(sorted(['parse', 'folder', 'file'] + all_meta_fields))
-        for k, v in self.data.items():
+        for k in self.data:
             line = [k.metadata.get(key, 'none') for key in fields]
-            line += [k.sent_id, k.idx, k, v]
+            line += [k.sent_id, k.idx, k, 1]
             record_data.append(line)
         column_names = fields + ['sent_id', 'tok_id', 'entry', 'count']
 
@@ -72,6 +71,7 @@ class Matches(Counter):
         return df
 
     def table(self, subcorpora='default', preserve_case=False, show=['w']):
+
         import pandas as pd
         from corpkit.corpus import Corpora, Datalist
 
