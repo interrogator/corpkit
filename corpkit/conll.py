@@ -42,7 +42,7 @@ def parse_conll(f,
         for line in sent.split('\n'):
             if line and not line.startswith('#') \
                 and not just_meta:
-                splitdata.append('\n%d\t%s' % (count, line))
+                continue
             else:
                 line = line.lstrip('# ')
                 if '=' in line:
@@ -53,32 +53,18 @@ def parse_conll(f,
         return metadata
 
     # happens with empty files
-    if not splitdata:
+    if not metadata:
         return
 
-    # head can only be as long as the list of cols in the df
-    num_tabs = splitdata[0].strip('\t').count('\t')
-    head = head[:num_tabs]
-    
-    # introduce sentence index for multiindex
-    #for i, d in enumerate(splitdata, start=1):
-    #    d = d.replace('\n', '\n%s\t' % str(i))
-    #    splitdata[i-1] = d
-
-    # turn into something pandas can read    
-    data = '\n'.join(splitdata)
-    data = data.replace('\n\n', '\n') + '\n'
-
-    # remove slashes as early as possible
-    data = data.replace('/', '-slash-')
-
-    # open with sent and token as multiindex
-    try:
-        df = pd.read_csv(StringIO(data), sep='\t', header=None,
-                         names=['s'] + head, index_col=['s', 'i'], usecols=None)
-        #df.index = pd.MultiIndex.from_tuples([(1, i) for i in df.index])
-    except ValueError:
-        return
+    df = pd.read_csv(f, sep='\t', header=None, na_filter=False, memory_map=True, comment="#", names=head, usecols=None, index_col=['i'])
+    c = 0
+    newlev = []
+    for i in df.index:
+        if i == 1:
+            c += 1
+        newlev.append((c, i))
+    ix = pd.MultiIndex.from_tuples(newlev)
+    df.index = ix
     df._metadata = metadata
     return df
 
@@ -202,7 +188,7 @@ def get_all_corefs(s, i, df, coref=False):
     except:
         return [(s, i)]
 
-def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, subcorpora=False, results=False, metadata=False, fobj=False, corpus_name=False):
+def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, subcorpora=False, metadata=False, fobj=False, corpus_name=False):
     """
     Search the dataframe for a single criterion
 
@@ -227,6 +213,8 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, subcorpor
         corp_folder = fobj.parent
     corp_file = fobj.name
 
+
+    # todo: could we use apply here?
     for (sent_id, tok_id), word in zip(list(matches.index), matches['w']):
 
         metadd = metadata[sent_id]
@@ -247,13 +235,13 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, subcorpor
         the_token = Token(tok_id, df, sent_id, fobj, metadd, word)
 
         if obj == 'g':
-            results[the_token.governor] += 1
+            out.append(the_token.governor)
 
         elif obj == 'd':
             raise NotImplementedError
 
         elif obj == 'm':
-            results[the_token] += 1
+            out.append(the_token)
 
         elif obj == 'h':
             raise NotImplementedError
@@ -261,7 +249,7 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, subcorpor
         elif obj == 'r':
             raise NotImplementedError
 
-    return results
+    return out
 
 def show_fix(show):
     """show everything"""
@@ -1156,7 +1144,7 @@ def pipeline(f=False,
     all_exclude = []
 
     from collections import Counter
-    all_res = Counter()
+    all_res = []
 
     # todo: this could become obsolete
     if from_df is False or from_df is None:
@@ -1232,7 +1220,7 @@ def pipeline(f=False,
     else:
         for k, v in search.items():
             adj, k = determine_adjacent(k)
-            all_res = search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, results=all_res, metadata=metadata, fobj=fobj, corpus_name=corpus_name)
+            all_res += search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, metadata=metadata, fobj=fobj, corpus_name=corpus_name)
 
     if exclude:
         for k, v in exclude.items():
