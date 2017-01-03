@@ -162,11 +162,44 @@ class Token(object):
                 deps = d.dependents
         return out
 
+    @lazyprop
+    def head(self):
+        if self.c.endswith('*'):
+            return self
+        else:
+            to_find = self.c
+            matches = self.df[self.df['c'] == to_find]
+            if matches:
+                m = matches.iloc[0]
+                # metadata here is actually wrong!
+                return Token(m.name[1], self.df, m.name[0], self.fobj, self.metadata, **m.to_dict())
+            else:
+                return
+
+    @lazyprop
+    def corefs(self):
+        out = []
+        just_same_coref = self.df.loc[self.df['c'] == self.c]
+        for (s, i), dat in just_same_coref.iterrows():
+            out.append(Token(i, self.df, s, self.fobj, self.metadata, **dat.to_dict()))
+        return out
+
+    @lazyprop
+    def representative(self):
+        to_find = self.c.rstrip('*')
+        matches = self.df[self.df['c'] == to_find + '*']
+        if matches:
+            m = matches.iloc[0]
+            # metadata here is actually wrong!
+            return Token(m.name[1], self.df, m.name[0], self.fobj, self.metadata, **m.to_dict())
+        else:
+            return
+
     def __hash__(self):
         return hash((self.i, self.s, self.path))
     
     def __eq__(self, other):
-        attrs = ['path', 's', 'idx']
+        attrs = ['path', 's', 'i']
         return all([getattr(self, a) == getattr(other, a) for a in attrs])
 
     def display(self, show=['mw'], preserve_case=False):

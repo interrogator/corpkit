@@ -254,6 +254,8 @@ class Corpus(object):
         """
         Lazy-load a list of all files in a corpus
         """
+        if self.level == 'd':
+            return self._dlist
         if self.level == 'f':
             return Datalist([self])
         if self.files:

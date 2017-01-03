@@ -40,6 +40,9 @@ def pmultiquery(corpus,
         pass
     import multiprocessing
 
+    if isinstance(corpus, Datalist):
+        corpus = Corpus(corpus, level='d', print_info=False)
+
     locs = locals()
     for k, v in kwargs.items():
         locs[k] = v
@@ -167,5 +170,5 @@ def pmultiquery(corpus,
     if print_info:
         if terminal:
             print(terminal.move(terminal.height-1, 0))
-            
+
     return interro

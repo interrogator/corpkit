@@ -205,7 +205,10 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False,
     # todo: could we use apply here?
     for (sent_id, tok_id), dat in matches.iterrows():
         #_w, _l, _p, _e, _m, _f, _d, _c = dat.values
+
+
         metadd = metadata[sent_id]
+
         if corpus_name:
             metadd['corpus'] = corpus_name
         if corp_folder:
@@ -222,29 +225,36 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False,
 
         the_token = Token(tok_id, df, sent_id, fobj, metadd, **dat.to_dict())
 
-        if obj == 'g':
-            for depe in the_token.dependents:
-                out.append(depe)
+        if coref:
+            the_tokens = the_token.corefs()
+        else:
+            the_tokens = [the_token]
 
-        if obj == 'a':
-            for depe in the_token.descendents:
-                out.append(depe)
+        for tok in the_tokens:
 
-        elif obj == 'd':
-            out.append(the_token.governor)
+            if obj == 'g':
+                for depe in tok.dependents:
+                    out.append(depe)
 
-        elif obj == 'p':
-            for govo in the_token.ancestors:
-                out.append(govo)
+            if obj == 'a':
+                for depe in tok.descendents:
+                    out.append(depe)
 
-        elif obj == 'm':
-            out.append(the_token)
+            elif obj == 'd':
+                out.append(tok.governor)
 
-        elif obj == 'h':
-            raise NotImplementedError
+            elif obj == 'p':
+                for govo in tok.ancestors:
+                    out.append(govo)
 
-        elif obj == 'r':
-            raise NotImplementedError
+            elif obj == 'm':
+                out.append(tok)
+
+            elif obj == 'h':
+                out.append(tok.head())
+
+            elif obj == 'r':
+                out.append(tok(representative()))
 
     return out
 
@@ -1141,6 +1151,7 @@ def pipeline(f=False,
     all_exclude = []
 
     from collections import Counter
+    from corpkit.matches import Token
     all_res = []
 
     # todo: this could become obsolete
@@ -1213,22 +1224,27 @@ def pipeline(f=False,
     if len(search) == 1 and list(search.keys())[0] == 'w' \
                         and hasattr(list(search.values())[0], 'pattern') \
                         and list(search.values())[0].pattern == r'.*':
-        all_matches = list(df.index)
+        all_res = []
+        for (s, i), dat in df.iterrows():
+            all_res.append(Token(i, df, s, f, metadata, **dat.to_dict()))
     else:
         for k, v in search.items():
             adj, k = determine_adjacent(k)
             all_res += search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, metadata=metadata, fobj=fobj, corpus_name=corpus_name)
+        if searchmode == 'all':
+            all_res = [k for k, v in Counter(all_res).items() if v == len(search)]
 
     if exclude:
         for k, v in exclude.items():
             adj, k = determine_adjacent(k)
-            all_exclude = search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, results=all_res, metadata=metadata, fobj=fobj, corpus_name=corpus_name)
-        all_exclude = remove_by_mode(all_exclude, excludemode, exclude)
-        all_matches = all_matches.difference(all_exclude)
-
-    # todo
-    #if coref:
-    #    all_res = get_corefs(df, all_res)
+            all_exclude += search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, metadata=metadata, fobj=fobj, corpus_name=corpus_name)
+        #all_exclude = remove_by_mode(all_exclude, excludemode, exclude)
+        if excludemode == 'all':
+            all_exclude = set(k for k, v in Counter(all_exclude).items() if v == len(search))
+        else:
+            all_exclude = set(all_exclude)
+        
+        all_res = list(set(all_res).difference(all_exclude))
 
     return all_res
 
