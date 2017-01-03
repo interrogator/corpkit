@@ -41,16 +41,19 @@ class Matches(Counter):
         from corpkit.corpus import Corpus
 
         self.data = data
-        self.corpus = Corpus(corpus, print_info=False)
+        self.corpus = corpus
 
         super(Matches, self).__init__(data)
 
     def record(self):
         import pandas as pd
         from corpkit.build import get_all_metadata_fields
-        from corpkit.corpus import Corpora
+        from corpkit.corpus import Corpora, Corpus, Datalist
         record_data = []
-        all_meta_fields = list(self.corpus.metadata['fields'].keys())
+        try:
+            all_meta_fields = list(self.corpus.metadata['fields'].keys())
+        except:
+            all_meta_fields = list(Corpus(self.corpus).metadata['fields'].keys())
         fields = list(sorted(['parse', 'folder', 'file'] + all_meta_fields))
         for k, v in self.data.items():
             line = [k.metadata.get(key, 'none') for key in fields]
@@ -70,15 +73,15 @@ class Matches(Counter):
 
     def table(self, subcorpora='default', preserve_case=False, show=['w']):
         import pandas as pd
-        from corpkit.corpus import Corpora
+        from corpkit.corpus import Corpora, Datalist
 
         # wrong for datalists
         if subcorpora == 'default':
             if isinstance(self.corpus, Corpora):
                 subcorpora = 'corpus'
-            if getattr(self.corpus, 'level', 'c'):
+            if getattr(self.corpus, 'level', 'c') and not isinstance(self.corpus, Datalist):
                 subcorpora = 'folder'
-            elif getattr(self.corpus, 'level', 's'):
+            elif getattr(self.corpus, 'level', 's') or isinstance(self.corpus, Datalist):
                 subcorpora = 'file'
             else:
                 subcorpora = False

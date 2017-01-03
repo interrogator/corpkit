@@ -743,12 +743,12 @@ def interrogator(corpus,
 
     matches = Matches(results, corpus)
 
-    query_bits = {'search': search,
+    querybits = {'search': search,
                   'exclude': exclude,
                   'show': show,
                   'subcorpora': subcorpora}
 
-    interro = Interrogation(data=matches, corpus=corpus, totals=len(matches), query=query_bits)
+    interro = Interrogation(data=matches, corpus=corpus, totals=len(matches), query=querybits)
     return interro
 
     #return make_result_from_counter(results, subcorpora, show=False)

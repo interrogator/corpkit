@@ -44,7 +44,12 @@ def pmultiquery(corpus,
     if not isinstance(multiprocess, int):
         multiprocess = multiprocessing.cpu_count()
 
-    num_files = len(corpus.all_files)
+    if getattr(corpus, 'all_files', False):
+        files = corpus.all_files
+    else:
+        files = corpus
+
+    num_files = len(files)
 
     def partition(lst, n):
         q, r = divmod(len(lst), n)
@@ -52,7 +57,7 @@ def pmultiquery(corpus,
         chunks = [lst[indices[i]:indices[i+1]] for i in range(n)]
         return [i for i in chunks if i]
 
-    chunks = partition(corpus.all_files, multiprocess)
+    chunks = partition(files, multiprocess)
 
     if len(chunks) < multiprocess:
         multiprocess = len(chunks)
@@ -147,143 +152,10 @@ def pmultiquery(corpus,
     except:
         totals = resbranch.sum()
 
-    interro = Interrogation(data=matches, corpus=corpus)
+    querybits = {'search': search,
+                  'exclude': exclude,
+                  'show': show,
+                  'subcorpora': subcorpora}
 
+    interro = Interrogation(data=matches, corpus=corpus, query=querybits)
     return interro
-
-    # remove unpicklable bits from query
-    from types import ModuleType, FunctionType, BuiltinMethodType, BuiltinFunctionType
-    badtypes = (ModuleType, FunctionType, BuiltinFunctionType, BuiltinMethodType)
-    qlocs = {k: v for k, v in locs.items() if not isinstance(v, badtypes)}
-
-    if hasattr(qlocs.get('corpus', False), 'name'):
-        qlocs['corpus'] = qlocs['corpus'].path
-    else:
-        qlocs['corpus'] = list([i.path for i in qlocs.get('corpus', [])])
-
-    # return just a concordance
-    from corpkit.interrogation import Concordance
-    if kwargs.get('conc') == 'only':
-        concs = pd.concat([x for x in res])
-        thetime = strftime("%H:%M:%S", localtime())
-        concs = concs.reset_index(drop=True)
-        if kwargs.get('maxconc'):
-            concs = concs[:kwargs.get('maxconc')]
-        lines = Concordance(concs)
-        
-        if save:
-            lines.save(save, print_info=print_info)
-
-        if print_info:
-            print('\n\n%s: Finished! %d results.\n\n' % (thetime, format(len(concs.index), ',')))
-
-        return lines
-
-    # return interrodict (to become multiindex)
-    if isinstance(res[0], Interrodict) or not all(isinstance(i.results, Series) for i in res):
-        out = OrderedDict()
-        for interrog, d in zip(res, ds):
-            for unpicklable in ['note', 'root']:
-                interrog.query.pop(unpicklable, None)
-            try:
-                out[interrog.query['outname']] = interrog
-            except KeyError:
-                out[d['outname']] = interrog
-
-        idict = Interrodict(out)
-        
-        if print_info:
-            thetime = strftime("%H:%M:%S", localtime())
-            print("\n\n%s: Finished! Output is multi-indexed." % thetime)
-        idict.query = qlocs
-
-        if save:
-            idict.save(save, print_info=print_info)
-
-        return idict
-
-    # make query and total branch, save, return
-    # todo: standardise this so we don't have to guess transposes
-    # 
-    else:
-        if multiple_corpora:
-            sers = [i.results for i in res]
-            out = DataFrame(sers, index=[i.query['outname'] for i in res])
-            out = out.reindex_axis(sorted(out.columns), axis=1) # sort cols
-            out = out.fillna(0) # nan to zero
-            out = out.astype(int) # float to int
-            out = out.T            
-        else:
-            # make a series from counts
-            if all(len(i.results) == 1 for i in res):
-                out = pd.concat([r.results for r in res])
-                out = out.sort_index()
-            else:
-                try:
-                    out = pd.concat([r.results for r in res], axis=1)
-                    out = out.T
-                    out.index = [i.query['outname'] for i in res]
-                except ValueError:
-                    return None
-                # format like normal
-                # this sorts subcorpora, which are cls
-                out = out[sorted(list(out.columns))]
-                # puts subcorpora in the right place
-                if not mult_corp_are_subs and multiple != 'subcorpora':
-                    out = out.T
-                if multiple == 'subcorpora':
-                    out = out.sort_index()
-                out = out.fillna(0) # nan to zero
-                out = out.astype(int)
-                if 'c' in show and mult_corp_are_subs:
-                    out = out.sum()
-                    out.index = sorted(list(out.index))
-
-        # sort by total
-        if isinstance(out, DataFrame):
-
-            out = out[list(out.sum().sort_values(ascending=False).index)]
-
-            # really need to figure out the deal with tranposing!
-            if all(x.endswith('.xml') for x in list(out.columns)) \
-            or all(x.endswith('.txt') for x in list(out.columns)) \
-            or all(x.endswith('.conll') for x in list(out.columns)):
-                out = out.T
-                
-            if kwargs.get('nosubmode'):
-                out = out.sum()
-    
-        from corpkit.interrogation import Interrogation
-        tt = out.sum(axis=1) if isinstance(out, DataFrame) else out.sum()
-        out = Interrogation(results=out, totals=tt, query=qlocs)
-
-        if hasattr(out, 'columns') and len(out.columns) == 1:
-            out = out.sort_index()   
-
-        if kwargs.get('conc') is True:
-            try:
-                concs = pd.concat([x.concordance for x in res], ignore_index=True)
-                concs = concs.sort_values(by='c')
-                concs = concs.reset_index(drop=True)
-                if kwargs.get('maxconc'):
-                    concs = concs[:kwargs.get('maxconc')]
-                out.concordance = Concordance(concs)
-            except ValueError:
-                out.concordance = None
-
-        thetime = strftime("%H:%M:%S", localtime())
-        if terminal:
-            print(terminal.move(terminal.height-1, 0))
-        if print_info:
-            if terminal:
-                print(terminal.move(terminal.height-1, 0))
-            if hasattr(out.results, 'columns'):
-                print('%s: Interrogation finished! %s unique results, %s total.' % (thetime, format(len(out.results.columns), ','), format(out.totals.sum(), ',')))
-            else:
-                print('%s: Interrogation finished! %s matches.' % (thetime, format(tt, ',')))
-        if save:
-            out.save(save, print_info = print_info)
-
-        if list(out.results.index) == ['0'] and not kwargs.get('df1_always_df'):
-            out.results = out.results.ix[0].sort_index()
-        return out

@@ -61,7 +61,9 @@ class Interrogation(object):
 
     @lazyprop
     def results(self):
-        subcorpora = self.query.get('subcorpora', 'default')
+        subcorpora = self.query.get('subcorpora')
+        if not subcorpora:
+            subcorpora = 'default'
         show = self.query.get('show', ['mw'])
         return self.data.table(subcorpora=subcorpora, show=show)
 

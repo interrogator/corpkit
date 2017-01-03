@@ -755,8 +755,6 @@ class Corpus(object):
             else:
                 kwargs['just_metadata'] = self.just
 
-        kwargs.pop('subcorpora', False)
-
         kwargs['multiprocess'] = par
         res = interrogator(self, search, *args, **kwargs)
         return res
@@ -1241,7 +1239,7 @@ class File(Corpus):
 class Datalist(list):
 
     def __init__(self, data, **kwargs):
-
+        self.data = data
         self.symbolic = kwargs.get('symbolic', False)
         self.just = kwargs.get('just', False)
         self.skip = kwargs.get('skip', False)
@@ -1292,7 +1290,9 @@ class Datalist(list):
         
         kwargs['just'] = self.just
         kwargs['skip'] = self.skip
-        kwargs['subcorpora'] = self.symbolic
+
+        #if self.symbolic and kwargs.get('subcorpora', 'xx') != 'xx':
+        #    kwargs['subcorpora'] = self.symbolic
 
         from corpkit.interrogator import interrogator
         interro = interrogator(self, *args, **kwargs)
