@@ -45,20 +45,23 @@ class Matches(object):
     def record(self):
         import pandas as pd
         from corpkit.build import get_all_metadata_fields
+        from corpkit.corpus import Corpora
         record_data = []
         fields = list(sorted(['parse', 'folder', 'file'] + get_all_metadata_fields(self.corpus.path, include_speakers=True)))
         for k, v in self.data.items():
             line = [k.metadata.get(key, 'none') for key in fields]
-            line += [k, v]
+            line += [k.sent_id, k.idx, k, v]
             record_data.append(line)
-        column_names = fields + ['entry', 'count']
+        column_names = fields + ['sent_id', 'tok_id', 'entry', 'count']
 
         df = pd.DataFrame(record_data)
         df.columns = column_names
-        return df
 
-        df = df.groupby(df.index).sum()
-        df = df[df.sum().sort_values(ascending=False).index]
+        sorts = ['corpus'] if isinstance(self.corpus, Corpora) else []
+        if getattr(self.corpus, 'level', 's'):
+            sorts.append('folder')
+        sorts += ['file', 'sent_id', 'tok_id']
+        df = df.sort_values(sorts).reset_index(drop=True)
         return df
 
     def table(self, subcorpora='default', preserve_case=False, show=['w']):
