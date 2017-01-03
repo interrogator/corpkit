@@ -1,35 +1,5 @@
 import pandas as pd
 
-import functools
-
-@functools.total_ordering
-class Match(object):
-    """
-    Store a single search result, with everything needed to generate views
-    """
-
-    def __init__(self, filepath, subcorpora, sent, tok, sent_id, tok_id):
-        self.file = filepath
-        self.subcorpora = subcorpora
-        self.sent = sent
-        self.tok = tok
-        self.sent_id = sent_id
-        self.tok_id = tok_id
-        super(Match, self).__init__()
-
-    def __eq__(self, other):
-        attrs = ['file', 'subcorpora', 'sent_id', 'tok_id']
-        return all([getattr(self, a) == getattr(other, a) for a in attrs])
-
-    def _is_valid_operand(self, other):
-        samefile = self.file == other.file
-        return (hasattr(other, 'tok_id') and hasattr(other, 'sent_id') and samefile)
-
-    def __lt__(self, other):
-        if not self._is_valid_operand(other):
-            raise NotImplementedError("Matches do not come from the same file, so they cannot be compared.")
-        return ((self.sent_id, self.tok_id) < (other.sent_id, other.tok_id))
-
 class Matches(list):
     """
     Store search results in an abstract, intermediate way
@@ -57,9 +27,9 @@ class Matches(list):
         
         for k in self.data:
             line = [k.metadata.get(key, 'none') for key in fields]
-            line += [k.sent_id, k.idx, k]
+            line += [k.s, k.i, k]
             record_data.append(line)
-        column_names = fields + ['sent_id', 'tok_id', 'entry']
+        column_names = fields + ['s', 'i', 'entry']
 
         df = pd.DataFrame(record_data)
         df.columns = column_names
@@ -67,7 +37,7 @@ class Matches(list):
         sorts = ['corpus'] if isinstance(self.corpus, Corpora) else []
         if getattr(self.corpus, 'level', 's'):
             sorts.append('folder')
-        sorts += ['file', 'sent_id', 'tok_id']
+        sorts += ['file', 's', 'i']
         df = df.sort_values(sorts).reset_index(drop=True)
         return df
 
@@ -117,7 +87,7 @@ class Matches(list):
         dummy_ser = pd.Series([0 for i in rec.index])
         loc = list(rec.columns).index('entry')
         rec.insert(loc, 'l', [0 for i in rec.index])
-        rec = rec.drop(['count', 'parse'], axis=1)
+        rec = rec.drop(['parse'], axis=1)
         rec.rename(columns = {'entry':'m'}, inplace=True)
         clines = rec.apply(_concer, show=show, axis=1)
         return Concordance(clines)
@@ -129,83 +99,74 @@ class Token(object):
     Model a token in the corpus
     """
 
-    def __init__(self, idx, df, sent_id, fobj, metadata, word):
-        self.idx = idx
-        self.sent_id = sent_id
+    def __init__(self, idx, df, sent_id, fobj, metadata, **kwargs):
+
+        kwargs['i'] = idx
+        kwargs['s'] = sent_id
+        
         self.df = df
         self.fobj = fobj
         self.path = fobj.path
         self.metadata = metadata
-        self._w = word
-        if self.idx != 0:
-            self.is_root = False
-        else:
-            self.is_root = True
+
+        from corpkit.constants import CONLL_COLUMNS
+        for name in ['s'] + CONLL_COLUMNS:
+            setattr(self, name, kwargs.get(name, 'root'))
+
+        self.is_root = idx == 0
 
         super(Token, self).__init__()
-
-    def getter(self, att):
-        """
-        Gets an att (word, lemma, etc) from a token
-        """
-        return self.sent.ix[self.idx][att]
     
-    def _i(self):
-        return self.idx
-
-    def _s(self):
-        return self.sent_id
-
     @lazyprop
     def sent(self):
-        return self.df.ix[self.sent_id]
-
-    @lazyprop
-    def _l(self):
-        if self.idx != 0:
-            return self.getter('l')
-        else:
-            return 'root'
-
-    @lazyprop
-    def _p(self):
-        if self.idx != 0:
-            return self.getter('p')
-        else:
-            return 'root'
-
-    @lazyprop
-    def _f(self):
-        if self.idx != 0:
-            return self.getter('f')
-        else:
-            return 'root'
-
-    @lazyprop
-    def _e(self):
-        if self.idx != 0:
-            return self.getter('e')
-        else:
-            return 'root'
+        return self.df.ix[self.s]
 
     @lazyprop
     def governor(self):
-        new_idx = self.sent.ix[self.idx]['g']
         try:
-            new_word = self.sent.ix[new_idx]['w'] if new_idx else 'root'
+            row = self.sent.ix[self.g].to_dict() if self.g else {}
         except KeyError:
             return
-        return Token(new_idx, self.df, self.sent_id, self.fobj, self.metadata, new_word)
+        return Token(self.g, self.df, self.s, self.fobj, self.metadata, **row)
 
     @lazyprop
     def dependents(self):
-        pass
+        out = []
+        new_idxs = [int(i) for i in self.sent.ix[self.i]['d'].split(',')]
+        for new_idx in new_idxs:
+            try:
+                row = self.sent.ix[new_idx].to_dict()
+            except KeyError:
+                continue
+            out.append(Token(new_idx, self.df, self.s, self.fobj, self.metadata, **row))
+        return out
+
+    @lazyprop
+    def ancestors(self):
+        out = []
+        while True:
+            self = self.governor
+            if self:
+                out.append(self)
+            else:
+                break
+        return out
+
+    @lazyprop
+    def descendents(self):
+        out = []
+        deps = self.dependents
+        while deps:
+            for d in deps:
+                out.append(d)
+                deps = d.dependents
+        return out
 
     def __hash__(self):
-        return hash((self.idx, self.sent_id, self.path))
+        return hash((self.i, self.s, self.path))
     
     def __eq__(self, other):
-        attrs = ['path', 'sent_id', 'idx']
+        attrs = ['path', 's', 'idx']
         return all([getattr(self, a) == getattr(other, a) for a in attrs])
 
     def display(self, show=['mw'], preserve_case=False):
@@ -220,7 +181,8 @@ class Token(object):
                 tok = self.governor
             elif obj == 'm':
                 tok = self
-            out.append(getattr(tok, '_' + att, 'none'))
+            out.append(getattr(tok, att, 'none'))
+
         out = '/'.join(out)
 
         if preserve_case:

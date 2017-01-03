@@ -2,7 +2,7 @@
 corpkit: process CONLL formatted data
 """
 
-from corpkit.matches import Match, Token
+from corpkit.matches import Token
 
 def parse_conll(f,
                 first_time=False,
@@ -104,21 +104,6 @@ def get_governors_of_id(idx, df=False, repeat=False, attr=False, coref=False):
         return getattr(df.loc[sent_id,govid], attr, 'root')
     return [(sent_id, govid)]
 
-def get_match(idx, df=False, repeat=False, attr=False, metadata=False, subcorpora=False, fobj=False, **kwargs):
-    """
-    Return matches
-    """
-
-    sent_id, tok_id = getattr(idx, 'name', idx)
-    rel_metadata = metadata[sent_id]
-
-    if attr:
-        mtch = df[attr].ix[sent_id, tok_id]
-    else:
-        mtch = [(sent_id, tok_id)]
-
-    return [Token(tok_id, df.ix[sent_id], sent_id, fobj, metadata)]
-
 def get_head(idx, df=False, repeat=False, attr=False, **kwargs):
     """
     Get the head of a 'constituent'---'
@@ -191,7 +176,8 @@ def get_all_corefs(s, i, df, coref=False):
     except:
         return [(s, i)]
 
-def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, subcorpora=False, metadata=False, fobj=False, corpus_name=False):
+def search_this(df, obj, attrib, pattern, adjacent=False, coref=False,
+                subcorpora=False, metadata=False, fobj=False, corpus_name=False):
     """
     Search the dataframe for a single criterion
 
@@ -216,9 +202,9 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, subcorpor
         corp_folder = fobj.parent
     corp_file = fobj.name
 
-
     # todo: could we use apply here?
-    for (sent_id, tok_id), word in zip(list(matches.index), matches['w']):
+    for (sent_id, tok_id), dat in matches.iterrows():
+        #_w, _l, _p, _e, _m, _f, _d, _c = dat.values
         metadd = metadata[sent_id]
         if corpus_name:
             metadd['corpus'] = corpus_name
@@ -234,13 +220,22 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, subcorpor
                 tomove = int(adj[1])
             tok_id += tomove
 
-        the_token = Token(tok_id, df, sent_id, fobj, metadd, word)
+        the_token = Token(tok_id, df, sent_id, fobj, metadd, **dat.to_dict())
 
         if obj == 'g':
-            out.append(the_token.governor)
+            for depe in the_token.dependents:
+                out.append(depe)
+
+        if obj == 'a':
+            for depe in the_token.descendents:
+                out.append(depe)
 
         elif obj == 'd':
-            raise NotImplementedError
+            out.append(the_token.governor)
+
+        elif obj == 'p':
+            for govo in the_token.ancestors:
+                out.append(govo)
 
         elif obj == 'm':
             out.append(the_token)
