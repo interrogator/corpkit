@@ -240,7 +240,7 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, subcorpor
 
         metadd = metadata[sent_id]
         if corpus_name:
-            metadd['corpus'] = corp_name
+            metadd['corpus'] = corpus_name
         if corp_folder:
             metadd['folder'] = corp_folder
         

@@ -7,6 +7,7 @@ from __future__ import print_function
 from collections import OrderedDict
 import pandas as pd
 from corpkit.process import classname
+from corpkit.matches import Matches
 
 class Interrogation(object):
     """
@@ -15,7 +16,7 @@ class Interrogation(object):
     Pandas object, which can be edited or plotted.
     """
 
-    def __init__(self, results=None, totals=None, query=None, concordance=None):
+    def __init__(self, results=None, totals=None, query=None, concordance=None, data=None, corpus=None):
         """Initialise the class"""
         self.results = results
         """pandas `DataFrame` containing counts for each subcorpus"""
@@ -25,6 +26,11 @@ class Interrogation(object):
         """`dict` containing values that generated the result"""
         self.concordance = concordance
         """pandas `DataFrame` containing concordance lines, if concordance lines were requested."""
+        self.corpus = corpus
+        """The corpus interrogated"""
+        self.data = data
+        """The abstract interrogation data, used to create views"""
+        super(Interrogation, self).__init__()
 
     def __str__(self):
         if self.query.get('corpus'):
@@ -42,6 +48,15 @@ class Interrogation(object):
             return "<%s instance: %d total>" % (classname(self), self.totals.sum())
         except AttributeError:
             return "<%s instance: %d total>" % (classname(self), self.totals)
+
+    def record(self, **kwargs):
+        return self.data.record(**kwargs)
+
+    def table(self, **kwargs):
+        return self.data.table(**kwargs)
+
+    def conc(self, **kwargs):
+        return self.data.conc(**kwargs)
 
     def edit(self, *args, **kwargs):
         """

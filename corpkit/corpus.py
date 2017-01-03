@@ -735,6 +735,7 @@ class Corpus(object):
         """
         from corpkit.interrogator import interrogator
         from corpkit.matches import Matches
+        from corpkit.interrogation import Interrogation
         import pandas as pd
         par = kwargs.pop('multiprocess', None)
         kwargs.pop('corpus', None)
@@ -758,45 +759,16 @@ class Corpus(object):
 
         kwargs['multiprocess'] = par
         res = interrogator(self, search, *args, **kwargs)
-        return Matches(res, self)
+        matches = Matches(res, self)
+        subc = subcorpora if kwargs.get('subcorpora') else 'default'
+        resbranch = matches.table(subcorpora=subc, show=kwargs.get('show', ['mw']))
+        try:
+            totals = resbranch.sum(axis=1)
+        except:
+            totals = resbranch.sum()
 
-
-        if kwargs.get('conc', False) == 'only':
-            return res
-
-        from corpkit.interrogation import Interrodict
-        if isinstance(res, Interrodict) and kwargs.get('use_interrodict'):
-            return res
-        elif isinstance(res, Interrodict) and not kwargs.get('use_interrodict', False):
-            return res.multiindex()
-        else:
-            if subcorpora:
-                res.results.index.name = subcorpora
-
-
-        # sort by total
-        ind = list(res.results.index)
-        if isinstance(res.results, pd.DataFrame):
-            if not res.results.empty:
-                res.results = res.results[list(res.results.sum().sort_values(ascending=False).index)]
-                res.results = res.results.astype(int)
-
-            if all(i == 'none' or str(i).isdigit() for i in ind):
-                longest = max([len(str(i)) if str(i).isdigit() else 1 for i in ind])
-                res.results.index = [str(i).zfill(longest) for i in ind]
-                res.results = res.results.sort_index().astype(int)
-        else:
-            show = res.query.get('show', [])
-            outs = []
-            from corpkit.constants import transshow, transobjs
-            for bit in show:
-                name = transobjs.get(bit[0], bit[0]) + '-' + transshow.get(bit[-1], bit[-1])
-                name = name.replace('Match-', '').lower()
-                outs.append(name)
-            name = '/'.join(outs)
-            if name:
-                res.results.name = name
-        return res
+        interro = Interrogation(results=resbranch, totals=totals, concordance=matches.conc(), data=matches, corpus=self)
+        return interro
 
     def sample(self, n, level='f'):
         """
