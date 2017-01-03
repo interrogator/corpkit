@@ -87,6 +87,9 @@ class Matches(list):
             else:
                 subcorpora = False
 
+        from corpkit.interrogator import fix_show
+        show = fix_show(show, 1)
+
         if not subcorpora:
             ser = pd.Series(self.data)
             ser.index = [k.display(show) for k in ser.index]
@@ -145,10 +148,7 @@ class Token(object):
         """
         Gets an att (word, lemma, etc) from a token
         """
-        try:
-            return self.sent.ix[self.idx][att]
-        except (IndexError, TypeError, KeyError):
-            return 'root'
+        return self.sent.ix[self.idx][att]
     
     def _i(self):
         return self.idx
@@ -190,14 +190,12 @@ class Token(object):
 
     @lazyprop
     def governor(self):
+        new_idx = self.sent.ix[self.idx]['g']
         try:
-            new_idx = int(self.sent.ix[self.idx]['g'])
-        except:
-            print(self.fobj.path)
-            raise
-        new_word = self.sent.ix[new_idx]['w'] if new_idx else 'root'
-
-        return Token(new_idx, self.sent, self.sent_id, self.fobj, self.metadata, new_word)
+            new_word = self.sent.ix[new_idx]['w'] if new_idx else 'root'
+        except KeyError:
+            return
+        return Token(new_idx, self.df, self.sent_id, self.fobj, self.metadata, new_word)
 
     @lazyprop
     def dependents(self):
@@ -214,9 +212,6 @@ class Token(object):
         """
         Show token in a certain way
         """
-        from corpkit.interrogator import fix_show
-        from corpkit.constants import transshow
-        show = fix_show(show, 1)
         out = []
         # todo
         for bit in show:
