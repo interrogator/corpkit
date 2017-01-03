@@ -202,7 +202,7 @@ def get_all_corefs(s, i, df, coref=False):
     except:
         return [(s, i)]
 
-def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, subcorpora=False, results=False, metadata=False, fobj=False):
+def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, subcorpora=False, results=False, metadata=False, fobj=False, corpus_name=False):
     """
     Search the dataframe for a single criterion
 
@@ -230,8 +230,21 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, subcorpor
                   'r': get_representative}
 
     getfunc = revmapping.get(obj)
+   
+    corp_folder = False
+    if getattr(fobj, 'parent', False):
+        corp_folder = fobj.parent
+    corp_file = fobj.name
 
     for sent_id, tok_id in list(matches.index):
+
+        metadd = metadata[sent_id]
+        if corpus_name:
+            metadd['corpus'] = corp_name
+        if corp_folder:
+            metadd['folder'] = corp_folder
+        
+        metadd['file'] = corp_file
 
         if adjacent:
             if adjacent[0] == '+':
@@ -240,22 +253,22 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, subcorpor
                 tomove = int(adj[1])
             tok_id += tomove
 
-        the_token = Token(tok_id, df.ix[sent_id], sent_id, fobj, metadata[sent_id])
+        the_token = Token(tok_id, df.ix[sent_id], sent_id, fobj, metadd)
 
         if obj == 'g':
             results[the_token.governor] += 1
 
         elif obj == 'd':
-            pass
+            raise NotImplementedError
 
         elif obj == 'm':
             results[the_token] += 1
 
         elif obj == 'h':
-            pass
+            raise NotImplementedError
 
         elif obj == 'r':
-            pass
+            raise NotImplementedError
 
     return results
 
@@ -1139,6 +1152,7 @@ def pipeline(f=False,
              lem_instance=False,
              subcorpora=False,
              fobj=False,
+             corpus_name=False,
              **kwargs):
     """
     A basic pipeline for conll querying---some options still to do
@@ -1227,12 +1241,12 @@ def pipeline(f=False,
     else:
         for k, v in search.items():
             adj, k = determine_adjacent(k)
-            all_res = search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, results=all_res, metadata=metadata, fobj=fobj)
+            all_res = search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, results=all_res, metadata=metadata, fobj=fobj, corpus_name=corpus_name)
 
     if exclude:
         for k, v in exclude.items():
             adj, k = determine_adjacent(k)
-            all_exclude = search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, results=all_res, metadata=metadata, fobj=fobj)
+            all_exclude = search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, results=all_res, metadata=metadata, fobj=fobj, corpus_name=corpus_name)
         all_exclude = remove_by_mode(all_exclude, excludemode, exclude)
         all_matches = all_matches.difference(all_exclude)
 

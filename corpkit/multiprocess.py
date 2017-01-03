@@ -4,15 +4,13 @@ from __future__ import print_function
 
 def pmultiquery(corpus, 
                 search,
-                show='words',
-                query='any', 
+                exclude=False,
                 sort_by='total', 
                 save=False,
                 multiprocess='default', 
                 root=False,
                 note=False,
                 print_info=True,
-                subcorpora=False,
                 **kwargs
                ):
     """
@@ -27,141 +25,60 @@ def pmultiquery(corpus,
     import collections
     from collections import namedtuple, OrderedDict
     from time import strftime, localtime
-    import corpkit
     from corpkit.interrogator import interrogator
     from corpkit.interrogation import Interrogation, Interrodict
     from corpkit.process import canpickle
+    from corpkit.corpus import Corpus, Corpora, Datalist
     try:
         from joblib import Parallel, delayed
     except ImportError:
         pass
     import multiprocessing
 
+    corpus = Corpus(corpus)
+
     locs = locals()
     for k, v in kwargs.items():
         locs[k] = v
     in_notebook = locs.get('in_notebook')
 
-    def best_num_parallel(num_cores, num_queries):
-        """decide how many parallel processes to run
+    if not isinstance(multiprocess, int):
+        multiprocess = multiprocessing.cpu_count()
 
-        the idea, more or less, is to balance the load when possible"""
-        import corpkit
-        if num_queries <= num_cores:
-            return num_queries
-        if num_queries > num_cores:
-            if (num_queries / num_cores) == num_cores:
-                return int(num_cores)
-            if num_queries % num_cores == 0:
-                try:
-                    return max([int(num_queries / n) for n in range(2, num_cores) \
-                               if int(num_queries / n) <= num_cores])   
-                except ValueError:
-                    return num_cores
-            else:
-                import math
-                if (float(math.sqrt(num_queries))).is_integer():
-                    square_root = math.sqrt(num_queries)
-                    if square_root <= num_queries / num_cores: 
-                        return int(square_root)    
-        return num_cores
+    num_files = len(corpus.all_files)
 
-    num_cores = multiprocessing.cpu_count()
+    def partition(lst, n):
+        q, r = divmod(len(lst), n)
+        indices = [q*i + min(i, r) for i in range(n+1)]
+        chunks = [lst[indices[i]:indices[i+1]] for i in range(n)]
+        return [i for i in chunks if i]
 
-    # what is our iterable? ...
-    multiple = kwargs.get('multiple', False)
-    mult_corp_are_subs = False
-    if hasattr(corpus, '__iter__'):
-        if all(getattr(x, 'level', False) == 's' for x in corpus):
-            mult_corp_are_subs = True
+    chunks = partition(corpus.all_files, multiprocess)
 
-    non_first_sub = None
-    if subcorpora:
-        non_first_sub = subcorpora[1:] if isinstance(subcorpora, list) else None
-        subval = subcorpora if not non_first_sub else subcorpora[0]
-        #print(subcorpora, non_first_sub, subval)
-        if subcorpora is True:
-            import re
-            subcorpora = re.compile(r'.*')
-        else:
-            # strange travis error happened here
-            subcorpora = corpus.metadata['fields'][subval]
-            if len(subcorpora) == 0:
-                print('No %s metadata found.' % str(subval))
-                return
-
-    mapcores = {'datalist': [corpus, 'corpus'],
-                'multiplecorpora': [corpus, 'corpus'],
-                'namedqueriessingle': [query, 'query'],
-                'namedqueriesmultiple': [search, 'search'],
-                'subcorpora': [subcorpora, 'subcorpora']}
-
-    # a is a dummy, just to produce default one
-    toiter, itsname = mapcores.get(multiple, [False, False])
-    if isinstance(toiter, dict):
-        toiter = toiter.items()
-    denom = len(toiter)
-    num_cores = best_num_parallel(num_cores, denom)
-
-    # todo: code below makes no sense
-    vals = ['eachspeaker', 'multiplespeaker', 'namedqueriesmultiple']
-    if multiple == 'multiplecorpora' and any(x is True for x in vals):
-        from corpkit.corpus import Corpus, Corpora
-        if isinstance(corpus, Corpora):
-            multiprocess = False
-        else:
-            corpus = Corpus(corpus)
-
-    if isinstance(multiprocess, int):
-        num_cores = multiprocess
-    if multiprocess is False:
-        num_cores = 1
+    if len(chunks) < multiprocess:
+        multiprocess = len(chunks)
 
     # make sure saves are right type
     if save is True:
-        raise ValueError('save must be string when multiprocessing.')
+        raise ValueError('save argument must be string when multiprocessing.')
 
     # make a list of dicts to pass to interrogator,
     # with the iterable unique in every one
-    locs['printstatus'] = False
-    locs['multiprocess'] = False
-    locs['df1_always_df'] = False
-    locs['files_as_subcorpora'] = False
-    locs['corpus'] = corpus
+    basic_multi_dict = {'search': search,
+                        'exclude': exclude,
+                        #'just_metadata' = just_metadata,
+                        'printstatus': False,
+                        'multiprocess': False,
+                        'df1_always_df': False,
+                        'files_as_subcorpora': False}
 
-    if multiple == 'multiplespeaker':
-        locs['multispeaker'] = True
-
-    if isinstance(non_first_sub, list) and len(non_first_sub) == 1:
-        non_first_sub = non_first_sub[0]
-
-    # make the default query
-    locs = {k: v for k, v in locs.items() if canpickle(v)}
     # make a new dict for every iteration
-    ds = [dict(**locs) for i in range(denom)]
-    for index, (d, bit) in enumerate(zip(ds, toiter)):
+    ds = [dict(**basic_multi_dict) for i in range(multiprocess)]
+
+    for index, (d, bit) in enumerate(zip(ds, chunks)):
         d['paralleling'] = index
-        if multiple in ['namedqueriessingle', 'namedqueriesmultiple']:
-            d[itsname] = bit[1]
-            d['outname'] = bit[0]
-        elif multiple in ['multiplecorpora', 'datalist']:
-            d['outname'] = bit.name.replace('-parsed', '')
-            d[itsname] = bit
-        elif multiple in ['subcorpora']:
-            d[itsname] = bit
-            jmd = {subval: bit}
-            # put this earlier
-            j2 = kwargs.get('just_metadata', False)
-            if not j2:
-                j2 = {}
-            jmd.update(j2)
-    
-            d['just_metadata'] = jmd
-            d['outname'] = bit
-            d['by_metadata'] = False
-            d['subcorpora'] = non_first_sub
-            if non_first_sub:
-                d['print_info'] = False
+        d['corpus'] = list(bit)
+    #print(ds)
 
     # message printer should be a function...
     if kwargs.get('conc') is False:
@@ -175,36 +92,7 @@ def pmultiquery(corpus,
     from corpkit.process import dictformat
     
     if print_info:
-
-        # proper printing for plurals
-        # in truth this needs to be revised, it's horrible.
-        sformat = dictformat(search, query)
-
-        if num_cores == 1:
-            add_es = ''
-        else:
-            add_es = 'es'
-        if multiple in ['multiplecorpora', 'datalist']:
-            corplist = "\n              ".join([i.name for i in list(corpus)[:20]])
-            if len(corpus) > 20:
-                corplist += '\n ... and %d more ...\n' % (len(corpus) - 20)
-            print(("\n%s: Beginning %d corpus interrogations (in %d parallel process%s):\n              %s" \
-               "\n          Query: %s\n          %s corpus ... \n"  % (time, len(corpus), num_cores, add_es, corplist, sformat, message)))
-
-        elif multiple == 'namedqueriessingle':
-            print(("\n%s: Beginning %d corpus interrogations (in %d parallel process%s): %s" \
-               "\n          Queries: %s\n          %s corpus ... \n" % (time, len(query), num_cores,  add_es, corpus.name, sformat, message) ))
-
-        elif multiple == 'namedqueriesmultiple':
-            print(("\n%s: Beginning %d corpus interrogations (in %d parallel process%s): %s" \
-               "\n          Queries: %s\n          %s corpus ... \n" % (time, len(list(search.keys())), num_cores, add_es, corpus.name, sformat, message)))
-
-        elif multiple in ['eachspeaker', 'multiplespeaker']:
-            print(("\n%s: Beginning %d parallel corpus interrogation%s: %s" \
-               "\n          Query: %s\n          %s corpus ... \n" % (time, num_cores, add_es.lstrip('e'), corpus.name, sformat, message) ))
-        elif multiple in ['subcorpora']:
-            print(("\n%s: Beginning %d parallel corpus interrogation%s: %s" \
-               "\n          Query: %s\n          %s corpus ... \n" % (time, num_cores, add_es.lstrip('e'), corpus.name, sformat, message) ))
+        print('starting')
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
@@ -214,7 +102,6 @@ def pmultiquery(corpus,
     failed = False
     terminal = False
     used_joblib = False
-    #ds = ds[::-1]
     #todo: the number of blank lines to print can be way wrong
     if not root and print_info:
         from blessings import Terminal
@@ -234,7 +121,7 @@ def pmultiquery(corpus,
 
     if not root and multiprocess:
         try:
-            res = Parallel(n_jobs=num_cores)(delayed(interrogator)(**x) for x in ds)
+            res = Parallel(n_jobs=multiprocess)(delayed(interrogator)(**x) for x in ds)
             used_joblib = True
         except:
             failed = True
@@ -251,6 +138,9 @@ def pmultiquery(corpus,
             res = sorted([i for i in res if i])
         except:
             pass
+
+    merged_res = { k: v for d in res for k, v in d.items() }
+    return merged_res
 
     # remove unpicklable bits from query
     from types import ModuleType, FunctionType, BuiltinMethodType, BuiltinFunctionType
@@ -307,7 +197,7 @@ def pmultiquery(corpus,
     # todo: standardise this so we don't have to guess transposes
     # 
     else:
-        if multiple == 'multiplecorpora' and not mult_corp_are_subs:
+        if multiple_corpora:
             sers = [i.results for i in res]
             out = DataFrame(sers, index=[i.query['outname'] for i in res])
             out = out.reindex_axis(sorted(out.columns), axis=1) # sort cols

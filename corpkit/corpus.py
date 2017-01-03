@@ -47,6 +47,7 @@ class Corpus(object):
         self.skip = kwargs.get('skip', False)
         self.just = kwargs.get('just', False)
         self.kwa = get_symbolics(self)
+        self.parent = kwargs.pop('parent', None)
 
         if isinstance(path, (list, Datalist)):
             self.path = abspath(dirname(path[0].path.rstrip('/')))
@@ -135,6 +136,11 @@ class Corpus(object):
                                     '\tFailed to load %s as %s attribute. Name conflict?' %
                                     (filename, variable_safe))
 
+            if self.level == 'c':
+                self.corpus_name = self.name
+            else:
+                self.corpus_name = False
+
             if self.print_info:
                 print('Corpus: %s' % self.path)
 
@@ -153,7 +159,7 @@ class Corpus(object):
             return self.data
         if self.level == 'c':
             variable_safe_r = re.compile(r'[\W0-9_]+', re.UNICODE)
-            sbs = Datalist(sorted([Subcorpus(join(self.path, d), self.datatype, **self.kwa)
+            sbs = Datalist(sorted([Subcorpus(join(self.path, d), self.datatype, parent=self.name, **self.kwa)
                                    for d in os.listdir(self.path)
                                    if isdir(join(self.path, d))],
                                   key=operator.attrgetter('name')), **self.kwa)
@@ -185,7 +191,7 @@ class Corpus(object):
         from os.path import join, isdir
         if self.level == 's':
             fls = [f for f in os.listdir(self.path) if not f.startswith('.')]
-            fls = [File(f, self.path, self.datatype, **self.kwa) for f in fls]
+            fls = [File(f, self.path, self.datatype, parent=self.name, **self.kwa) for f in fls]
             fls = sorted(fls, key=operator.attrgetter('name'))
             return Datalist(fls, **self.kwa)
         elif self.level == 'd':
@@ -728,6 +734,7 @@ class Corpus(object):
                   invoked, result may be multiindexed.
         """
         from corpkit.interrogator import interrogator
+        from corpkit.matches import Matches
         import pandas as pd
         par = kwargs.pop('multiprocess', None)
         kwargs.pop('corpus', None)
@@ -735,20 +742,6 @@ class Corpus(object):
         if self.datatype != 'conll':
             raise ValueError('You need to parse or tokenise the corpus before searching.')
         
-        # handle symbolic structures
-        subcorpora = kwargs.get('subcorpora', False)
-        if self.level == 's':
-            subcorpora = 'file'
-        if self.symbolic:
-            subcorpora = self.symbolic
-        if 'subcorpora' in kwargs:
-            subcorpora = kwargs.pop('subcorpora')
-        if subcorpora in ['default', 'folder', 'folders']:
-            subcorpora = False
-        if subcorpora in ['file', 'files']:
-            subcorpora = False
-            kwargs['files_as_subcorpora'] = True
-
         if self.skip:
             if kwargs.get('skip_metadata'):
                 kwargs['skip_metadata'].update(self.skip)
@@ -763,17 +756,10 @@ class Corpus(object):
 
         kwargs.pop('subcorpora', False)
 
-        if par and self.subcorpora:
-            if isinstance(par, int):
-                kwargs['multiprocess'] = par
-            res = interrogator(self.subcorpora, search,
-                                subcorpora=subcorpora, *args, **kwargs)
-        else:
-            kwargs['multiprocess'] = par
-            res = interrogator(self, search,
-                                subcorpora=subcorpora, *args, **kwargs)
-            from corpkit.matches import Matches
-            return Matches(res, self)
+        kwargs['multiprocess'] = par
+        res = interrogator(self, search, *args, **kwargs)
+        return Matches(res, self)
+
 
         if kwargs.get('conc', False) == 'only':
             return res
@@ -1414,7 +1400,7 @@ class Corpora(Datalist):
     
         for index, i in enumerate(data):
             if isinstance(i, STRINGTYPE):
-                data[index] = Corpus(i, **kwargs)
+                data[index] = Corpus(i, parent=self.name, **kwargs)
 
         # now turn it into a Datalist
         Datalist.__init__(self, data, **kwargs)
@@ -1474,3 +1460,13 @@ class Corpora(Datalist):
         """
         for corpus in self:
             corpus.lexicon
+
+    @lazyprop
+    def all_files(self):
+        af = []
+        for corpus in self:
+            fs = corpus.all_files
+            for f in fs:
+                af.append(f)
+        return Datalist(af)
+

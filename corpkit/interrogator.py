@@ -89,7 +89,7 @@ def interrogator(corpus,
     Interrogate corpus, corpora, subcorpus and file objects.
     See corpkit.interrogation.interrogate() for docstring
     """
-    
+
     conc = kwargs.get('do_concordancing', conc)
     quiet = kwargs.get('quiet', False)
     coref = kwargs.pop('coref', False)
@@ -129,6 +129,9 @@ def interrogator(corpus,
     from corpkit.process import delete_files_and_subcorpora
     
     have_java = check_jdk()
+
+    if isinstance(corpus, list):
+        corpus = Datalist(corpus)
 
     # remake corpus without bad files and folders 
     corpus, skip_metadata, just_metadata = delete_files_and_subcorpora(corpus, skip_metadata, just_metadata)
@@ -182,32 +185,6 @@ def interrogator(corpus,
         print('%s: Interrogation resumed.\n' % time)
         signal.signal(signal.SIGINT, signal_handler)
 
-    def is_multiquery(corpus, search, query, outname):
-        """
-        Determine if multiprocessing is needed/possibe, and 
-        do some retyping if need be as well
-        """
-        is_mul = False
-        from collections import OrderedDict
-        from corpkit.dictionaries.process_types import Wordlist
-        
-        if isinstance(query, Wordlist):
-            query = list(query)
-
-        #if subcorpora and multiprocess:
-        #    is_mul = 'subcorpora'
-
-        #if isinstance(subcorpora, (list, tuple)):
-        #    is_mul = 'subcorpora'
-
-        if isinstance(query, (dict, OrderedDict)):
-            is_mul = 'namedqueriessingle'
-        
-        if isinstance(search, dict):
-            if all(isinstance(i, dict) for i in list(search.values())):
-                is_mul = 'namedqueriesmultiple'
-        return is_mul, corpus, search, query
-
     def ispunct(s):
         import string
         return all(c in string.punctuation for c in s)
@@ -258,6 +235,7 @@ def interrogator(corpus,
         statsmode = False
         tree_to_text = False
         search_trees = False
+        optiontext = "Querying CONLL data"
             
         simp_crit = all(not i for i in [kwargs.get('tgrep'),
                                         files_as_subcorpora,
@@ -375,73 +353,6 @@ def interrogator(corpus,
             bits[index] = converted
         r = '/'.join(bits)
         return r
-
-    def make_search_iterable(corpus):
-        """determine how to structure the corpus for interrogation
-
-        :return: a dict of {(subcorpus name, subcorpus path): subcorpus files}
-        """
-        # skip file definitions if they are not needed
-        if getattr(corpus, '_dlist', False):
-            return {(i.name, i.path): [i] for i in list(corpus.files)}
-            #return {('Sample', 'Sample'): list(corpus.files)}
-
-        if simple_tregex_mode:
-            if corpus.level in ['s', 'f', 'd']:
-                return {(corpus.name, corpus.path): False}
-            else:
-                return {(os.path.basename(i), os.path.join(corpus.path, i)): False
-                    for i in os.listdir(corpus.path)
-                    if os.path.isdir(os.path.join(corpus.path, i))}
-
-        if isinstance(corpus, Datalist):
-            to_iterate_over = {}
-            # it could be files or subcorpus objects
-            if corpus[0].level in ['s', 'd']:
-                if files_as_subcorpora:
-                    for subc in corpus:
-                        for f in subc.files:
-                            to_iterate_over[(f.name, f.path)] = [f]
-                else:
-                    for subc in corpus:
-                        to_iterate_over[(subc.name, subc.path)] = subc.files
-            elif corpus[0].level == 'f':
-                for f in corpus:
-                    to_iterate_over[(f.name, f.path)] = [f]
-        elif corpus.singlefile:
-            to_iterate_over = {(corpus.name, corpus.path): [corpus]}
-        elif not hasattr(corpus, 'subcorpora') or not corpus.subcorpora:
-            # just files in a directory
-            if files_as_subcorpora:
-                to_iterate_over = {}
-                for f in corpus.files:
-                    to_iterate_over[(f.name, f.path)] = [f]
-            else:
-                to_iterate_over = {(corpus.name, corpus.path): corpus.files}
-        else:
-            to_iterate_over = {}
-            if files_as_subcorpora:
-                # don't know if possible: has subcorpora but also .files
-                if hasattr(corpus, 'files') and corpus.files is not None:
-                    for f in corpus.files:
-                        to_iterate_over[(f.name, f.path)] = [f]
-                # has subcorpora with files in those
-                elif hasattr(corpus, 'files') and corpus.files is None:
-                    for subc in corpus.subcorpora:
-                        for f in subc.files:
-                            to_iterate_over[(f.name, f.path)] = [f]
-            else:
-                if corpus[0].level == 's':
-                    for subcorpus in corpus:
-                        to_iterate_over[(subcorpus.name, subcorpus.path)] = subcorpus.files
-                elif corpus[0].level == 'f':
-                    for f in corpus:
-                        to_iterate_over[(f.name, f.path)] = [f]
-                else:
-                    for subcorpus in corpus.subcorpora:
-                        to_iterate_over[(subcorpus.name, subcorpus.path)] = subcorpus.files
-        return to_iterate_over
-
 
     def welcome_printer(return_it=False):
         """Print welcome message"""
@@ -670,42 +581,18 @@ def interrogator(corpus,
         from nltk.stem.wordnet import WordNetLemmatizer
         lem_instance = WordNetLemmatizer()
 
-    # do multiprocessing if need be
-    im, corpus, search, query, = is_multiquery(corpus, search, query, 
-                                                             kwargs.get('outname', False))
-
-    # figure out if we can multiprocess the corpus
-    if hasattr(corpus, '__iter__') and im:
-        corpus = Corpus(corpus, print_info=False)
-    if hasattr(corpus, '__iter__') and not im:
-        im = 'datalist'
-    if isinstance(corpus, Corpora):
-        im = 'multiplecorpora'
-
-    # split corpus if the user wants multiprocessing but no other iterable
-    if not im and multiprocess:
-        im = 'datalist'
-        if getattr(corpus, 'subcorpora', False):
-            corpus = corpus[:]
-        else:
-            corpus = corpus.files
-
     search = fix_search(search, case_sensitive=case_sensitive, root=root)
     exclude = fix_search(exclude, case_sensitive=case_sensitive, root=root)
 
-    # if it's already been through pmultiquery, don't do it again
     locs['search'] = search
     locs['exclude'] = exclude
     locs['query'] = query
     locs['corpus'] = corpus
     locs['multiprocess'] = multiprocess
     locs['print_info'] = kwargs.get('printstatus', True)
-    locs['multiple'] = im
     locs['subcorpora'] = subcorpora
-    locs['nosubmode'] = nosubmode
 
-    # send to multiprocess function
-    if im:
+    if multiprocess:
         signal.signal(signal.SIGINT, original_sigint)
         from corpkit.multiprocess import pmultiquery
         return pmultiquery(**locs)
@@ -790,7 +677,7 @@ def interrogator(corpus,
     usecols = auto_usecols(search, exclude, show, kwargs.pop('usecols', None), coref=coref)
 
     # make the iterable, which should be very simple now
-    corpus_iter = corpus.all_files
+    corpus_iter = corpus.all_files if corpus.all_files else corpus
 
     # print welcome message
     welcome_message = welcome_printer(return_it=in_notebook)
@@ -838,6 +725,7 @@ def interrogator(corpus,
                                  lem_instance=lem_instance,
                                  lemtag=lemtag,
                                  fobj=f,
+                                 corpus_name=getattr(corpus, 'corpus_name', False),
                                  **kwargs)
 
         results += res

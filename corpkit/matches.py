@@ -46,7 +46,7 @@ class Matches(object):
         import pandas as pd
         from corpkit.build import get_all_metadata_fields
         record_data = []
-        fields = list(sorted(['parse'] + get_all_metadata_fields(self.corpus.path, include_speakers=True)))
+        fields = list(sorted(['parse', 'folder', 'file'] + get_all_metadata_fields(self.corpus.path, include_speakers=True)))
         for k, v in self.data.items():
             line = [k.metadata.get(key, 'none') for key in fields]
             line += [k, v]
@@ -61,8 +61,20 @@ class Matches(object):
         df = df[df.sum().sort_values(ascending=False).index]
         return df
 
-    def table(self, subcorpora=False, preserve_case=False, show=['w']):
+    def table(self, subcorpora='default', preserve_case=False, show=['w']):
         import pandas as pd
+        from corpkit.corpus import Corpora
+
+        if subcorpora == 'default':
+            if isinstance(self.corpus, Corpora):
+                subcorpora = 'corpus'
+            if getattr(self.corpus, 'level', 'c'):
+                subcorpora = 'folder'
+            elif getattr(self.corpus, 'level', 's'):
+                subcorpora = 'file'
+            else:
+                subcorpora = False
+
         if not subcorpora:
             ser = pd.Series(self.data)
             ser.index = [k.display(show) for k in ser.index]
