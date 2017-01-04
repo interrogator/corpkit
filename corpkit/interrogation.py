@@ -618,6 +618,12 @@ class Concordance(pd.core.frame.DataFrame):
     
     def __init__(self, data):
 
+        # recorder columns
+        start = ['s', 'i', 'l', 'm', 'r']
+        dfcols = [i for i in data.columns if i not in start]
+        allcols = start + dfcols
+        data = data[allcols]
+
         super(Concordance, self).__init__(data)
         self.concordance = data
 
@@ -659,6 +665,55 @@ class Concordance(pd.core.frame.DataFrame):
         """Make new Interrogation object from (modified) concordance lines"""
         from corpkit.process import interrogation_from_conclines
         return interrogation_from_conclines(self)
+
+    def tabview(self, window=(55, 55), **kwargs):
+        from tabview import view
+        from corpkit.other import resize_by_window_size
+        #dat = resize_by_window_size(self, window)
+        import pandas as pd
+        if isinstance(self.index, pd.MultiIndex):
+            lsts = list(zip(*self.index.to_series()))
+            widths = []
+            for l in lsts:
+                w = max([len(str(x)) for x in l])
+                if w < 10:
+                    widths.append(w)
+                else:
+                    widths.append(10)
+        else:
+            iwid = self.index.astype(str)[:100].str.len().max()
+            if iwid > 10:
+                iwid = 10
+            widths = [iwid]
+        tot = len(self.columns) + len(self.index.names)
+        aligns = [True] * tot
+        if isinstance(window, int):
+            window = [window, window]
+        else:
+            window = list(window)
+        if window[0] > self['l'][:100].str.len().max():
+            window[0] = self['l'][:100].str.len().max()
+        if window[1] > self['r'][:100].str.len().max():
+            window[1] = self['r'][:100].str.len().max()
+
+        for i, c in enumerate(self.columns):
+            if c == 'l':
+                widths.append(window[0])
+            elif c == 'r':
+                widths.append(window[1])
+                aligns[i+len(self.index.names)] = False            
+            else:
+                mx = self[c].astype(str)[:100].str.len().max()
+                if mx > 10:
+                    mx = 10
+                widths.append(mx)
+
+
+        kwa = {'column_widths': widths}
+        if 'align_right' not in kwargs:
+            kwa['align_right'] = aligns
+
+        view(pd.DataFrame(self), **kwa)
 
     def shuffle(self, inplace=False):
         """Shuffle concordance lines
