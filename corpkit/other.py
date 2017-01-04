@@ -101,6 +101,22 @@ def quickview(results, n=25):
         else:
             print('%s: %s' %(str(index).rjust(3), entry.ljust(longest)))
 
+def resize_by_window_size(df, window):
+    df.is_copy = False
+    if isinstance(window, int):
+        df['l'] = df['l'].str.slice(start=-window, stop=None)
+        df['l'] = df['l'].str.rjust(window)
+        df['r'] = df['r'].str.slice(start=0, stop=window)
+        df['r'] = df['r'].str.ljust(window)
+        df['m'] = df['m'].str.ljust(df['m'].str.len().max())
+    else:
+        df['l'] = df['l'].str.slice(start=-window[0], stop=None)
+        df['l'] = df['l'].str.rjust(window[0])
+        df['r'] = df['r'].str.slice(start=0, stop=window[-1])
+        df['r'] = df['r'].str.ljust(window[-1])
+        df['m'] = df['m'].str.ljust(df['m'].str.len().max())
+    return df
+
 def concprinter(dataframe, kind='string', n=100,
                 window=35, columns='all', metadata=True, **kwargs):
     """
@@ -114,7 +130,6 @@ def concprinter(dataframe, kind='string', n=100,
     :type n: int/'all'
     :returns: None
     """
-    import corpkit
 
     df = dataframe.copy().fillna('')
 
@@ -136,38 +151,22 @@ def concprinter(dataframe, kind='string', n=100,
     else:
         raise ValueError('n argument "%s" not recognised.' % str(n))
 
-    def resize_by_window_size(df, window):
-        df.is_copy = False
-        if isinstance(window, int):
-            df['l'] = df['l'].str.slice(start=-window, stop=None)
-            df['l'] = df['l'].str.rjust(window)
-            df['r'] = df['r'].str.slice(start=0, stop=window)
-            df['r'] = df['r'].str.ljust(window)
-            df['m'] = df['m'].str.ljust(df['m'].str.len().max())
-        else:
-            df['l'] = df['l'].str.slice(start=-window[0], stop=None)
-            df['l'] = df['l'].str.rjust(window[0])
-            df['r'] = df['r'].str.slice(start=0, stop=window[-1])
-            df['r'] = df['r'].str.ljust(window[-1])
-            df['m'] = df['m'].str.ljust(df['m'].str.len().max())            
-        return df
-
     to_show.is_copy = False
     if window:
         to_show = resize_by_window_size(to_show, window)
 
     # if showing metadata to the right of lmr, add it here
-    cnames = list(to_show.columns)
-    ind = cnames.index('r')
-    if columns == 'all':
-        columns = cnames[:ind+1]
-    if metadata is True:
-        after_right = cnames[ind+1:]
-        columns = columns + after_right
-    elif isinstance(metadata, list):
-        columns = columns + metadata
-
-    to_show = to_show[columns]
+    #cnames = list(to_show.columns)
+    #ind = cnames.index('r')
+    #if columns == 'all':
+    #    columns = cnames[:ind+1]
+    #if metadata is True:
+    #    after_right = cnames[ind+1:]
+    #    columns = columns + after_right
+    #elif isinstance(metadata, list):
+    #    columns = columns + metadata
+#
+    #to_show = to_show[columns]
 
     if kind.startswith('s'):
         functi = pd.DataFrame.to_string
@@ -188,6 +187,10 @@ def concprinter(dataframe, kind='string', n=100,
     if 'f' in list(to_show.columns):
         import os
         to_show['f'] = to_show['f'].apply(os.path.basename)
+
+    if 'file' in list(to_show.columns):
+        import os
+        to_show['file'] = to_show['file'].apply(os.path.basename)
 
     return_it = kwargs.pop('return_it', False)
     print_it = kwargs.pop('print_it', True)
