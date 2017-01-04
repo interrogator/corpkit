@@ -2,12 +2,15 @@
 corpkit: process CONLL formatted data
 """
 
-from corpkit.matches import Token
+from corpkit.matches import Token, Matches
 
 def parse_conll(f,
                 first_time=False,
                 just_meta=False,
-                usecols=None):
+                usecols=None,
+                index_col=['i'],
+                corp_folder=False,
+                corpus_name=False):
     """
     Make a pandas.DataFrame with metadata from a CONLL-U file
     
@@ -36,9 +39,16 @@ def parse_conll(f,
 
     splitdata = []
     metadata = {}
-    sents = data.split('\n\n')    
+    sents = data.split('\n\n')  
+    basedict = defaultdict(set)
+    basedict['file'].add(f)
+    if corp_folder:
+        basedict['folder'].add(corp_folder)
+    if corpus_name:
+        basedict['corpus'].add(corpus_name)
+
     for count, sent in enumerate(sents, start=1):
-        metadata[count] = defaultdict(set)
+        metadata[count] = basedict.copy()
         for line in sent.split('\n'):
             if line and not line.startswith('#') \
                 and not just_meta:
@@ -47,7 +57,8 @@ def parse_conll(f,
                 line = line.lstrip('# ')
                 if '=' in line:
                     field, val = line.split('=', 1)
-                    metadata[count][field].add(val)
+                    for x in val.split(','):
+                        metadata[count][field].add(x)
         metadata[count] = {k: ','.join(v) for k, v in metadata[count].items()}
     if just_meta:
         return metadata
@@ -56,15 +67,12 @@ def parse_conll(f,
     if not metadata:
         return
 
-    df = pd.read_csv(f, sep='\t', header=None, na_filter=False, memory_map=True, comment="#", names=head, usecols=None, index_col=['i'], engine='c')
+    df = pd.read_csv(f, sep='\t', header=None, na_filter=False, memory_map=True, comment="#", names=head, usecols=None, index_col=index_col, engine='c')
     c = 0
     newlev = []
     for i in df.index:
-        try:
-            if int(i) == 1:
-                c += 1
-        except:
-            print(df, f)
+        if int(i) == 1:
+            c += 1
         newlev.append((c, i))
     ix = pd.MultiIndex.from_tuples(newlev)
     df.index = ix
@@ -176,7 +184,7 @@ def get_all_corefs(s, i, df, coref=False):
     except:
         return [(s, i)]
 
-def search_this(df, obj, attrib, pattern, adjacent=False, coref=False,
+def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, corpus=False, matches=False,
                 subcorpora=False, metadata=False, fobj=False, corpus_name=False):
     """
     Search the dataframe for a single criterion
@@ -184,133 +192,61 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False,
     :return: a defaultdict with subcorpora as keys and results as values
     """
     import re
-    out = []
-
+   
     # if searching by head, they need to be heads
     if obj == 'h':
         df = df.loc[df['c'].endswith('*')]
 
+    out = []
+
     # cut down to just tokens with matching attr
     # but, if the pattern is 'any', don't bother
+    if attrib in ['s', 'i']:
+        ix = df.index
+        df = df.reset_index()
+        attrib = 'level_0' if attrib == 's' else 'level_1'
+        df['level_0'] = df['level_0'].astype(str)
+        df['level_1'] = df['level_1'].astype(str)
+        df.index = ix
+
     if hasattr(pattern, 'pattern') and pattern.pattern == r'.*':
-        matches = df
+        xmatches = df
     else:
-        matches = df[df[attrib].fillna('').str.contains(pattern)]
+        xmatches = df[df[attrib].fillna('').str.contains(pattern)]
 
-    corp_folder = False
-    if getattr(fobj, 'parent', False):
-        corp_folder = fobj.parent
-    corp_file = fobj.name
+    tokks = xmatches.apply(row_tok_apply, axis=1, df=df, fobj=fobj, metadata=metadata, matches=matches)
+    tokks = tokks.values
 
-    # this apply code seems to be slower! still, cython could happen one day.
-    #def make_tok(row, df=False, metadata=False, fobj=False, corpus_name=False, corp_folder=False, corp_file=False, adjacent=False):
-    #    from corpkit.matches import Token
-    #    s, i = row.name
-    #    if adjacent:
-    #        if adjacent[0] == '+':
-    #            tomove = -int(i)
-    #        elif adjacent[0] == '-':
-    #            tomove = int(i)
-    #        i += tomove
-    #    md = metadata[s]
-    #    if corp_folder:
-    #        md['folder'] = corp_folder
-    #    if corpus_name:
-    #        md['corpus'] = corpus_name
-    #    md['file'] = corp_file
-    #    return Token(i, df, s, fobj, md, **row.to_dict())
+    if coref:
+        tokks = tokks.corefs()
+    #else:
+    #    the_tokens = tokks
 
-    #applied = matches.apply(make_tok, axis=1, df=df, metadata=metadata, fobj=fobj,
-    #                        corpus_name=False, corp_folder=False, corp_file=False,
-    #                        adjacent=adjacent)
-#
-    #for t in applied.values:
-#
-    #    if coref:
-    #        the_tokens = t.corefs()
-    #    else:
-    #        the_tokens = [t]
-#
-    #    for tok in the_tokens:
-#
-    #        if obj == 'g':
-    #            for depe in tok.dependents:
-    #                out.append(depe)
-#
-    #        if obj == 'a':
-    #            for depe in tok.descendents:
-    #                out.append(depe)
-#
-    #        elif obj == 'd':
-    #            out.append(tok.governor)
-#
-    #        elif obj == 'p':
-    #            for govo in tok.ancestors:
-    #                out.append(govo)
-#
-    #        elif obj == 'm':
-    #            out.append(tok)
-#
-    #        elif obj == 'h':
-    #            out.append(tok.head())
-    #
-    #        elif obj == 'r':
-    #           out.append(tok(representative()))
-    #
-    #return out
+    for tok in tokks:
 
-    # todo: could we use apply here?
-    for (sent_id, tok_id), dat in matches.iterrows():
-        #_w, _l, _p, _e, _m, _f, _d, _c = dat.values
+        if obj == 'g':
+            for depe in tok.dependents:
+                out.append(depe)
 
-        metadd = metadata[sent_id]
+        if obj == 'a':
+            for depe in tok.descendents:
+                out.append(depe)
 
-        if corpus_name:
-            metadd['corpus'] = corpus_name
-        if corp_folder:
-            metadd['folder'] = corp_folder
-        
-        metadd['file'] = corp_file
+        elif obj == 'd':
+            out.append(tok.governor)
 
-        if adjacent:
-            if adjacent[0] == '+':
-                tomove = -int(adj[1])
-            elif adjacent[0] == '-':
-                tomove = int(adj[1])
-            tok_id += tomove
+        elif obj == 'o':
+            for govo in tok.ancestors:
+                out.append(govo)
 
-        the_token = Token(tok_id, df, sent_id, fobj, metadd, **dat.to_dict())
+        elif obj == 'm':
+            out.append(tok)
 
-        if coref:
-            the_tokens = the_token.corefs()
-        else:
-            the_tokens = [the_token]
+        elif obj == 'h':
+            out.append(tok.head())
 
-        for tok in the_tokens:
-
-            if obj == 'g':
-                for depe in tok.dependents:
-                    out.append(depe)
-
-            if obj == 'a':
-                for depe in tok.descendents:
-                    out.append(depe)
-
-            elif obj == 'd':
-                out.append(tok.governor)
-
-            elif obj == 'p':
-                for govo in tok.ancestors:
-                    out.append(govo)
-
-            elif obj == 'm':
-                out.append(tok)
-
-            elif obj == 'h':
-                out.append(tok.head())
-
-            elif obj == 'r':
-                out.append(tok(representative()))
+        elif obj == 'r':
+            out.append(tok(representative()))
 
     return out
 
@@ -1177,6 +1113,12 @@ def update_dd(res, all_res):
         all_res[k] += v
     return all_res
 
+def row_tok_apply(row, df=False, fobj=False, metadata=False, matches=False):
+    from corpkit.matches import Token
+
+    t = Token(row.name[1], df, row.name[0], fobj, metadata[row.name[0]], matches, **row.to_dict())
+    return t
+
 def pipeline(f=False,
              search=False,
              show=False,
@@ -1195,6 +1137,8 @@ def pipeline(f=False,
              subcorpora=False,
              fobj=False,
              corpus_name=False,
+             corpus=False,
+             matches=False,
              **kwargs):
     """
     A basic pipeline for conll querying---some options still to do
@@ -1205,14 +1149,18 @@ def pipeline(f=False,
 
     all_matches = []
     all_exclude = []
+    all_res = []
 
     from collections import Counter
     from corpkit.matches import Token
-    all_res = []
 
     # todo: this could become obsolete
+    corp_folder = False
+    if getattr(fobj, 'parent', False):
+        corp_folder = fobj.parent
+
     if from_df is False or from_df is None:
-        df = parse_conll(f, usecols=kwargs.get('usecols'))
+        df = parse_conll(f, usecols=kwargs.get('usecols'), corpus_name=corpus_name, corp_folder=corp_folder)
         # can fail here if df is none
         if df is None:
             print('Problem reading data from %s.' % f)
@@ -1277,30 +1225,31 @@ def pipeline(f=False,
                         **kwargs)
 
     # do no searching if 'any' is requested
-    if len(search) == 1 and list(search.keys())[0] == 'w' \
+    if len(search) == 1 and list(search.keys())[0] == 'mw' \
                         and hasattr(list(search.values())[0], 'pattern') \
                         and list(search.values())[0].pattern == r'.*':
         all_res = []
-        for (s, i), dat in df.iterrows():
-            all_res.append(Token(i, df, s, f, metadata, **dat.to_dict()))
+        tokks = df.apply(row_tok_apply, axis=1, df=df, fobj=fobj, metadata=metadata, matches=matches)
     else:
         for k, v in search.items():
             adj, k = determine_adjacent(k)
-            all_res += search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, metadata=metadata, fobj=fobj, corpus_name=corpus_name)
-        if searchmode == 'all':
-            all_res = [k for k, v in Counter(all_res).items() if v == len(search)]
+            all_res += search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, metadata=metadata,
+                                   fobj=fobj, corpus_name=corpus_name, corpus=corpus, matches=matches)
+        if searchmode == 'all' and len(search) > 1:
+            all_res = sorted([k for k, v in Counter(all_res).items() if v == len(search)])
 
     if exclude:
         for k, v in exclude.items():
             adj, k = determine_adjacent(k)
-            all_exclude += search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, metadata=metadata, fobj=fobj, corpus_name=corpus_name)
+            all_exclude += search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, metadata=metadata,
+                                   fobj=fobj, corpus_name=corpus_name, corpus=corpus, matches=matches)
         #all_exclude = remove_by_mode(all_exclude, excludemode, exclude)
         if excludemode == 'all':
             all_exclude = set(k for k, v in Counter(all_exclude).items() if v == len(search))
         else:
             all_exclude = set(all_exclude)
         
-        all_res = list(set(all_res).difference(all_exclude))
+        all_res = sorted(list(set(all_res).difference(all_exclude)))
 
     return all_res
 

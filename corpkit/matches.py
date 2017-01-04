@@ -1,4 +1,5 @@
 import pandas as pd
+from functools import total_ordering
 
 class Matches(list):
     """
@@ -99,27 +100,25 @@ class Matches(list):
 
 from corpkit.lazyprop import lazyprop
 
+@total_ordering
 class Token(object):
     """
     Model a token in the corpus
     """
 
-    def __init__(self, idx, df, sent_id, fobj, metadata, **kwargs):
+    def __init__(self, idx, df, sent_id, fobj, metadata, parent, **kwargs):
 
-        kwargs['i'] = idx
-        kwargs['s'] = sent_id
-        
+        self.i = idx
+        self.s = sent_id
         self.df = df
         self.fobj = fobj
         self.path = fobj.path
         self.metadata = metadata
-
+        self.parent = parent
         from corpkit.constants import CONLL_COLUMNS
-        for name in ['s'] + CONLL_COLUMNS:
+        for name in CONLL_COLUMNS[1:]:
             setattr(self, name, kwargs.get(name, 'root'))
-
         self.is_root = idx == 0
-
         super(Token, self).__init__()
     
     @lazyprop
@@ -132,7 +131,7 @@ class Token(object):
             row = self.sent.ix[self.g].to_dict() if self.g else {}
         except KeyError:
             return
-        return Token(self.g, self.df, self.s, self.fobj, self.metadata, **row)
+        return Token(self.g, self.df, self.s, self.fobj, self.metadata, self.parent, **row)
 
     @lazyprop
     def x(self):
@@ -143,13 +142,13 @@ class Token(object):
     @lazyprop
     def dependents(self):
         out = []
-        new_idxs = [int(i) for i in self.sent.ix[self.i]['d'].split(',')]
+        new_idxs = [int(i) for i in self.sent.at[self.i, 'd'].split(',')]
         for new_idx in new_idxs:
             try:
                 row = self.sent.ix[new_idx].to_dict()
             except KeyError:
                 continue
-            out.append(Token(new_idx, self.df, self.s, self.fobj, self.metadata, **row))
+            out.append(Token(new_idx, self.df, self.s, self.fobj, self.metadata, self.parent, **row))
         return out
 
     @lazyprop
@@ -183,7 +182,7 @@ class Token(object):
             if matches:
                 m = matches.iloc[0]
                 # metadata here is actually wrong!
-                return Token(m.name[1], self.df, m.name[0], self.fobj, self.metadata, **m.to_dict())
+                return Token(m.name[1], self.df, m.name[0], self.fobj, self.metadata, self.parent, **m.to_dict())
             else:
                 return
 
@@ -192,7 +191,7 @@ class Token(object):
         out = []
         just_same_coref = self.df.loc[self.df['c'] == self.c]
         for (s, i), dat in just_same_coref.iterrows():
-            out.append(Token(i, self.df, s, self.fobj, self.metadata, **dat.to_dict()))
+            out.append(Token(i, self.df, s, self.fobj, self.metadata, self.parent, **dat.to_dict()))
         return out
 
     @lazyprop
@@ -202,9 +201,16 @@ class Token(object):
         if matches:
             m = matches.iloc[0]
             # metadata here is actually wrong!
-            return Token(m.name[1], self.df, m.name[0], self.fobj, self.metadata, **m.to_dict())
+            return Token(m.name[1], self.df, m.name[0], self.fobj, self.metadata, self.parent, **m.to_dict())
         else:
             return
+
+    def research(self):
+        """
+        Search for this token in the corpus
+        """
+        import re
+        return self.parent.corpus.interrogate({'mw': r'^%s$' % re.escape(self.w)})
 
     def __hash__(self):
         return hash((self.i, self.s, self.path))
@@ -212,6 +218,9 @@ class Token(object):
     def __eq__(self, other):
         attrs = ['path', 's', 'i']
         return all([getattr(self, a) == getattr(other, a) for a in attrs])
+
+    def __lt__(self, other):
+        return (self.path, self.s, self.i) < (self.path, other.s, other.i)
 
     def display(self, show=['mw'], preserve_case=False):
         """
@@ -235,8 +244,7 @@ class Token(object):
             return out.lower()
 
     def __str__(self):
-        return self._w
-
+        return '<%s>' % self.w
 
 def _concer(record, show):
     """
@@ -249,3 +257,21 @@ def _concer(record, show):
     record['r'] = end
     record['l'] = start 
     return record
+
+# unused code below!
+
+def add_gov(row,df=False):
+    """apply to df to add g rows"""
+    from pandas import Series
+    if row['g'] == 0:
+        r = Series(['root'] * len(row), index=row.index)
+    else:
+        r = df.ix[row.name[0], row['g']]
+    r.index = r.index.str.pad(2, fillchar='g')
+    nr = row.append(r)
+    return nr
+
+def add_gov_to_f(df):
+    """add govs to a df"""
+    nrow = df.apply(add_gov, df=df, axis=1)
+    return nrow

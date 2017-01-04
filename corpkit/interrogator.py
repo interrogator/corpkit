@@ -617,7 +617,9 @@ def interrogator(corpus,
         
     # store all results in here
     from collections import defaultdict, Counter
-    results = []
+    
+    results = Matches([], corpus)
+    
     count_results = defaultdict(list)
     conc_results = defaultdict(list)
 
@@ -729,6 +731,8 @@ def interrogator(corpus,
                                  lemtag=lemtag,
                                  fobj=f,
                                  corpus_name=getattr(corpus, 'corpus_name', False),
+                                 corpus=corpus,
+                                 matches=results,
                                  **kwargs)
             
         if res == 'Bad query':
