@@ -24,6 +24,7 @@ def parse_conll(f,
         pandas.DataFrame: DataFrame containing tokens and a ._metadata attribute
     """
     import pandas as pd
+    import os
     try:
         from StringIO import StringIO
     except ImportError:
@@ -41,7 +42,7 @@ def parse_conll(f,
     metadata = {}
     sents = data.split('\n\n')  
     basedict = defaultdict(set)
-    basedict['file'].add(f)
+    basedict['file'].add(os.path.basename(f))
     if corp_folder:
         basedict['folder'].add(corp_folder)
     if corpus_name:
