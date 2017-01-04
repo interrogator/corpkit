@@ -464,6 +464,11 @@ def interpreter(debug=False,
                     df = df.apply(lambda x: '{:,}'.format(x))
             #if showfunc == tabview.view:
             #    df = df.astype(str).apply(lambda x: x.str.rjust(len(x.name), ' '))
+            for poss in ['f', 'file']:
+                if poss in df.columns:
+                    import os
+                    df[poss] = df[poss].apply(os.path.basename)
+
             showfunc(df, **kwa)
             return
         # not sure what might be here
