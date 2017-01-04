@@ -94,7 +94,7 @@ class Matches(list):
         loc = list(rec.columns).index('entry')
         rec.insert(loc, 'l', [0 for i in rec.index])
         rec = rec.drop(['parse'], axis=1)
-        rec.rename(columns = {'entry':'m'}, inplace=True)
+        rec.rename(columns={'entry':'m'}, inplace=True)
         clines = rec.apply(_concer, show=show, axis=1)
         return Concordance(clines)
 
@@ -252,8 +252,8 @@ def _concer(record, show):
     """
     tok = record['m']
     record['m'] = tok.display(show)
-    start = ' '.join(tok.sent['w'].loc[:tok.idx-1].values)
-    end = ' '.join(tok.sent['w'].loc[tok.idx+1:].values)
+    start = ' '.join(tok.sent['w'].loc[:tok.i-1].values)
+    end = ' '.join(tok.sent['w'].loc[tok.i+1:].values)
     record['r'] = end
     record['l'] = start 
     return record
