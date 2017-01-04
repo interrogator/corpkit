@@ -9,7 +9,7 @@ OPENER = open if PYTHON_VERSION == 3 else codecs.open
 
 # quicker access to search, exclude, show types
 from itertools import product
-_starts = ['M', 'N', 'B', 'G', 'D', 'H', 'R', 'P', 'A']
+_starts = ['M', 'N', 'B', 'G', 'D', 'H', 'R', 'O', 'A']
 _ends = ['W', 'L', 'I', 'S', 'P', 'X', 'R', 'F', 'E']
 _others = ['A', 'ANY', 'ANYWORD', 'C', 'SELF', 'V', 'K', 'T']
 _prod = list(product(_starts, _ends))
