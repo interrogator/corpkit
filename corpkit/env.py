@@ -448,7 +448,8 @@ def interpreter(debug=False,
         if start_pos:
             kwa['start_pos'] = start_pos
 
-        obj = getattr(obj, 'results', obj)
+        #if not getattr(obj, 'data', False):
+        #    obj = getattr(obj, 'results', obj)
         if isinstance(obj, (pd.DataFrame, pd.Series)):
             df = obj.round(objs._decimal)
             if isinstance(obj, pd.DataFrame):
@@ -914,12 +915,13 @@ def interpreter(debug=False,
         """
         Turn the last part of a command into a dict of kwargs
         """
+        from collections import defaultdict
         if 'with' in tokens:
             start = tokens.index('with')
             with_related = tokens[start+1:]
         else:
             with_related = []
-        withs = {}
+        withs = defaultdict(list)
         skips = []
         for i, token in enumerate(with_related):
             if i in skips or token == 'and':
@@ -942,11 +944,24 @@ def interpreter(debug=False,
                 skips.append(i+1)
             elif '=' not in token:
                 if len(with_related) >= i+2 and with_related[i+1] == 'as':
-                    val = with_related[i+2]
-                    val = parse_pattern(val)
-                    withs[token.lower()] = val
+                    n = 2
+                    val = with_related[i+n]
                     skips.append(i+1)
                     skips.append(i+2)
+                    if token.lower() == 'columns':
+                        parsed = process_long_key(val.strip(','))
+                    else:
+                        parsed = parse_pattern(val.rstrip(','))
+                    withs[token.lower()].append(parsed)
+                    while val.endswith(','):
+                        n += 1
+                        skips.append(i+n)
+                        val = with_related[i+n]
+                        if token.lower() == 'columns':
+                            parsed = process_long_key(val.strip(','))
+                        else:
+                            parsed = parse_pattern(val.rstrip(','))
+                        withs[token.lower()].append(parsed)
                 else:
                     withs[token.lower()] = True
             elif '=' in token:
@@ -955,6 +970,26 @@ def interpreter(debug=False,
                 withs[k] = v
         return withs
 
+    def parse_show(tokens, word='showing'):
+        if word in tokens:
+            start = tokens.index(word)
+            show_related = tokens[start+1:]
+            end = show_related.index('with') if 'with' in show_related else False
+            if end:
+                show_related = show_related[:end]
+        else:
+            show_related = []
+        show = []
+        if show_related:
+            for token in show_related:
+                token = token.rstrip(',')
+                if token == 'and':
+                    continue
+                token = process_long_key(token)
+                show.append(token)
+        else:
+            show = ['w']
+        return show
 
     def parse_search_args(tokens):
         """
@@ -989,14 +1024,7 @@ def interpreter(debug=False,
         else:
             ex_related = []
 
-        if 'showing' in tokens:
-            start = tokens.index('showing')
-            show_related = tokens[start+1:]
-            end = show_related.index('with') if 'with' in show_related else False
-            if end:
-                show_related = show_related[:end]
-        else:
-            show_related = []
+        show = parse_show(tokens)
 
         if 'with' in tokens:
             start = tokens.index('with')
@@ -1008,16 +1036,7 @@ def interpreter(debug=False,
         if not exclude and ex_related:
             exclude, _, _, _, _ = parse_search_related(ex_related)
 
-        show = []
-        if show_related:
-            for token in show_related:
-                token = token.rstrip(',')
-                if token == 'and':
-                    continue
-                token = process_long_key(token)
-                show.append(token)
-        else:
-            show = ['w']
+
 
         withs = process_kwargs(tokens)
 
@@ -1088,10 +1107,24 @@ def interpreter(debug=False,
         print('')
         return objs.result
 
+
+    def show_result(to_show, tokens):
+        kwargs = process_kwargs(tokens)
+        subcorpora = kwargs.pop('subcorpora', 'default')
+        show = kwargs.pop('columns', ['mw'])
+        data = to_show.table(subcorpora=subcorpora, show=show, **kwargs)
+        show_table(data)
+        return
+
     def show_this(tokens):
         """
         Show any object in a human-readable form
         """
+        if tokens[0] == 'result' or objs._get(tokens[0])[0] == 'result':
+            gotten = objs._get(tokens[0])[1]
+            show_result(gotten, tokens[1:])
+            return
+
         if tokens[0].startswith('file'):
             get_something[tokens]
             return
@@ -1520,6 +1553,7 @@ def interpreter(debug=False,
 
         calcs = ['k', '%', '+', '/', '-', '*', 'percentage', 'keyness']
         operation = next((i for i in tokens if any(i.startswith(x) for x in calcs)), operation)
+        #todo: results!
         if not operation:
             if tokens[-1].startswith('conc'):
                 res = objs.concordance.calculate()
