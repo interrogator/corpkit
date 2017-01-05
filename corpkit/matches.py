@@ -1,5 +1,6 @@
 import pandas as pd
 from functools import total_ordering
+from corpkit.lazyprop import lazyprop
 
 class Matches(list):
     """
@@ -15,6 +16,7 @@ class Matches(list):
 
         super(Matches, self).__init__(data)
 
+    @lazyprop
     def record(self):
         import pandas as pd
         from corpkit.build import get_all_metadata_fields
@@ -71,7 +73,7 @@ class Matches(list):
             from collections import Counter
             return pd.Series(Counter([k.display(show) for k in self.data])).sort_values(ascending=False)
         else:
-            df = self.record()
+            df = self.record.copy()
             # should be apply
             df['entry'] = [x.display(show, preserve_case=preserve_case) for x in df['entry']]
             df['count'] = [1 for x in df.index]
@@ -89,7 +91,7 @@ class Matches(list):
         from corpkit.interrogator import fix_show
         show = fix_show(show, 1)
         from corpkit.interrogation import Concordance
-        rec = self.record()
+        rec = self.record.copy()
         dummy_ser = pd.Series([0 for i in rec.index])
         loc = list(rec.columns).index('entry')
         rec.insert(loc, 'l', [0 for i in rec.index])
@@ -97,8 +99,6 @@ class Matches(list):
         rec.rename(columns={'entry':'m'}, inplace=True)
         clines = rec.apply(_concer, show=show, axis=1)
         return Concordance(clines)
-
-from corpkit.lazyprop import lazyprop
 
 @total_ordering
 class Token(object):
