@@ -244,6 +244,8 @@ class Objects(object):
         self._decimal = 3
         self._annotation_unlocked = False
 
+
+
     def _get(self, name):
         """
         Get an object, item from store or wordlist
@@ -395,26 +397,8 @@ def interpreter(debug=False,
         df = obj
         new_ix = []
         from colorama import Fore, Back, Style, init
-        for i in df.index:
-            num = str(i)
-            istr = ''
-            gotnums = objs._conc_colours[found_the_conc].get(num, {})
-            if gotnums:
-                for sty, col in gotnums.items():
-                    if col.upper() in ['DIM', 'NORMAL', 'BRIGHT', 'RESET_ALL']:
-                        thing_to_color = Style
-                    elif sty == 'Back':
-                        thing_to_color = Back
-                    else:
-                        thing_to_color = Fore
-                    istr += getattr(thing_to_color, col.upper())
-                istr += num
-                new_ix.append(istr)
-            else:
-                new_ix.append(str(i) + Style.RESET_ALL)
-        df.index = new_ix
-
-        df.tabview()
+        thisc = objs._conc_colours[found_the_conc]
+        df.tabview(colours=thisc)
         return
 
         if objs._conc_colours.get(found_the_conc):
@@ -1994,7 +1978,8 @@ def interpreter(debug=False,
         #    sty = tokens[-2].title().replace('ground', '')
 
         for line in cols:
-            if not int(line) in list(objs.concordance.index):
+            line = int(line)
+            if not line in list(objs.concordance.index):
                 continue
             # if there is already info for this line number, add present info
             if objs._conc_colours[len(objs._old_concs)-1].get(line):
@@ -2420,6 +2405,7 @@ def interpreter(debug=False,
 
         # exception handling: interrupt, exit or raise error...
         except KeyboardInterrupt:
+            raise
             print('\nEnter ctrl+d, "exit" or "quit" to quit\n')
             backslashed = ''
             if python_c_mode:

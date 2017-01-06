@@ -667,9 +667,9 @@ class Concordance(pd.core.frame.DataFrame):
         return interrogation_from_conclines(self)
 
     def tabview(self, window=(55, 55), **kwargs):
+        """Show concordance in interactive cli view"""
         from tabview import view
         from corpkit.other import resize_by_window_size
-        #dat = resize_by_window_size(self, window)
         import pandas as pd
         if isinstance(self.index, pd.MultiIndex):
             lsts = list(zip(*self.index.to_series()))
@@ -687,6 +687,7 @@ class Concordance(pd.core.frame.DataFrame):
             widths = [iwid]
         tot = len(self.columns) + len(self.index.names)
         aligns = [True] * tot
+        truncs = [False] * tot
         if isinstance(window, int):
             window = [window, window]
         else:
@@ -699,19 +700,29 @@ class Concordance(pd.core.frame.DataFrame):
         for i, c in enumerate(self.columns):
             if c == 'l':
                 widths.append(window[0])
+                truncs[i+len(self.index.names)] = True
             elif c == 'r':
                 widths.append(window[1])
-                aligns[i+len(self.index.names)] = False            
+                aligns[i+len(self.index.names)] = False
+            elif c == 'm':
+                mx = self[c].astype(str)[:100].str.len().max() + 1
+                if mx > 15:
+                    mx = 15
+                widths.append(mx)
+                aligns[i+len(self.index.names)] = False         
             else:
-                mx = self[c].astype(str)[:100].str.len().max()
+                mx = self[c].astype(str)[:100].str.len().max() + 1
                 if mx > 10:
                     mx = 10
                 widths.append(mx)
 
-
-        kwa = {'column_widths': widths, 'persist': True}
+        kwa = {'column_widths': widths, 'persist': True, 'trunc_left': truncs,
+               'colours': kwargs.get('colours', False)}
+        
         if 'align_right' not in kwargs:
             kwa['align_right'] = aligns
+
+        print(kwa)
 
         view(pd.DataFrame(self), **kwa)
 

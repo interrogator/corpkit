@@ -690,10 +690,10 @@ def interrogator(corpus,
     # create a progress bar
     p, outn, total_files, par_args = make_progress_bar(corpus_iter)
 
-    if conc:
-        conc_col_names = get_conc_colnames(corpus,
-                                           fsi_index=fsi_index,
-                                           simple_tregex_mode=False)
+    #if conc:
+    #    conc_col_names = get_conc_colnames(corpus,
+    #                                       fsi_index=fsi_index,
+    #                                       simple_tregex_mode=False)
 
 
     for f in corpus_iter:
