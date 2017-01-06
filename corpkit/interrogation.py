@@ -709,7 +709,7 @@ class Concordance(pd.core.frame.DataFrame):
                 widths.append(mx)
 
 
-        kwa = {'column_widths': widths}
+        kwa = {'column_widths': widths, 'persist': True}
         if 'align_right' not in kwargs:
             kwa['align_right'] = aligns
 

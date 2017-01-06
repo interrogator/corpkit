@@ -392,6 +392,31 @@ def interpreter(debug=False,
         if found_the_conc is None:
             return
         # if colours have been saved for these lines, try to fill them in 
+        df = obj
+        new_ix = []
+        from colorama import Fore, Back, Style, init
+        for i in df.index:
+            num = str(i)
+            istr = ''
+            gotnums = objs._conc_colours[found_the_conc].get(num, {})
+            if gotnums:
+                for sty, col in gotnums.items():
+                    if col.upper() in ['DIM', 'NORMAL', 'BRIGHT', 'RESET_ALL']:
+                        thing_to_color = Style
+                    elif sty == 'Back':
+                        thing_to_color = Back
+                    else:
+                        thing_to_color = Fore
+                    istr += getattr(thing_to_color, col.upper())
+                istr += num
+                new_ix.append(istr)
+            else:
+                new_ix.append(str(i) + Style.RESET_ALL)
+        df.index = new_ix
+
+        df.tabview()
+        return
+
         if objs._conc_colours.get(found_the_conc):
             try:
                 lines_to_print = []
