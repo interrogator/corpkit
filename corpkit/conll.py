@@ -68,12 +68,16 @@ def parse_conll(f,
     if not metadata:
         return
 
-    df = pd.read_csv(f, sep='\t', header=None, na_filter=False, memory_map=True, comment="#", names=head, usecols=None, index_col=index_col, engine='c')
+    df = pd.read_csv(f, sep='\t', header=None, na_filter=False, memory_map=True, comment="#",
+                     names=head, usecols=None, index_col=index_col, engine='c')
     c = 0
     newlev = []
     for i in df.index:
-        if int(i) == 1:
-            c += 1
+        try:
+            if int(i) == 1:
+                c += 1
+        except:
+            pass
         newlev.append((c, i))
     ix = pd.MultiIndex.from_tuples(newlev)
     df.index = ix
@@ -1140,6 +1144,7 @@ def pipeline(f=False,
              corpus_name=False,
              corpus=False,
              matches=False,
+             multiprocess=False,
              **kwargs):
     """
     A basic pipeline for conll querying---some options still to do
@@ -1251,6 +1256,10 @@ def pipeline(f=False,
             all_exclude = set(all_exclude)
         
         all_res = sorted(list(set(all_res).difference(all_exclude)))
+
+    if multiprocess:
+        for i in all_res:
+            del i.parent
 
     return all_res
 

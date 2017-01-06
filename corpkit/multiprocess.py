@@ -83,7 +83,8 @@ def pmultiquery(corpus,
                         'printstatus': False,
                         'multiprocess': False,
                         'df1_always_df': False,
-                        'files_as_subcorpora': False}
+                        'files_as_subcorpora': False,
+                        'mp': True}
 
     # make a new dict for every iteration
     ds = [dict(**basic_multi_dict) for i in range(multiprocess)]

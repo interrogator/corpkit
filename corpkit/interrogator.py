@@ -733,6 +733,7 @@ def interrogator(corpus,
                                  corpus_name=getattr(corpus, 'corpus_name', False),
                                  corpus=corpus,
                                  matches=results,
+                                 multiprocess=kwargs.get('mp'),
                                  **kwargs)
             
         if res == 'Bad query':
