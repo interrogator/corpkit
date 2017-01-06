@@ -106,11 +106,16 @@ class Token(object):
     Model a token in the corpus
     """
 
-    def __init__(self, idx, df, sent_id, fobj, metadata, parent, **kwargs):
+    def __init__(self, idx, df, sent_id, fobj, metadata, parent, conc=True, **kwargs):
 
         self.i = idx
         self.s = sent_id
-        self.df = df
+        self._conc = conc
+        if conc:
+            self.df = df
+        else:
+            self.df = df.loc[sent_id]
+        df = None
         self.fobj = fobj
         self.path = fobj.path
         self.metadata = metadata
@@ -123,7 +128,10 @@ class Token(object):
     
     @lazyprop
     def sent(self):
-        return self.df.ix[self.s]
+        if self._conc:
+            return self.df.ix[self.s]
+        else:
+            return self.df
 
     @lazyprop
     def governor(self):
