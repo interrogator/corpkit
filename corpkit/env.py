@@ -401,47 +401,6 @@ def interpreter(debug=False,
         df.tabview(colours=thisc)
         return
 
-        if objs._conc_colours.get(found_the_conc):
-            try:
-                lines_to_print = []
-                from colorama import Fore, Back, Style, init
-                lines = obj.format(print_it=False, **objs._conc_kwargs).splitlines()
-                # for each concordance line
-                for line in lines:
-                    # get index as str
-                    num = line.strip().split(' ', 1)[0]
-                    # get dict of style and colour for line
-                    gotnums = objs._conc_colours[found_the_conc].get(num, {})
-                    highstr = ''
-                    for sty, col in gotnums.items():
-                        if col.upper() in ['DIM', 'NORMAL', 'BRIGHT', 'RESET_ALL']:
-                            thing_to_color = Style
-                        elif sty == 'Back':
-                            thing_to_color = Back
-                        else:
-                            thing_to_color = Fore
-                        highstr += getattr(thing_to_color, col.upper())
-                    highstr += line    
-                    lines_to_print.append(highstr)
-
-                if objs._interactive:
-                    pydoc.pipepager('\n'.join(lines_to_print), cmd="less -X -R -S")
-                else:
-                    print('\n'.join(lines_to_print))
-            except ImportError:
-                formatted = obj.format(print_it=False, **objs._conc_kwargs)  
-                if objs._interactive:
-                    pydoc.pipepager(formatted, cmd="less -X -R -S")
-                else:
-                    print(formatted)
-
-        else:
-            formatted = obj.format(print_it=False, **objs._conc_kwargs)
-            if objs._interactive:
-                pydoc.pipepager(formatted, cmd="less -X -R -S")
-            else:
-                print(formatted)
-
     def show_table(obj, objtype=False, start_pos=False):
         """
         Print or tabview a Pandas object
@@ -2405,7 +2364,6 @@ def interpreter(debug=False,
 
         # exception handling: interrupt, exit or raise error...
         except KeyboardInterrupt:
-            raise
             print('\nEnter ctrl+d, "exit" or "quit" to quit\n')
             backslashed = ''
             if python_c_mode:

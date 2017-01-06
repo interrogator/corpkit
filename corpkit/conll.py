@@ -186,7 +186,7 @@ def get_all_corefs(s, i, df, coref=False):
         return [(s, i)]
 
 def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, corpus=False, matches=False,
-                subcorpora=False, metadata=False, fobj=False, corpus_name=False):
+                subcorpora=False, metadata=False, fobj=False, corpus_name=False, conc=True):
     """
     Search the dataframe for a single criterion
 
@@ -1114,10 +1114,10 @@ def update_dd(res, all_res):
         all_res[k] += v
     return all_res
 
-def row_tok_apply(row, df=False, fobj=False, metadata=False, matches=False):
+def row_tok_apply(row, df=False, fobj=False, metadata=False, matches=False, conc=True):
     from corpkit.matches import Token
 
-    t = Token(row.name[1], df, row.name[0], fobj, metadata[row.name[0]], matches, **row.to_dict())
+    t = Token(row.name[1], df, row.name[0], fobj, metadata[row.name[0]], matches, conc=conc, **row.to_dict())
     return t
 
 def pipeline(f=False,
@@ -1126,7 +1126,7 @@ def pipeline(f=False,
              exclude=False,
              searchmode='all',
              excludemode='any',
-             conc=False,
+             conc=True,
              coref=False,
              from_df=False,
              just_metadata=False,
@@ -1230,12 +1230,12 @@ def pipeline(f=False,
                         and hasattr(list(search.values())[0], 'pattern') \
                         and list(search.values())[0].pattern == r'.*':
         all_res = []
-        tokks = df.apply(row_tok_apply, axis=1, df=df, fobj=fobj, metadata=metadata, matches=matches)
+        tokks = df.apply(row_tok_apply, axis=1, df=df, fobj=fobj, metadata=metadata, matches=matches, conc=conc)
     else:
         for k, v in search.items():
             adj, k = determine_adjacent(k)
             all_res += search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, metadata=metadata,
-                                   fobj=fobj, corpus_name=corpus_name, corpus=corpus, matches=matches)
+                                   fobj=fobj, corpus_name=corpus_name, corpus=corpus, matches=matches, conc=conc)
         if searchmode == 'all' and len(search) > 1:
             all_res = sorted([k for k, v in Counter(all_res).items() if v == len(search)])
 
@@ -1243,7 +1243,7 @@ def pipeline(f=False,
         for k, v in exclude.items():
             adj, k = determine_adjacent(k)
             all_exclude += search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, metadata=metadata,
-                                   fobj=fobj, corpus_name=corpus_name, corpus=corpus, matches=matches)
+                                   fobj=fobj, corpus_name=corpus_name, corpus=corpus, matches=matches, conc=conc)
         #all_exclude = remove_by_mode(all_exclude, excludemode, exclude)
         if excludemode == 'all':
             all_exclude = set(k for k, v in Counter(all_exclude).items() if v == len(search))

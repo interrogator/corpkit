@@ -722,8 +722,6 @@ class Concordance(pd.core.frame.DataFrame):
         if 'align_right' not in kwargs:
             kwa['align_right'] = aligns
 
-        print(kwa)
-
         view(pd.DataFrame(self), **kwa)
 
     def shuffle(self, inplace=False):
