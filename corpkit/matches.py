@@ -168,8 +168,8 @@ def _concer(record, show):
     """
     tok = record['m']
     record['m'] = tok.display(show)
-    record['r'] = tok.right
-    record['l'] = tok.left
+    record['r'] = ' '.join(tok.sent['w'].loc[tok.i+1:].values)
+    record['l'] = ' '.join(tok.sent['w'].loc[:tok.i-1].values)
     return record
 
 # unused code below!
