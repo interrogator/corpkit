@@ -153,20 +153,14 @@ def pmultiquery(corpus,
             pass
 
     merged_res = [item for sublist in res for item in sublist]
-    matches = Matches(merged_res, corpus)
     subc = subcorpora if kwargs.get('subcorpora') else 'default'
-    resbranch = matches.table(subcorpora=subc, show=show)
-    try:
-        totals = resbranch.sum(axis=1)
-    except:
-        totals = resbranch.sum()
 
     querybits = {'search': search,
                   'exclude': exclude,
                   'show': show,
                   'subcorpora': subcorpora}
 
-    interro = Interrogation(data=matches, corpus=corpus, query=querybits, totals=len(matches))
+    interro = Interrogation(data=merged_res, corpus=corpus, query=querybits)
 
     if print_info:
         if terminal:

@@ -1,104 +1,10 @@
 import pandas as pd
 from functools import total_ordering
-
-class Matches(list):
-    """
-    Store search results in an abstract, intermediate way
-    """
-
-    def __init__(self, data, corpus, **kwargs):
-
-        from corpkit.corpus import Corpus
-
-        self.data = data
-        self.corpus = corpus
-
-        super(Matches, self).__init__(data)
-
-    def record(self):
-        import pandas as pd
-        from corpkit.build import get_all_metadata_fields
-        from corpkit.corpus import Corpora, Corpus, Datalist
-        record_data = []
-        try:
-            all_meta_fields = list(self.corpus.metadata['fields'].keys())
-        except:
-            all_meta_fields = list(Corpus(self.corpus, print_info=False).metadata['fields'].keys())
-        fields = list(sorted(['parse', 'folder', 'file'] + all_meta_fields))
-        
-        for k in self.data:
-            line = [k.metadata.get(key, 'none') for key in fields]
-            line += [k.s, k.i, k]
-            record_data.append(line)
-        column_names = fields + ['s', 'i', 'entry']
-
-        df = pd.DataFrame(record_data)
-        df.columns = column_names
-
-        sorts = ['corpus'] if isinstance(self.corpus, Corpora) else []
-        if getattr(self.corpus, 'level', 's'):
-            sorts.append('folder')
-        sorts += ['file', 's', 'i']
-        df = df.sort_values(sorts).reset_index(drop=True)
-        return df
-
-    def table(self, subcorpora='default', preserve_case=False, show=['w']):
-
-        import pandas as pd
-        from corpkit.corpus import Corpora, Datalist, Subcorpus
-
-        # wrong for datalists
-        if subcorpora == 'default':
-
-            subcorpora = False
-            lev = getattr(self.corpus, 'level', False)
-            if isinstance(self.corpus, Corpora):
-                subcorpora = 'corpus'
-            elif lev == 'd' or isinstance(self.corpus, Datalist):
-                if isinstance(self.corpus[0], Subcorpus):
-                    subcorpora = 'folder'
-                else:
-                    subcorpora = 'file'
-            elif lev == 'c':
-                subcorpora = 'folder'
-            elif lev == 's':
-                subcorpora = 'file'
-    
-        from corpkit.interrogator import fix_show
-        show = fix_show(show, 1)
-
-        if not subcorpora:
-            from collections import Counter
-            return pd.Series(Counter([k.display(show) for k in self.data])).sort_values(ascending=False)
-        else:
-            df = self.record()
-            # should be apply
-            df['entry'] = [x.display(show, preserve_case=preserve_case) for x in df['entry']]
-            df['count'] = [1 for x in df.index]
-            df = df.pivot_table(index=subcorpora, columns='entry', values='count', aggfunc=sum)
-            df = df.fillna(0.0).astype(int)
-            df = df[df.sum().sort_values(ascending=False).index]
-            return df
-
-    def conc(self, show=['w']):
-        """
-        Generate concordance from Matches
-        """
-        #todo: add index stuff in here
-        import pandas as pd
-        from corpkit.interrogator import fix_show
-        show = fix_show(show, 1)
-        from corpkit.interrogation import Concordance
-        rec = self.record()
-        dummy_ser = pd.Series([0 for i in rec.index])
-        loc = list(rec.columns).index('entry')
-        rec.insert(loc, 'l', [0 for i in rec.index])
-        rec = rec.drop(['parse'], axis=1)
-        rec.rename(columns={'entry':'m'}, inplace=True)
-        clines = rec.apply(_concer, show=show, axis=1)
-        return Concordance(clines)
-
 from corpkit.lazyprop import lazyprop
+from corpkit.constants import STRINGTYPE
+
+def make_ser(row, k=False):
+    return row['entry'].display(k)
 
 @total_ordering
 class Token(object):
@@ -111,10 +17,7 @@ class Token(object):
         self.i = idx
         self.s = sent_id
         self._conc = conc
-        if conc:
-            self.df = df
-        else:
-            self.df = df.loc[sent_id]
+        self.df = df
         df = None
         self.fobj = fobj
         self.path = fobj.path
@@ -128,10 +31,15 @@ class Token(object):
     
     @lazyprop
     def sent(self):
-        if self._conc:
-            return self.df.ix[self.s]
-        else:
-            return self.df
+        return self.df.loc[self.s]
+
+    @lazyprop
+    def left(self):
+        return ' '.join(self.df['w'].loc[:self.i-1].values)
+
+    @lazyprop
+    def right(self):
+        return ' '.join(self.df['w'].loc[self.i+1:].values)
 
     @lazyprop
     def governor(self):
@@ -260,10 +168,8 @@ def _concer(record, show):
     """
     tok = record['m']
     record['m'] = tok.display(show)
-    start = ' '.join(tok.sent['w'].loc[:tok.i-1].values)
-    end = ' '.join(tok.sent['w'].loc[tok.i+1:].values)
-    record['r'] = end
-    record['l'] = start 
+    record['r'] = tok.right
+    record['l'] = tok.left
     return record
 
 # unused code below!

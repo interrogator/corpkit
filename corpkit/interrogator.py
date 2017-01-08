@@ -106,7 +106,6 @@ def interrogator(corpus,
     See corpkit.interrogation.interrogate() for docstring
     """
 
-
     conc = kwargs.get('do_concordancing', conc)
     quiet = kwargs.get('quiet', False)
     coref = kwargs.pop('coref', False)
@@ -133,9 +132,8 @@ def interrogator(corpus,
     import pandas as pd
     from pandas import DataFrame, Series
 
-    from corpkit.interrogation import Interrogation, Interrodict
-    from corpkit.matches import Matches
-    from corpkit.corpus import Datalist, Corpora, Corpus, File, Subcorpus
+    from corpkit.interrogation import Interrogation
+    from corpkit.corpus import Datalist, File, Corpora, Corpus, Subcorpus
     from corpkit.process import (tregex_engine, get_deps, unsplitter, sanitise_dict, 
                                  animator, filtermaker, fix_search,
                                  pat_format, auto_usecols, format_tregex,
@@ -147,9 +145,6 @@ def interrogator(corpus,
     from corpkit.process import delete_files_and_subcorpora
     
     have_java = check_jdk()
-
-    if isinstance(corpus, list):
-        corpus = Datalist(corpus)
 
     # remake corpus without bad files and folders 
     corpus, skip_metadata, just_metadata = delete_files_and_subcorpora(corpus, skip_metadata, just_metadata)
@@ -559,13 +554,13 @@ def interrogator(corpus,
         import copy
         corpus = copy.copy(corpus)
         for k, v in corpus.__dict__.items():
-            if isinstance(v, (Interrogation, Interrodict)):
+            if isinstance(v, Interrogation):
                 corpus.__dict__.pop(k, None)
 
     # convert path to corpus object
-    if not isinstance(corpus, (Corpus, Corpora, Subcorpus, File, Datalist)):
-        if not multiprocess and not kwargs.get('outname'):
-            corpus = Corpus(corpus, print_info=False)
+    #if not isinstance(corpus, (Corpus, Corpora, Subcorpus, File, Datalist)):
+    #    if not multiprocess and not kwargs.get('outname'):
+    #        corpus = Corpus(corpus, print_info=False)
 
     # figure out how the user has entered the query and show, and normalise
     from corpkit.process import searchfixer
@@ -618,7 +613,7 @@ def interrogator(corpus,
     # store all results in here
     from collections import defaultdict, Counter
     
-    results = Matches([], corpus)
+    results = []
     
     count_results = defaultdict(list)
     conc_results = defaultdict(list)
@@ -746,19 +741,17 @@ def interrogator(corpus,
         tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
         animator(p, current_iter, tstr, **par_args)
 
-    matches = Matches(results, corpus)
-
     querybits = {'search': search,
                   'exclude': exclude,
                   'show': show,
                   'subcorpora': subcorpora}
 
-    interro = Interrogation(data=matches, corpus=corpus, totals=len(matches), query=querybits)
+    interro = Interrogation(data=results, corpus=corpus, query=querybits)
     
     signal.signal(signal.SIGINT, original_sigint)
 
     if kwargs.get('paralleling', None) is None:
         return interro
     else:
-        return matches[:]
+        return results
         

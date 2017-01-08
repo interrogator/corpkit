@@ -25,7 +25,6 @@ __all__ = [
     "new_project",
     "Corpus",
     "File",
-    "Corpora",
     "gui"] + LETTERS
 
 corpath = inspect.getfile(inspect.currentframe())
@@ -38,7 +37,7 @@ for p in [corpath, baspat]:
         os.environ["PATH"] += os.pathsep + p
 
 # import classes
-from corpkit.corpus import Corpus, File, Corpora
+from corpkit.corpus import Corpus, File
 #from corpkit.model import MultiModel
 
 from corpkit.other import (load, loader, load_all_results, 

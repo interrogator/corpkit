@@ -362,7 +362,7 @@ def get_fullpath_to_jars(path_var):
 
 def determine_datatype(path):
     """
-    Determine if plaintext, tokens or parsed XML
+    Determine if plaintext or conll --- could be quicker
     """
     import os
     from collections import Counter
@@ -1580,3 +1580,43 @@ def timestring(inputx, blankfirst=0):
     thetime = strftime("%H:%M:%S", localtime())
     blankfirst = '\n' * blankfirst
     print('%s%s: %s' % (blankfirst, thetime, inputx.lstrip()))
+
+def make_record(data, corpus):
+    import pandas as pd
+    from corpkit.build import get_all_metadata_fields
+    from corpkit.corpus import Corpora, Corpus, Datalist
+    record_data = []
+    try:
+        all_meta_fields = list(corpus.metadata['fields'].keys())
+    except:
+        all_meta_fields = list(Corpus(corpus, print_info=False).metadata['fields'].keys())
+    fields = list(sorted(['parse', 'folder', 'file'] + all_meta_fields))
+    for k in data:
+        line = [k.metadata.get(key, 'none') for key in fields]
+        line += [k.s, k.i, k]
+        record_data.append(line)
+    column_names = fields + ['s', 'i', 'entry']
+
+    df = pd.DataFrame(record_data)
+    df.columns = column_names
+
+    sorts = ['corpus'] if isinstance(corpus, Corpora) else []
+    if getattr(corpus, 'level', 's'):
+        sorts.append('folder')
+    sorts += ['file', 's', 'i']
+    df = df.sort_values(sorts).reset_index(drop=True)
+    return df
+
+def make_tree(path):
+    import os
+    s = ""
+    for root, dirs, files in os.walk(path):
+        level = root.replace(path, '').count(os.sep)
+        indent = ' ' * 4 * (level)
+        s += '{}{}/'.format(indent, os.path.basename(root)) + '\n'
+        subindent = ' ' * 4 * (level + 1)
+        for f in files:
+            if not f.endswith('.txt') and not f.endswith('.conll'):
+                continue
+            s += '{}{}'.format(subindent, f) + '\n'
+    return s

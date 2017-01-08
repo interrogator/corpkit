@@ -2,7 +2,7 @@
 corpkit: process CONLL formatted data
 """
 
-from corpkit.matches import Token, Matches
+from corpkit.matches import Token
 
 def parse_conll(f,
                 first_time=False,
@@ -219,7 +219,7 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, corpus=Fa
     else:
         xmatches = df[df[attrib].fillna('').str.contains(pattern)]
 
-    tokks = xmatches.apply(row_tok_apply, axis=1, df=df, fobj=fobj, metadata=metadata, matches=matches)
+    tokks = xmatches.apply(row_tok_apply, axis=1, df=df, fobj=fobj, metadata=metadata, matches=matches, conc=conc)
     tokks = tokks.values
 
     if coref:
