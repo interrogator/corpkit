@@ -21,7 +21,7 @@ class Interrogation(pd.DataFrame):
     Pandas object, which can be edited or plotted.
     """
 
-    def __init__(self, data=None, corpus=None, query=None, norec=False):
+    def __init__(self, data=None, corpus=None, query=None, norec=False, path=False):
         """Initialise the class"""
         if norec:
             super(Interrogation, self).__init__(data)

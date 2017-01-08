@@ -1450,7 +1450,7 @@ def add_df_to_dotfile(path, df, typ='features', subcorpora=False):
         md[name] = df.astype(object).to_dict()
         make_dotfile(path, data_dict=md)
 
-def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
+def delete_files_and_subcorpora(corpus, skip, just):
     """
     Remake a Corpus object without some files or folders
     """
@@ -1460,23 +1460,23 @@ def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
     
     # we use type here because subcorpora don't have subcorpora, but Subcorpus
     # inherits from Corpus
-    if not type(corpus) == Corpus:
-        return corpus, skip_metadata, just_metadata
+    if not isinstance(corpus, Corpus):
+        return corpus, skip, just
         
-    if not skip_metadata and not just_metadata:
-        return corpus, skip_metadata, just_metadata
+    if not skip and not just:
+        return corpus, skip, just
 
-    sd = skip_metadata.pop('folders', None) if isinstance(skip_metadata, dict) else None
-    sf = skip_metadata.pop('files', None) if isinstance(skip_metadata, dict) else None
-    jd = just_metadata.pop('folders', None) if isinstance(just_metadata, dict) else None
-    jf = just_metadata.pop('files', None) if isinstance(just_metadata, dict) else None
+    sd = skip.pop('folders', None) if isinstance(skip, dict) else None
+    sf = skip.pop('files', None) if isinstance(skip, dict) else None
+    jd = just.pop('folders', None) if isinstance(just, dict) else None
+    jf = just.pop('files', None) if isinstance(just, dict) else None
     sd = str(sd) if isinstance(sd, (int, float)) else sd
     sf = str(sf) if isinstance(sf, (int, float)) else sf
     jd = str(jd) if isinstance(jd, (int, float)) else jd
     jf = str(jf) if isinstance(jf, (int, float)) else jf
 
     if not any([sd, sf, jd, jf]):
-        return corpus, skip_metadata, just_metadata
+        return corpus, skip, just
 
     # now, the real processing begins
     # the code has to be this way, sorry.
@@ -1571,7 +1571,7 @@ def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
                 for i in sorted(todel, reverse=True):
                     del sc.files[i]
 
-    return corpus, skip_metadata, just_metadata
+    return corpus, skip, just
 
 
 def timestring(inputx, blankfirst=0):
@@ -1581,15 +1581,16 @@ def timestring(inputx, blankfirst=0):
     blankfirst = '\n' * blankfirst
     print('%s%s: %s' % (blankfirst, thetime, inputx.lstrip()))
 
-def make_record(data, corpus):
+def make_record(data, corpus, path=False):
     import pandas as pd
     from corpkit.build import get_all_metadata_fields
-    from corpkit.corpus import Corpora, Corpus, Datalist
+    from corpkit.corpus import Corpus
     record_data = []
     try:
         all_meta_fields = list(corpus.metadata['fields'].keys())
-    except:
-        all_meta_fields = list(Corpus(corpus, print_info=False).metadata['fields'].keys())
+    except AttributeError:
+        all_meta_fields = list(Corpus(corpus, print_info=False, root=path).metadata['fields'].keys())
+
     fields = list(sorted(['parse', 'folder', 'file'] + all_meta_fields))
     for k in data:
         line = [k.metadata.get(key, 'none') for key in fields]
@@ -1600,7 +1601,7 @@ def make_record(data, corpus):
     df = pd.DataFrame(record_data)
     df.columns = column_names
 
-    sorts = ['corpus'] if isinstance(corpus, Corpora) else []
+    sorts = []
     if getattr(corpus, 'level', 's'):
         sorts.append('folder')
     sorts += ['file', 's', 'i']

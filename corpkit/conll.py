@@ -853,16 +853,16 @@ def cut_df_by_metadata(df, metadata, criteria, coref=False,
     df._metadata = new_metadata
     return df
 
-def cut_df_by_meta(df, just_metadata, skip_metadata):
+def cut_df_by_meta(df, just, skip):
     """
     Reshape a DataFrame based on filters
     """
     if df is not None:
-        if just_metadata:
-            for k, v in just_metadata.items():
+        if just:
+            for k, v in just.items():
                 df = cut_df_by_metadata(df, df._metadata, v, feature=k)
-        if skip_metadata:
-            for k, v in skip_metadata.items():
+        if skip:
+            for k, v in skip.items():
                 df = cut_df_by_metadata(df, df._metadata, v, feature=k, method='skip')
     return df
 
@@ -1133,8 +1133,8 @@ def pipeline(f=False,
              conc=True,
              coref=False,
              from_df=False,
-             just_metadata=False,
-             skip_metadata=False,
+             just=False,
+             skip=False,
              show_conc_metadata=False,
              statsmode=False,
              search_trees=False,
