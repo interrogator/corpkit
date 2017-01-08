@@ -1362,7 +1362,12 @@ def get_first_df(corpus):
     check what columns it has
     """
     # genius code below
-    from corpkit.corpus import Corpus
+    from corpkit.corpus import Corpus, File
+    import os
+    if isinstance(corpus, str) and os.path.isfile(corpus):
+        return File(corpus).document
+    if getattr(corpus, 'singlefile', False):
+        return corpus.document
     if not isinstance(corpus, Corpus):
         corpus = Corpus(corpus, print_info=False)
     if corpus.subcorpora:
@@ -1621,3 +1626,15 @@ def make_tree(path):
                 continue
             s += '{}{}'.format(subindent, f) + '\n'
     return s
+
+def make_filelist(path):
+    """make a list of absolute paths to every file in the corpus"""
+    import os
+    all_files = []
+    for root, ds, fs in os.walk(path):
+        for f in fs:
+            if not f.endswith('.txt') and not f.endswith('.conll'):
+                continue
+            fp = os.path.join(root, f)
+            all_files.append(fp)
+    return all_files

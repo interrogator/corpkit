@@ -8,21 +8,27 @@ class Corpus(list):
 
     def __init__(self, path_or_list, **kwargs):
 
+        self.mainpath = kwargs.get('mainpath', False)
         if isinstance(path_or_list, list):
             self.singlefile = False
             self.path = kwargs.pop('root')
             self.name = os.path.basename(self.path)
             self.data = path_or_list
         else:
-            self.data = False
+            # init file here?
             if os.path.isfile(path_or_list):
                 self.singlefile = True
                 self.path = path_or_list
             elif not os.path.isdir(path_or_list):
-                self.singlefile = False
                 path_or_list = os.path.join('data', path_or_list.strip('/'))
-                self.path = os.path.abspath(path_or_list)
+                self.singlefile = False
+            else:
+                self.singlefile = False
+            self.path = os.path.abspath(path_or_list)
             self.name = os.path.basename(path_or_list)
+            self.data = False
+            if not self.mainpath:
+                self.mainpath = path_or_list
             
         self._sliced = kwargs.pop('sliced', False)
         self.just = kwargs.pop('just', False)
@@ -46,17 +52,9 @@ class Corpus(list):
         """
         Lazy load data paths in a corpus
         """ 
-        all_files = list()
-
-        # make a list of absolute paths to every file in the corpus
-        for root, ds, fs in os.walk(self.path):
-            for f in fs:
-                if not f.endswith('.txt') and not f.endswith('.conll'):
-                    continue
-                fp = os.path.join(root, f)
-                all_files.append(fp)
-
-        # and all directories
+        from corpkit.process import make_filelist
+        
+        all_files = make_filelist(self.path)
         all_dirs = sorted(list(set(os.path.split(i)[0] for i in all_files 
                        if os.path.isdir(os.path.join(self.path, os.path.split(i)[0])))))
 
@@ -64,12 +62,13 @@ class Corpus(list):
         immediate = os.listdir(self.path)
         files = [f for f in all_files if os.path.split(f)[1] in immediate]
         dirs = [d for d in all_dirs if os.path.basename(d.rstrip('/')) in immediate]
+        
         return all_files, all_dirs, files, dirs, len(all_files)
 
     @lazyprop
     def subcorpora(self):
         ds = self._data_paths[3]
-        return Subcorpus([Subcorpus(d) for d in ds], root=self.path)
+        return Subcorpus([Subcorpus(d, mainpath=self.mainpath) for d in ds], root=self.path, mainpath=self.mainpath)
 
     @lazyprop
     def _ndirs(self):
@@ -86,19 +85,19 @@ class Corpus(list):
     @lazyprop
     def files(self):
         fs = self._data_paths[2]
-        return Subcorpus([File(f) for f in fs], root=self.path)
+        return Subcorpus([File(f, mainpath=self.mainpath) for f in fs], root=self.path, mainpath=self.mainpath)
 
     @lazyprop
     def all_subcorpora(self):
         ds = self._data_paths[1]
-        return Subcorpus([Subcorpus(d) for d in ds], root=self.path)
+        return Subcorpus([Subcorpus(d, mainpath=self.mainpath) for d in ds], root=self.path, mainpath=self.mainpath)
 
     @lazyprop
     def all_files(self):
         if self._sliced:
             return list(self.data)
         ds = self._data_paths[0]
-        return Subcorpus([File(d) for d in ds], root=self.path)
+        return Subcorpus([File(d, mainpath=self.mainpath) for d in ds], root=self.path, mainpath=self.mainpath)
 
     @lazyprop
     def _length(self):
@@ -127,9 +126,10 @@ class Corpus(list):
         return '<%s: %s --- %ss/%sf>' % (self.__class__.__name__, path, format(self._ndirs, ','), format(self._nfiles, ','))
 
     def __getitem__(self, key):
-        return Subcorpus(super(Corpus, self).__getitem__(key), root=self.path, sliced=True)
-
-
+        if isinstance(key, int):
+            return super(Corpus, self).__getitem__(key)
+        else:
+            return Files(super(Corpus, self).__getitem__(key), root=self.path, sliced=True)
 
     def sample(self, n, level='f'):
         """
@@ -179,6 +179,8 @@ class Corpus(list):
         """
         Get metadata for a corpus
         """
+        if isinstance(self, (Subcorpus, File)):
+            self = self.mainpath
         from corpkit.process import get_corpus_metadata
         return get_corpus_metadata(self, generate=True)
 
@@ -354,20 +356,28 @@ class Corpus(list):
         annotator(self, annotation, dry_run=dry_run, deletemode=True)
 
 
+class Files(Corpus):
 
+    def __init__(self, data, **kwargs):
 
+        super(Files, self).__init__(data, **kwargs)
+        self.data = data
 
+    def __getitem__(self, key):
+        return list.__getitem__(self.data, key)
 
+    def __repr__(self):
+        path = ' -> '.join(os.path.relpath(self.path).split('/')[1:])
+        return '<%s: %s (n=%s)>' % (self.__class__.__name__, path, format(self._nfiles, ','))
 
 class Subcorpus(Corpus):
 
     def __init__(self, data, **kwargs):
 
         super(Subcorpus, self).__init__(data, **kwargs)
-        self.data = data
 
     def __getitem__(self, key):
-        return list.__getitem__(self.data, key)
+        return list.__getitem__(self, key)
 
 class File(Corpus):
     """
@@ -378,13 +388,14 @@ class File(Corpus):
     directly as a `str`, or as a Pandas DataFrame.
     """
 
-    def __init__(self, path, dirname=False, datatype=False, **kwa):
+    def __init__(self, path, **kwargs):
         import os
         super(File, self).__init__(path, isfile=True)
         if self.path.endswith('.conll') or self.path.endswith('.conllu'):
             self.datatype = 'conll'
         else:
             self.datatype = 'plaintext'
+        self.mainpath = kwargs.get('mainpath', False)
 
     def __repr__(self):
         return "<%s instance: %s>" % (classname(self), self.name)
