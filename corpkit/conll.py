@@ -1231,11 +1231,12 @@ def pipeline(f=False,
                         **kwargs)
 
     # do no searching if 'any' is requested
+    # doesn't work?
     if len(search) == 1 and list(search.keys())[0] == 'mw' \
                         and hasattr(list(search.values())[0], 'pattern') \
                         and list(search.values())[0].pattern == r'.*':
-        all_res = []
         tokks = df.apply(row_tok_apply, axis=1, df=df, fobj=fobj, metadata=metadata, matches=matches, conc=conc)
+        all_res = list(tokks.values)
     else:
         for k, v in search.items():
             adj, k = determine_adjacent(k)

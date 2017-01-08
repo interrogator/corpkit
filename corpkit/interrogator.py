@@ -549,7 +549,7 @@ def interrogator(corpus,
     querybits = {'search': search,
                   'exclude': exclude,
                   'subcorpora': subcorpora}
-                  
+
     signal.signal(signal.SIGINT, original_sigint)
 
     if kwargs.get('paralleling', None) is None:
