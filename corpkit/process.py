@@ -1386,7 +1386,7 @@ def make_dotfile(path, return_json=False, data_dict=False):
     import os
     import json
     from corpkit.build import get_all_metadata_fields, get_speaker_names_from_parsed_corpus
-    from corpkit.constants import OPENER
+    from corpkit.constants import OPENER, CONLL_COLUMNS
     if data_dict:
         json_data = data_dict
     else:
@@ -1395,8 +1395,8 @@ def make_dotfile(path, return_json=False, data_dict=False):
         for field in fields:
             vals = get_speaker_names_from_parsed_corpus(path, field)
             json_data['fields'][field] = vals
-        df = get_first_df(path)
-        json_data['columns'] = ['s', 'i'] + list(df.columns)
+        #df = get_first_df(path)
+        json_data['columns'] = ['s'] + CONLL_COLUMNS
     dotname = '.%s.json' % os.path.basename(path)
     with OPENER(os.path.join('data', dotname), 'w', encoding='utf-8') as fo:
         fo.write(json.dumps(json_data))
