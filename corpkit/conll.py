@@ -25,6 +25,7 @@ def parse_conll(f,
     """
     import pandas as pd
     import os
+    import re
     try:
         from StringIO import StringIO
     except ImportError:
@@ -42,7 +43,10 @@ def parse_conll(f,
     metadata = {}
     sents = data.split('\n\n')  
     basedict = defaultdict(set)
-    basedict['file'].add(os.path.basename(f))
+    fname = os.path.basename(f)
+    fname = re.sub(r'(-[0-9][0-9][0-9]|).txt.conll$', '', fname)
+
+    basedict['file'].add(fname)
     if corp_folder:
         basedict['folder'].add(corp_folder)
     if corpus_name:
@@ -1149,7 +1153,6 @@ def pipeline(f=False,
     """
     A basic pipeline for conll querying---some options still to do
     """
-
     if isinstance(show, str):
         show = [show]
 
