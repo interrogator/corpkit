@@ -235,6 +235,9 @@ class Token(object):
     def __lt__(self, other):
         return (self.path, self.s, self.i) < (self.path, other.s, other.i)
 
+    def __iter__(self):
+        return (x for x in str(self))
+
     def display(self, show=['mw'], preserve_case=False):
         """
         Show token in a certain way
@@ -257,14 +260,19 @@ class Token(object):
             return out.lower()
 
     def __str__(self):
-        return '<%s>' % self.w
+        if not getattr(self, '_show_as', False):
+            return '<%s>' % self.w
+        else:
+            return self.display(self._show_as)
 
 def _concer(record, show):
     """
     to use in a pandas apply function to make a concordance line
     """
     tok = record['m']
-    record['m'] = tok.display(show)
+    tok._show_as = show
+    record['m'] = tok
+    #record['m'] = tok.display(show)
     record['r'] = ' '.join(tok.sent['w'].loc[tok.i+1:].values)
     record['l'] = ' '.join(tok.sent['w'].loc[:tok.i-1].values)
     return record
