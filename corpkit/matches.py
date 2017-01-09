@@ -294,3 +294,16 @@ def add_gov_to_f(df):
     """add govs to a df"""
     nrow = df.apply(add_gov, df=df, axis=1)
     return nrow
+
+
+class Count(object):
+
+    def __init__(self, count, name, **kwargs):
+
+        self.count = count
+        self.name = name
+        super(Count, self).__init__()
+
+    def __str__(self):
+        return self.name
+        
