@@ -307,6 +307,15 @@ def save(interrogation, savename, savedir='saved_interrogations', **kwargs):
     if hasattr(interrogation, 'query'):
         interrogation.query = sanitise_dict(interrogation.query)
 
+    try:
+        del interrogation.corpus
+        del interrogation.data.data
+        del interrogation.data.corpus
+        for i in interrogation.data:
+            del i.parent
+    except:
+        pass
+
     with open(fullpath, 'wb') as fo:
         pickle.dump(interrogation, fo)
     

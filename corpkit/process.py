@@ -362,7 +362,7 @@ def get_fullpath_to_jars(path_var):
 
 def determine_datatype(path):
     """
-    Determine if plaintext, tokens or parsed XML
+    Determine if plaintext or conll --- could be quicker
     """
     import os
     from collections import Counter
@@ -1362,7 +1362,12 @@ def get_first_df(corpus):
     check what columns it has
     """
     # genius code below
-    from corpkit.corpus import Corpus
+    from corpkit.corpus import Corpus, File
+    import os
+    if isinstance(corpus, str) and os.path.isfile(corpus):
+        return File(corpus).document
+    if getattr(corpus, 'singlefile', False):
+        return corpus.document
     if not isinstance(corpus, Corpus):
         corpus = Corpus(corpus, print_info=False)
     if corpus.subcorpora:
@@ -1450,7 +1455,7 @@ def add_df_to_dotfile(path, df, typ='features', subcorpora=False):
         md[name] = df.astype(object).to_dict()
         make_dotfile(path, data_dict=md)
 
-def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
+def delete_files_and_subcorpora(corpus, skip, just):
     """
     Remake a Corpus object without some files or folders
     """
@@ -1460,23 +1465,23 @@ def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
     
     # we use type here because subcorpora don't have subcorpora, but Subcorpus
     # inherits from Corpus
-    if not type(corpus) == Corpus:
-        return corpus, skip_metadata, just_metadata
+    if not isinstance(corpus, Corpus):
+        return corpus, skip, just
         
-    if not skip_metadata and not just_metadata:
-        return corpus, skip_metadata, just_metadata
+    if not skip and not just:
+        return corpus, skip, just
 
-    sd = skip_metadata.pop('folders', None) if isinstance(skip_metadata, dict) else None
-    sf = skip_metadata.pop('files', None) if isinstance(skip_metadata, dict) else None
-    jd = just_metadata.pop('folders', None) if isinstance(just_metadata, dict) else None
-    jf = just_metadata.pop('files', None) if isinstance(just_metadata, dict) else None
+    sd = skip.pop('folders', None) if isinstance(skip, dict) else None
+    sf = skip.pop('files', None) if isinstance(skip, dict) else None
+    jd = just.pop('folders', None) if isinstance(just, dict) else None
+    jf = just.pop('files', None) if isinstance(just, dict) else None
     sd = str(sd) if isinstance(sd, (int, float)) else sd
     sf = str(sf) if isinstance(sf, (int, float)) else sf
     jd = str(jd) if isinstance(jd, (int, float)) else jd
     jf = str(jf) if isinstance(jf, (int, float)) else jf
 
     if not any([sd, sf, jd, jf]):
-        return corpus, skip_metadata, just_metadata
+        return corpus, skip, just
 
     # now, the real processing begins
     # the code has to be this way, sorry.
@@ -1571,7 +1576,7 @@ def delete_files_and_subcorpora(corpus, skip_metadata, just_metadata):
                 for i in sorted(todel, reverse=True):
                     del sc.files[i]
 
-    return corpus, skip_metadata, just_metadata
+    return corpus, skip, just
 
 
 def timestring(inputx, blankfirst=0):
@@ -1580,3 +1585,56 @@ def timestring(inputx, blankfirst=0):
     thetime = strftime("%H:%M:%S", localtime())
     blankfirst = '\n' * blankfirst
     print('%s%s: %s' % (blankfirst, thetime, inputx.lstrip()))
+
+def make_record(data, corpus, path=False):
+    import pandas as pd
+    from corpkit.build import get_all_metadata_fields
+    from corpkit.corpus import Corpus
+    record_data = []
+    try:
+        all_meta_fields = list(corpus.metadata['fields'].keys())
+    except AttributeError:
+        all_meta_fields = list(Corpus(corpus, print_info=False, root=path).metadata['fields'].keys())
+
+    fields = list(sorted(['parse', 'folder', 'file'] + all_meta_fields))
+    for k in data:
+        line = [k.metadata.get(key, 'none') for key in fields]
+        line += [k.s, k.i, k]
+        record_data.append(line)
+    column_names = fields + ['s', 'i', 'entry']
+
+    df = pd.DataFrame(record_data)
+    df.columns = column_names
+
+    sorts = []
+    if getattr(corpus, 'level', 's'):
+        sorts.append('folder')
+    sorts += ['file', 's', 'i']
+    df = df.sort_values(sorts).reset_index(drop=True)
+    return df
+
+def make_tree(path):
+    import os
+    s = ""
+    for root, dirs, files in os.walk(path):
+        level = root.replace(path, '').count(os.sep)
+        indent = ' ' * 4 * (level)
+        s += '{}{}/'.format(indent, os.path.basename(root)) + '\n'
+        subindent = ' ' * 4 * (level + 1)
+        for f in files:
+            if not f.endswith('.txt') and not f.endswith('.conll'):
+                continue
+            s += '{}{}'.format(subindent, f) + '\n'
+    return s
+
+def make_filelist(path):
+    """make a list of absolute paths to every file in the corpus"""
+    import os
+    all_files = []
+    for root, ds, fs in os.walk(path):
+        for f in fs:
+            if not f.endswith('.txt') and not f.endswith('.conll'):
+                continue
+            fp = os.path.join(root, f)
+            all_files.append(fp)
+    return all_files

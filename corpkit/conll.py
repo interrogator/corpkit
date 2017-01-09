@@ -2,7 +2,7 @@
 corpkit: process CONLL formatted data
 """
 
-from corpkit.matches import Token, Matches
+from corpkit.matches import Token
 
 def parse_conll(f,
                 first_time=False,
@@ -68,12 +68,16 @@ def parse_conll(f,
     if not metadata:
         return
 
-    df = pd.read_csv(f, sep='\t', header=None, na_filter=False, memory_map=True, comment="#", names=head, usecols=None, index_col=index_col, engine='c')
+    df = pd.read_csv(f, sep='\t', header=None, na_filter=False, memory_map=True, comment="#",
+                     names=head, usecols=None, index_col=index_col, engine='c')
     c = 0
     newlev = []
     for i in df.index:
-        if int(i) == 1:
-            c += 1
+        try:
+            if int(i) == 1:
+                c += 1
+        except:
+            pass
         newlev.append((c, i))
     ix = pd.MultiIndex.from_tuples(newlev)
     df.index = ix
@@ -186,7 +190,7 @@ def get_all_corefs(s, i, df, coref=False):
         return [(s, i)]
 
 def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, corpus=False, matches=False,
-                subcorpora=False, metadata=False, fobj=False, corpus_name=False):
+                subcorpora=False, metadata=False, fobj=False, corpus_name=False, conc=True):
     """
     Search the dataframe for a single criterion
 
@@ -215,7 +219,7 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, corpus=Fa
     else:
         xmatches = df[df[attrib].fillna('').str.contains(pattern)]
 
-    tokks = xmatches.apply(row_tok_apply, axis=1, df=df, fobj=fobj, metadata=metadata, matches=matches)
+    tokks = xmatches.apply(row_tok_apply, axis=1, df=df, fobj=fobj, metadata=metadata, matches=matches, conc=conc)
     tokks = tokks.values
 
     if coref:
@@ -849,16 +853,16 @@ def cut_df_by_metadata(df, metadata, criteria, coref=False,
     df._metadata = new_metadata
     return df
 
-def cut_df_by_meta(df, just_metadata, skip_metadata):
+def cut_df_by_meta(df, just, skip):
     """
     Reshape a DataFrame based on filters
     """
     if df is not None:
-        if just_metadata:
-            for k, v in just_metadata.items():
+        if just:
+            for k, v in just.items():
                 df = cut_df_by_metadata(df, df._metadata, v, feature=k)
-        if skip_metadata:
-            for k, v in skip_metadata.items():
+        if skip:
+            for k, v in skip.items():
                 df = cut_df_by_metadata(df, df._metadata, v, feature=k, method='skip')
     return df
 
@@ -1114,10 +1118,10 @@ def update_dd(res, all_res):
         all_res[k] += v
     return all_res
 
-def row_tok_apply(row, df=False, fobj=False, metadata=False, matches=False):
+def row_tok_apply(row, df=False, fobj=False, metadata=False, matches=False, conc=True):
     from corpkit.matches import Token
 
-    t = Token(row.name[1], df, row.name[0], fobj, metadata[row.name[0]], matches, **row.to_dict())
+    t = Token(row.name[1], df, row.name[0], fobj, metadata[row.name[0]], matches, conc=conc, **row.to_dict())
     return t
 
 def pipeline(f=False,
@@ -1126,11 +1130,11 @@ def pipeline(f=False,
              exclude=False,
              searchmode='all',
              excludemode='any',
-             conc=False,
+             conc=True,
              coref=False,
              from_df=False,
-             just_metadata=False,
-             skip_metadata=False,
+             just=False,
+             skip=False,
              show_conc_metadata=False,
              statsmode=False,
              search_trees=False,
@@ -1140,6 +1144,7 @@ def pipeline(f=False,
              corpus_name=False,
              corpus=False,
              matches=False,
+             multiprocess=False,
              **kwargs):
     """
     A basic pipeline for conll querying---some options still to do
@@ -1226,16 +1231,17 @@ def pipeline(f=False,
                         **kwargs)
 
     # do no searching if 'any' is requested
+    # doesn't work?
     if len(search) == 1 and list(search.keys())[0] == 'mw' \
                         and hasattr(list(search.values())[0], 'pattern') \
                         and list(search.values())[0].pattern == r'.*':
-        all_res = []
-        tokks = df.apply(row_tok_apply, axis=1, df=df, fobj=fobj, metadata=metadata, matches=matches)
+        tokks = df.apply(row_tok_apply, axis=1, df=df, fobj=fobj, metadata=metadata, matches=matches, conc=conc)
+        all_res = list(tokks.values)
     else:
         for k, v in search.items():
             adj, k = determine_adjacent(k)
             all_res += search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, metadata=metadata,
-                                   fobj=fobj, corpus_name=corpus_name, corpus=corpus, matches=matches)
+                                   fobj=fobj, corpus_name=corpus_name, corpus=corpus, matches=matches, conc=conc)
         if searchmode == 'all' and len(search) > 1:
             all_res = sorted([k for k, v in Counter(all_res).items() if v == len(search)])
 
@@ -1243,7 +1249,7 @@ def pipeline(f=False,
         for k, v in exclude.items():
             adj, k = determine_adjacent(k)
             all_exclude += search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, metadata=metadata,
-                                   fobj=fobj, corpus_name=corpus_name, corpus=corpus, matches=matches)
+                                   fobj=fobj, corpus_name=corpus_name, corpus=corpus, matches=matches, conc=conc)
         #all_exclude = remove_by_mode(all_exclude, excludemode, exclude)
         if excludemode == 'all':
             all_exclude = set(k for k, v in Counter(all_exclude).items() if v == len(search))
@@ -1251,6 +1257,10 @@ def pipeline(f=False,
             all_exclude = set(all_exclude)
         
         all_res = sorted(list(set(all_res).difference(all_exclude)))
+
+    if multiprocess:
+        for i in all_res:
+            del i.parent
 
     return all_res
 

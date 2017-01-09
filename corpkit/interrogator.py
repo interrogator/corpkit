@@ -21,16 +21,6 @@ def welcome_printer(search, cname, optiontext, return_it=False, printstatus=True
         else:
             print(welcome)
 
-def make_result_from_counter(cntr, subcorpora, show=False):
-    import pandas as pd
-    index = []
-    data = []
-    for k, v in cntr.items():
-        index.append(tuple([k.metadata.get(x) for x in subcorpora]))
-        data.append(k)
-    ix = pd.MultiIndex.from_tuples(index)
-    return pd.DataFrame(data, index=ix)
-
 def fix_show_bit(show_bit):
     """
     Take a single search/show_bit type, return match
@@ -76,43 +66,26 @@ def fix_show(show, gramsize):
 def interrogator(corpus, 
     search='w', 
     query='any',
-    show='w',
     exclude=False,
     excludemode='any',
     searchmode='all',
+    show=['w'],
     case_sensitive=False,
-    save=False,
     subcorpora=False,
-    just_metadata=False,
-    skip_metadata=False,
-    preserve_case=False,
+    just=False,
+    skip=False,
     lemmatag=False,
-    files_as_subcorpora=False,
-    only_unique=False,
-    only_format_match=True,
     multiprocess=False,
-    spelling=False,
     regex_nonword_filter=r'[A-Za-z0-9]',
-    gramsize=1,
-    conc=False,
-    maxconc=9999,
-    window=None,
     no_closed=False,
     no_punct=True,
-    discard=False,
     **kwargs):
     """
     Interrogate corpus, corpora, subcorpus and file objects.
     See corpkit.interrogation.interrogate() for docstring
     """
 
-
-    conc = kwargs.get('do_concordancing', conc)
-    quiet = kwargs.get('quiet', False)
     coref = kwargs.pop('coref', False)
-    show_conc_metadata = kwargs.pop('show_conc_metadata', False)
-    fsi_index = kwargs.pop('fsi_index', True)
-    dep_type = kwargs.pop('dep_type', 'collapsed-ccprocessed-dependencies')
 
     nosubmode = subcorpora is None
     #todo: temporary
@@ -133,9 +106,8 @@ def interrogator(corpus,
     import pandas as pd
     from pandas import DataFrame, Series
 
-    from corpkit.interrogation import Interrogation, Interrodict
-    from corpkit.matches import Matches
-    from corpkit.corpus import Datalist, Corpora, Corpus, File, Subcorpus
+    from corpkit.interrogation import Interrogation
+    from corpkit.corpus import File, Corpus, Subcorpus
     from corpkit.process import (tregex_engine, get_deps, unsplitter, sanitise_dict, 
                                  animator, filtermaker, fix_search,
                                  pat_format, auto_usecols, format_tregex,
@@ -148,11 +120,8 @@ def interrogator(corpus,
     
     have_java = check_jdk()
 
-    if isinstance(corpus, list):
-        corpus = Datalist(corpus)
-
     # remake corpus without bad files and folders 
-    corpus, skip_metadata, just_metadata = delete_files_and_subcorpora(corpus, skip_metadata, just_metadata)
+    corpus, skip, just = delete_files_and_subcorpora(corpus, skip, just)
 
     # so you can do corpus.interrogate('features/postags/wordclasses/lexicon')
     if search == 'features':
@@ -160,13 +129,12 @@ def interrogator(corpus,
         query = 'any'
     if search in ['postags', 'wordclasses']:
         query = 'any'
-        preserve_case = True
         show = 'p' if search == 'postags' else 'x'
         # use tregex if simple because it's faster
         # but use dependencies otherwise
-        search = 't' if not subcorpora and not just_metadata and not skip_metadata and have_java else {'w': 'any'}
+        search = 't' if not subcorpora and not just and not skip and have_java else {'w': 'any'}
     if search == 'lexicon':
-        search = 't' if not subcorpora and not just_metadata and not skip_metadata and have_java else {'w': 'any'}
+        search = 't' if not subcorpora and not just and not skip and have_java else {'w': 'any'}
         query = 'any'
         show = ['w']
 
@@ -246,7 +214,7 @@ def interrogator(corpus,
             else:
                 raise ValueError('%s: Query %s' % (thetime, error_message))
 
-    def determine_search_func(show):
+    def determine_search_func():
         """Figure out what search function we're using"""
 
         simple_tregex_mode = False
@@ -256,10 +224,9 @@ def interrogator(corpus,
         optiontext = "Querying CONLL data"
             
         simp_crit = all(not i for i in [kwargs.get('tgrep'),
-                                        files_as_subcorpora,
                                         subcorpora,
-                                        just_metadata,
-                                        skip_metadata])
+                                        just,
+                                        skip])
 
         if search.get('t') and simp_crit:
             if have_java:
@@ -303,8 +270,7 @@ def interrogator(corpus,
                           query=search.get('t'),
                           options=['-t'],
                           check_query=True,
-                          root=root,
-                          preserve_case=preserve_case
+                          root=root
                          )
 
         # so many of these bad fixing loops!
@@ -352,26 +318,6 @@ def interrogator(corpus,
             search['t'] = anyq
         return search['t'], newshow
 
-    def correct_spelling(a_string):
-        """correct spelling within a string"""
-        if not spelling:
-            return a_string
-        from corpkit.dictionaries.word_transforms import usa_convert
-        if spelling.lower() == 'uk':
-            usa_convert = {v: k for k, v in list(usa_convert.items())}
-        bits = a_string.split('/')
-        for index, i in enumerate(bits):
-            converted = usa_convert.get(i.lower(), i)
-            if i.islower() or preserve_case is False:
-                converted = converted.lower()
-            elif i.isupper() and preserve_case:
-                converted = converted.upper()
-            elif i.istitle() and preserve_case:
-                converted = converted.title()
-            bits[index] = converted
-        r = '/'.join(bits)
-        return r
-
     def goodbye_printer(return_it=False, only_conc=False):
         """Say goodbye before exiting"""
         if not kwargs.get('printstatus', True):
@@ -390,114 +336,6 @@ def interrogator(corpus,
         else:
             print(finalstring)
 
-    def get_conc_colnames(corpus,
-                          fsi_index=False,
-                          simple_tregex_mode=False):
-    
-        fields = []
-        base = 'c f s l m r'
-        
-        if simple_tregex_mode:
-            base = base.replace('f ', '')
-
-        if fsi_index and not simple_tregex_mode:
-            base = 'i ' + base
-        
-        if PYTHON_VERSION == 2:
-            base = base.encode('utf-8').split()
-        else:
-            base = base.split() 
-
-        if show_conc_metadata:
-            from corpkit.build import get_all_metadata_fields
-            meta = get_all_metadata_fields(corpus.path)
-
-            if isinstance(show_conc_metadata, list):
-                meta = [i for i in meta if i in show_conc_metadata]
-            #elif show_conc_metadata is True:
-            #    pass
-            for i in sorted(meta):
-                if i in ['speaker', 'sent_id', 'parse']:
-                    continue
-                if PYTHON_VERSION == 2:
-                    base.append(i.encode('utf-8'))
-                else:
-                    base.append(i)
-        return base
-
-    def make_conc_obj_from_conclines(conc_results, fsi_index=False):
-        """
-        Turn conclines into DataFrame
-        """
-        from corpkit.interrogation import Concordance
-        #fsi_place = 2 if fsi_index else 0
-
-        all_conc_lines = []
-        for sc_name, resu in sorted(conc_results.items()):
-            if only_unique:
-                unique_results = uniquify(resu)
-            else:
-                unique_results = resu
-            #make into series
-            for lin in unique_results:
-                #spkr = str(spkr, errors = 'ignore')
-                #if not subcorpora:
-                #    lin[fsi_place] = lin[fsi_place]
-                #lin.insert(fsi_place, sc_name)
-
-                if len(lin) < len(conc_col_names):
-                    diff = len(conc_col_names) - len(lin)
-                    lin.extend(['none'] * diff)
-
-                all_conc_lines.append(Series(lin, index=conc_col_names))
-
-        try:
-            conc_df = pd.concat(all_conc_lines, axis=1).T
-        except ValueError:
-            return
-        
-        if all(x == '' for x in list(conc_df['s'].values)) or \
-           all(x == 'none' for x in list(conc_df['s'].values)):
-            conc_df.drop('s', axis=1, inplace=True)
-
-        locs['corpus'] = corpus.name
-
-        if maxconc:
-            conc_df = Concordance(conc_df[:maxconc])
-        else:
-            conc_df = Concordance(conc_df)
-        try:
-            conc_df.query = locs
-        except AttributeError:
-            pass
-        return conc_df
-
-    def lowercase_result(res):
-        """      
-        Take any result and do spelling/lowercasing if need be
-
-        todo: remove lowercase and change name
-        """
-        if not res or statsmode:
-            return res
-        # this is likely broken, but spelling in interrogate is deprecated anyway
-        if spelling:
-            res = [correct_spelling(r) for r in res]
-        return res
-
-    def postprocess_concline(line, fsi_index=False, conc=False):
-        # todo: are these right?
-        if not conc:
-            return line
-        subc, star, en = 0, 2, 5
-        if fsi_index:
-            subc, star, en = 2, 4, 7
-        if not preserve_case:
-            line[star:en] = [str(x).lower() for x in line[star:en]]
-        if spelling:
-            line[star:en] = [correct_spelling(str(b)) for b in line[star:en]]
-        return line
-
     def make_progress_bar(corpus_iter):
         """generate a progress bar"""
 
@@ -506,7 +344,7 @@ def interrogator(corpus,
         par_args = {'printstatus': kwargs.get('printstatus', True),
                     'root': root, 
                     'note': note,
-                    'quiet': quiet,
+                    #'quiet': quiet,
                     'length': total_files,
                     'startnum': kwargs.get('startnum'),
                     'denom': kwargs.get('denominator', 1)}
@@ -544,38 +382,21 @@ def interrogator(corpus,
             original_sigint = signal.getsignal(signal.SIGINT)
             signal.signal(signal.SIGINT, signal_handler)
 
-    # find out about concordancing
-    only_conc = False
-    no_conc = False
-    if conc is False:
-        no_conc = True
-    if isinstance(conc, str) and conc.lower() == 'only':
-        only_conc = True
-        no_conc = False
-    numconc = 0
-
     # wipe non essential class attributes to not bloat query attrib
     if isinstance(corpus, Corpus):
         import copy
         corpus = copy.copy(corpus)
         for k, v in corpus.__dict__.items():
-            if isinstance(v, (Interrogation, Interrodict)):
+            if isinstance(v, Interrogation):
                 corpus.__dict__.pop(k, None)
-
-    # convert path to corpus object
-    if not isinstance(corpus, (Corpus, Corpora, Subcorpus, File, Datalist)):
-        if not multiprocess and not kwargs.get('outname'):
-            corpus = Corpus(corpus, print_info=False)
 
     # figure out how the user has entered the query and show, and normalise
     from corpkit.process import searchfixer
     search = searchfixer(search, query)
-    show = fix_show(show, gramsize)
-    locs['show'] = show
 
     # instantiate lemmatiser if need be
     lem_instance = False
-    if any(i.endswith('l') for i in show) and isinstance(search, dict) and search.get('t'):
+    if isinstance(search, dict) and search.get('t'):
         from nltk.stem.wordnet import WordNetLemmatizer
         lem_instance = WordNetLemmatizer()
 
@@ -584,50 +405,37 @@ def interrogator(corpus,
 
     datatype = getattr(corpus, 'datatype', 'conll')
     singlefile = getattr(corpus, 'singlefile', False)
-    level = getattr(corpus, 'level', 'c')
-
 
     # Determine the search function to be used #
-    optiontext, simple_tregex_mode, statsmode, tree_to_text, search_trees = determine_search_func(show)
-
-    cname = corpus.name
+    optiontext, simple_tregex_mode, statsmode, tree_to_text, search_trees = determine_search_func()
 
     locs['search'] = search
     locs['exclude'] = exclude
     locs['query'] = query
-    locs['show'] = show
     locs['corpus'] = corpus
     locs['multiprocess'] = multiprocess
     locs['print_info'] = kwargs.get('printstatus', True)
     locs['subcorpora'] = subcorpora
-    locs['cname'] = cname
+    #locs['cname'] = cname
     locs['optiontext'] = optiontext
+    locs['mainpath'] = getattr(corpus, 'path', False)
 
-    if multiprocess:
+    if multiprocess and not kwargs.get('mp'):
         signal.signal(signal.SIGINT, original_sigint)
         from corpkit.multiprocess import pmultiquery
         return pmultiquery(**locs)
-
-    # get corpus metadata
     
-    if isinstance(save, STRINGTYPE):
-        savename = corpus.name + '-' + save
-    if save is True:
-        raise ValueError('save must be str, not bool.')
-        
     # store all results in here
     from collections import defaultdict, Counter
     
-    results = Matches([], corpus)
+    results = []
     
     count_results = defaultdict(list)
     conc_results = defaultdict(list)
 
     # check if just counting, turn off conc if so
-    countmode = 'c' in show or 'mc' in show
-    if countmode:
-        no_conc = True
-        only_conc = False
+    countmode = kwargs.get('count')
+
     # where we are at in interrogation
     current_iter = 0
 
@@ -682,49 +490,41 @@ def interrogator(corpus,
     usecols = auto_usecols(search, exclude, show, kwargs.pop('usecols', None), coref=coref)
 
     # make the iterable, which should be very simple now
-    corpus_iter = corpus.all_files if corpus.all_files else corpus
+    corpus_iter = corpus.all_files if getattr(corpus, 'all_files', False) else corpus
 
     # print welcome message
-    welcome_message = welcome_printer(search, cname, optiontext, return_it=in_notebook, printstatus=kwargs.get('printstatus', True))
+    welcome_message = welcome_printer(search, 'corpus', optiontext, return_it=in_notebook, printstatus=kwargs.get('printstatus', True))
 
     # create a progress bar
     p, outn, total_files, par_args = make_progress_bar(corpus_iter)
-
-    if conc:
-        conc_col_names = get_conc_colnames(corpus,
-                                           fsi_index=fsi_index,
-                                           simple_tregex_mode=False)
-
 
     for f in corpus_iter:
 
         filepath, corefs = f.path, coref
 
         res = pipeline(filepath, search=search, show=show,
-                                 dep_type=dep_type,
                                  exclude=exclude,
                                  excludemode=excludemode,
                                  searchmode=searchmode,
                                  case_sensitive=case_sensitive,
-                                 conc=False,
-                                 only_format_match=only_format_match,
-                                 gramsize=gramsize,
+                                 #conc=False,
+                                 #only_format_match=only_format_match,
+                                 #gramsize=gramsize,
                                  no_punct=no_punct,
                                  no_closed=no_closed,
-                                 window=window,
+                                 #window=window,
                                  filename=f.path,
                                  coref=corefs,
                                  countmode=countmode,
-                                 maxconc=(maxconc, numconc),
                                  is_a_word=is_a_word,
                                  subcorpora=subcorpora,
-                                 show_conc_metadata=show_conc_metadata,
-                                 just_metadata=just_metadata,
-                                 skip_metadata=skip_metadata,
-                                 fsi_index=fsi_index,
+                                 #show_conc_metadata=show_conc_metadata,
+                                 just=just,
+                                 skip=skip,
+                                 #fsi_index=fsi_index,
                                  translated_option=translated_option,
                                  statsmode=statsmode,
-                                 preserve_case=preserve_case,
+                                 #preserve_case=preserve_case,
                                  usecols=usecols,
                                  search_trees=search_trees,
                                  lem_instance=lem_instance,
@@ -733,6 +533,7 @@ def interrogator(corpus,
                                  corpus_name=getattr(corpus, 'corpus_name', False),
                                  corpus=corpus,
                                  matches=results,
+                                 multiprocess=kwargs.get('mp'),
                                  **kwargs)
             
         if res == 'Bad query':
@@ -745,19 +546,14 @@ def interrogator(corpus,
         tstr = '%s%d/%d' % (outn, current_iter + 1, total_files)
         animator(p, current_iter, tstr, **par_args)
 
-    matches = Matches(results, corpus)
-
     querybits = {'search': search,
                   'exclude': exclude,
-                  'show': show,
                   'subcorpora': subcorpora}
 
-    interro = Interrogation(data=matches, corpus=corpus, totals=len(matches), query=querybits)
-    
     signal.signal(signal.SIGINT, original_sigint)
 
     if kwargs.get('paralleling', None) is None:
+        interro = Interrogation(data=results, corpus=corpus, query=querybits)
         return interro
     else:
-        return matches[:]
-        
+        return results

@@ -15,6 +15,7 @@ def pmultiquery(corpus,
                 print_info=True,
                 show=['mw'],
                 subcorpora=False,
+                mainpath=False,
                 **kwargs
                ):
     """
@@ -30,24 +31,23 @@ def pmultiquery(corpus,
     from collections import namedtuple, OrderedDict
     from time import strftime, localtime
     from corpkit.interrogator import interrogator, welcome_printer
-    from corpkit.interrogation import Interrogation, Interrodict
+    from corpkit.interrogation import Interrogation
     from corpkit.process import canpickle
-    from corpkit.corpus import Corpus, Corpora, Datalist
-    from corpkit.matches import Matches
+    from corpkit.corpus import Corpus
     try:
         from joblib import Parallel, delayed
     except ImportError:
         pass
     import multiprocessing
 
-    if isinstance(corpus, Datalist):
-        corpus = Corpus(corpus, level='d', print_info=False)
+    #if isinstance(corpus, Datalist):
+    #    corpus = Corpus(corpus, level='d', print_info=False)
 
     locs = locals()
     for k, v in kwargs.items():
         locs[k] = v
     in_notebook = locs.get('in_notebook')
-    cname = kwargs.pop('cname')
+    #cname = kwargs.pop('cname')
     optiontext = kwargs.pop('optiontext')
 
     if not isinstance(multiprocess, int):
@@ -83,7 +83,8 @@ def pmultiquery(corpus,
                         'printstatus': False,
                         'multiprocess': False,
                         'df1_always_df': False,
-                        'files_as_subcorpora': False}
+                        'files_as_subcorpora': False,
+                        'mp': True}
 
     # make a new dict for every iteration
     ds = [dict(**basic_multi_dict) for i in range(multiprocess)]
@@ -91,20 +92,8 @@ def pmultiquery(corpus,
     for index, (d, bit) in enumerate(zip(ds, chunks)):
         d['paralleling'] = index
         d['corpus'] = list(bit)
-    #print(ds)
-
-    # message printer should be a function...
-    if kwargs.get('conc') is False:
-        message = 'Interrogating'
-    elif kwargs.get('conc') is True:
-        message = 'Interrogating and concordancing'
-    elif kwargs.get('conc').lower() == 'only':
-        message = 'Concordancing'
-
-    time = strftime("%H:%M:%S", localtime())
-    from corpkit.process import dictformat
     
-    welcome_message = welcome_printer(search, cname, optiontext, return_it=in_notebook, printstatus=print_info)
+    welcome_message = welcome_printer(search, 'corpus', optiontext, return_it=in_notebook, printstatus=print_info)
 
     # run in parallel, get either a list of tuples (non-c option)
     # or a dataframe (c option)
@@ -152,20 +141,14 @@ def pmultiquery(corpus,
             pass
 
     merged_res = [item for sublist in res for item in sublist]
-    matches = Matches(merged_res, corpus)
     subc = subcorpora if kwargs.get('subcorpora') else 'default'
-    resbranch = matches.table(subcorpora=subc, show=show)
-    try:
-        totals = resbranch.sum(axis=1)
-    except:
-        totals = resbranch.sum()
 
     querybits = {'search': search,
                   'exclude': exclude,
                   'show': show,
                   'subcorpora': subcorpora}
 
-    interro = Interrogation(data=matches, corpus=corpus, query=querybits, totals=len(matches))
+    interro = Interrogation(data=merged_res, corpus=corpus, query=querybits, path=mainpath)
 
     if print_info:
         if terminal:

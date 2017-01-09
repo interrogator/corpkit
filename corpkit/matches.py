@@ -1,6 +1,7 @@
 import pandas as pd
 from functools import total_ordering
 from corpkit.lazyprop import lazyprop
+<<<<<<< HEAD
 
 class Matches(list):
     """
@@ -100,17 +101,22 @@ class Matches(list):
         clines = rec.apply(_concer, show=show, axis=1)
         return Concordance(clines)
 
+def make_ser(row, k=False):
+    return row['entry'].display(k)
+
 @total_ordering
 class Token(object):
     """
     Model a token in the corpus
     """
 
-    def __init__(self, idx, df, sent_id, fobj, metadata, parent, **kwargs):
+    def __init__(self, idx, df, sent_id, fobj, metadata, parent, conc=True, **kwargs):
 
         self.i = idx
         self.s = sent_id
+        self._conc = conc
         self.df = df
+        df = None
         self.fobj = fobj
         self.path = fobj.path
         self.metadata = metadata
@@ -123,7 +129,15 @@ class Token(object):
     
     @lazyprop
     def sent(self):
-        return self.df.ix[self.s]
+        return self.df.loc[self.s]
+
+    @lazyprop
+    def left(self):
+        return ' '.join(self.df['w'].loc[:self.i-1].values)
+
+    @lazyprop
+    def right(self):
+        return ' '.join(self.df['w'].loc[self.i+1:].values)
 
     @lazyprop
     def governor(self):
@@ -252,10 +266,8 @@ def _concer(record, show):
     """
     tok = record['m']
     record['m'] = tok.display(show)
-    start = ' '.join(tok.sent['w'].loc[:tok.i-1].values)
-    end = ' '.join(tok.sent['w'].loc[tok.i+1:].values)
-    record['r'] = end
-    record['l'] = start 
+    record['r'] = ' '.join(tok.sent['w'].loc[tok.i+1:].values)
+    record['l'] = ' '.join(tok.sent['w'].loc[:tok.i-1].values)
     return record
 
 # unused code below!

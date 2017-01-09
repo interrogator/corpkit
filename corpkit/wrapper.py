@@ -60,7 +60,8 @@ except NameError:
 # raises an exception, wrapper() will restore the terminal to a sane state so
 # you can read the resulting traceback.
 
-def wrapper(func, *args, **kwds):
+
+def wrapper(func, stdscr, *args, **kwds):
     """Wrapper function that initializes curses and calls another function,
     restoring normal keyboard/screen behavior on error.
     The callable object 'func' is then passed the main window 'stdscr'
@@ -68,15 +69,12 @@ def wrapper(func, *args, **kwds):
     wrapper().
     """
 
-
     try:
         # Initialize curses
-        stdscr = initscr()
-        def_shell_mode()
 
         # Turn off echoing of keys, and enter cbreak mode,
         # where no buffering is performed on keyboard input
-        #noecho()
+        noecho()
         cbreak()
 
         # In keypad mode, escape sequences for special keys
@@ -92,13 +90,12 @@ def wrapper(func, *args, **kwds):
             start_color()
         except:
             pass
-
         return func(stdscr, *args, **kwds)
+
     finally:
         # Set everything back to normal
         if 'stdscr' in locals():
             stdscr.keypad(0)
             echo()
             nocbreak()
-            #endwin()
-            reset_shell_mode()
+            endwin()

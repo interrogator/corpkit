@@ -202,7 +202,7 @@ class Objects(object):
                           'showing', 'excluding', 'not', 'as', 'with', 'and', 'by',
                           'm', 'l', 'r', 'conc', 'keeping', 'skipping', 'entries', 'subcorpora',
                           'merging', 'k', 'sampled',
-                          '_in_a_project', '_previous_type', '_old_concs',
+                          '_in_a_project', '_previous_type', '_old_searches',
                           '_conc_colours', '_conc_kwargs', '_do_conc',
                           '_interactive', '_decimal', '_protected']
                           
@@ -234,7 +234,7 @@ class Objects(object):
         # system toggles and references to older data
         self._in_a_project = None
         self._previous_type = None
-        self._old_concs = []
+        self._old_searches = []
         self._conc_colours = defaultdict(dict)
         self._conc_kwargs = {'n': 999}
 
@@ -243,6 +243,8 @@ class Objects(object):
         self._interactive = True
         self._decimal = 3
         self._annotation_unlocked = False
+
+
 
     def _get(self, name):
         """
@@ -376,62 +378,27 @@ def interpreter(debug=False,
         print('Loading graphical interface ... ')
         subprocess.call(["python", "-m", 'corpkit.gui', os.getcwd()])
 
-    def show_concordance(obj, command, args):
+    def show_concordance(tokens):
         import pydoc
         # update the showing parameters 
-        kwargs = process_kwargs(args)
-        if kwargs:
-            objs._conc_kwargs.update(kwargs)
-        
-        if obj is None:
+        kwargs = process_kwargs(tokens)
+        show = kwargs.pop('m', ['mw'])
+        #if kwargs:
+        #    objs._conc_kwargs.update(kwargs)
+        objs.concordance = objs._get('result')[1].conc(show=show, **kwargs)
+        if objs.concordance is None:
             print("There's no concordance here right now, sorry.")
             return
         # retrieve the correct concordances, so we can colour them
-        found_the_conc = next((i for i, c in enumerate(objs._old_concs) \
-                               if c.equals(obj)), None)
+        found_the_conc = next((i for i, c in enumerate(objs._old_searches) \
+                               if c.equals(objs.result)), None)
         if found_the_conc is None:
             return
-        # if colours have been saved for these lines, try to fill them in 
-        if objs._conc_colours.get(found_the_conc):
-            try:
-                lines_to_print = []
-                from colorama import Fore, Back, Style, init
-                lines = obj.format(print_it=False, **objs._conc_kwargs).splitlines()
-                # for each concordance line
-                for line in lines:
-                    # get index as str
-                    num = line.strip().split(' ', 1)[0]
-                    # get dict of style and colour for line
-                    gotnums = objs._conc_colours[found_the_conc].get(num, {})
-                    highstr = ''
-                    for sty, col in gotnums.items():
-                        if col.upper() in ['DIM', 'NORMAL', 'BRIGHT', 'RESET_ALL']:
-                            thing_to_color = Style
-                        elif sty == 'Back':
-                            thing_to_color = Back
-                        else:
-                            thing_to_color = Fore
-                        highstr += getattr(thing_to_color, col.upper())
-                    highstr += line    
-                    lines_to_print.append(highstr)
-
-                if objs._interactive:
-                    pydoc.pipepager('\n'.join(lines_to_print), cmd="less -X -R -S")
-                else:
-                    print('\n'.join(lines_to_print))
-            except ImportError:
-                formatted = obj.format(print_it=False, **objs._conc_kwargs)  
-                if objs._interactive:
-                    pydoc.pipepager(formatted, cmd="less -X -R -S")
-                else:
-                    print(formatted)
-
-        else:
-            formatted = obj.format(print_it=False, **objs._conc_kwargs)
-            if objs._interactive:
-                pydoc.pipepager(formatted, cmd="less -X -R -S")
-            else:
-                print(formatted)
+        new_ix = []
+        from colorama import Fore, Back, Style, init
+        thisc = objs._conc_colours[found_the_conc]
+        objs.concordance.tabview(colours=thisc)
+        return
 
     def show_table(obj, objtype=False, start_pos=False):
         """
@@ -561,7 +528,7 @@ def interpreter(debug=False,
             show_table(obj, objtype)
 
         elif objtype == 'concordance':
-            show_concordance(obj, objtype, args)
+            show_concordance(args)
         elif objtype == 'wordlists':
             show_this([objtype])
         elif objtype == 'wordlist':
@@ -953,7 +920,7 @@ def interpreter(debug=False,
                     val = with_related[i+n]
                     skips.append(i+1)
                     skips.append(i+2)
-                    if token.lower() == 'columns':
+                    if token.lower() in ['columns', 'm', 'middle']:
                         parsed = process_long_key(val.strip(','))
                     else:
                         parsed = parse_pattern(val.rstrip(','))
@@ -962,7 +929,7 @@ def interpreter(debug=False,
                         n += 1
                         skips.append(i+n)
                         val = with_related[i+n]
-                        if token.lower() == 'columns':
+                        if token.lower() in ['columns', 'm', 'middle']:
                             parsed = process_long_key(val.strip(','))
                         else:
                             parsed = parse_pattern(val.rstrip(','))
@@ -973,6 +940,9 @@ def interpreter(debug=False,
                 k, v = token.lower().split('=', 1)
                 v = parse_pattern(v)
                 withs[k] = v
+
+        if debug:
+            print('kwargs', withs)
         return withs
 
     def parse_show(tokens, word='showing'):
@@ -1129,7 +1099,9 @@ def interpreter(debug=False,
             gotten = objs._get(tokens[0])[1]
             show_result(gotten, tokens[1:])
             return
-
+        if tokens[0] == 'concordance' or objs._get(tokens[0])[0] == 'concordance':
+            show_concordance(tokens[1:])
+            return
         if tokens[0].startswith('file'):
             get_something[tokens]
             return
@@ -1300,26 +1272,22 @@ def interpreter(debug=False,
             objs.previous = out
             show_this(['result'])
             objs.query = getattr(out, 'query', None)
-            if objs._do_conc and (hasattr(out, 'concordance') and out.concordance is not None):
-                objs.concordance = out.concordance
-                objs._old_concs.append(objs.concordance)
-            else:
-                objs.concordance = None
+            #if objs._do_conc:
+                #objs.concordance = out.conc()
+            objs._old_searches.append(out)
+            #else:
+            #    objs.concordance = None
             # find out what is going on here
             objs.edited = False
 
         # either all or no showing should be done here 
         elif command in [edit_something, sort_something, calculate_result,
                        keep_conc, del_conc]:
-            from corpkit.interrogation import Concordance
-            if isinstance(out, Concordance):
-                objs._old_concs[-1] = objs.concordance
-                if objs._interactive:
-                    show_this(['concordance'] + tokens[1:])
-            else:
-                if objs._interactive:
-                    show_this(['edited'])
-                    
+            objs._old_searches[-1] = out
+            #if objs._interactive:
+            #    show_this(['concordance'] + tokens[1:])
+            if objs._interactive:
+                show_this(['edited'])
         else:
             if debug:
                 print('Done:', repr(out))
@@ -1329,7 +1297,7 @@ def interpreter(debug=False,
         """
         Exporting conc lines needs to preserve colouring
         """
-        colourdict = objs._conc_colours[len(objs._old_concs)-1]
+        colourdict = objs._conc_colours[len(objs._old_searches)-1]
         fores = []
         backs = []
         stys = [] 
@@ -1476,7 +1444,7 @@ def interpreter(debug=False,
 
                 elif val in ['scheme', 'color', 'colour']:
                     val = 'x'
-                    num_col = objs._conc_colours[len(objs._old_concs)-1]
+                    num_col = objs._conc_colours[len(objs._old_searches)-1]
                     series = []
                     # todo: fix this!
                     for i in range(len(thing_to_edit)):
@@ -1494,7 +1462,7 @@ def interpreter(debug=False,
             objs.concordance = Concordance(sorted_lines)
 
             # do not add new entry to old concs for sorting :)
-            objs._old_concs[-1] = objs.concordance
+            objs._old_searches[-1] = objs.concordance
             if objs._interactive:
                 single_command_print('concordance')
 
@@ -1817,7 +1785,7 @@ def interpreter(debug=False,
                 sty = 'Style'
             else:
                 sty = 'Fore'
-            colourdict = objs._conc_colours[len(objs._old_concs)-1]
+            colourdict = objs._conc_colours[len(objs._old_searches)-1]
             return set([k for k, v in colourdict.items() if v.get(sty) == token])  
             
         # annotate range of tokens
@@ -1969,14 +1937,15 @@ def interpreter(debug=False,
         #    sty = tokens[-2].title().replace('ground', '')
 
         for line in cols:
-            if not int(line) in list(objs.concordance.index):
+            line = int(line)
+            if not line in list(objs.concordance.index):
                 continue
             # if there is already info for this line number, add present info
-            if objs._conc_colours[len(objs._old_concs)-1].get(line):
-                objs._conc_colours[len(objs._old_concs)-1][line][sty] = color
+            if objs._conc_colours[len(objs._old_searches)-1].get(line):
+                objs._conc_colours[len(objs._old_searches)-1][line][sty] = color
             else:
-                objs._conc_colours[len(objs._old_concs)-1][line] = {}
-                objs._conc_colours[len(objs._old_concs)-1][line][sty] = color
+                objs._conc_colours[len(objs._old_searches)-1][line] = {}
+                objs._conc_colours[len(objs._old_searches)-1][line][sty] = color
 
         single_command_print(['concordance'] + tokens)
 
