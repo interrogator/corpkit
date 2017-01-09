@@ -202,8 +202,8 @@ class Objects(object):
                           'showing', 'excluding', 'not', 'as', 'with', 'and', 'by',
                           'm', 'l', 'r', 'conc', 'keeping', 'skipping', 'entries', 'subcorpora',
                           'merging', 'k', 'sampled',
-                          '_in_a_project', '_previous_type', '_old_searches',
-                          '_conc_colours', '_conc_kwargs', '_do_conc',
+                          '_in_a_project', '_old_searches',
+                          '_conc_colours', '_conc_kwargs',
                           '_interactive', '_decimal', '_protected']
                           
         # main variables the user might access
@@ -230,16 +230,16 @@ class Objects(object):
         self.max_cols = None
         self.max_rows = None
         self._comma = False
+        self._last_shown = None
+        self._token_show_format = ['mw']
 
         # system toggles and references to older data
         self._in_a_project = None
-        self._previous_type = None
         self._old_searches = []
         self._conc_colours = defaultdict(dict)
         self._conc_kwargs = {'n': 999}
 
         # user settings  (more to come?)
-        self._do_conc = True
         self._interactive = True
         self._decimal = 3
         self._annotation_unlocked = False
@@ -324,10 +324,6 @@ def interpreter(debug=False,
             data = fo.read()
         data = data.splitlines()
         data = [i for i in data if i.strip() and i.strip()[0] != '#']
-        
-        # turn off concordancing if it's never used in the script
-        if 'concordance' not in ' '.join(data):
-            objs._do_conc = False
 
         return list(reversed(data))
 
@@ -378,17 +374,19 @@ def interpreter(debug=False,
         print('Loading graphical interface ... ')
         subprocess.call(["python", "-m", 'corpkit.gui', os.getcwd()])
 
-    def show_concordance(tokens):
+    def show_concordance(tokens, conc_obj=False, start_pos=False):
         import pydoc
-        # update the showing parameters 
         kwargs = process_kwargs(tokens)
-        show = kwargs.pop('m', ['mw'])
-        #if kwargs:
-        #    objs._conc_kwargs.update(kwargs)
-        objs.concordance = objs._get('result')[1].conc(show=show, **kwargs)
-        if objs.concordance is None:
-            print("There's no concordance here right now, sorry.")
-            return
+        show = kwargs.pop('m', False)
+        if not show:
+            show = objs._token_show_format
+        else:
+            objs._token_show_format = show
+        if conc_obj is False:
+            conc_obj = objs._get('result')[1]
+        #TODO: n, columns, etc.
+
+        objs.concordance = conc_obj.conc(show=show, **kwargs)
         # retrieve the correct concordances, so we can colour them
         found_the_conc = next((i for i, c in enumerate(objs._old_searches) \
                                if c.equals(objs.result)), None)
@@ -397,7 +395,9 @@ def interpreter(debug=False,
         new_ix = []
         from colorama import Fore, Back, Style, init
         thisc = objs._conc_colours[found_the_conc]
-        objs.concordance.tabview(colours=thisc)
+        objs._last_shown = 'conc'
+        #.drop(objs._conc_kwargs.get('columns', []) axis=1, errors='ignore')
+        objs.concordance.tabview(colours=thisc, start_pos=False)
         return
 
     def show_table(obj, objtype=False, start_pos=False):
@@ -525,8 +525,7 @@ def interpreter(debug=False,
         
         elif objtype in ['result', 'edited', 'totals', 'previous',
                          'features', 'postags', 'wordclasses', 'series']:
-            show_table(obj, objtype)
-
+            show_this(objtype)
         elif objtype == 'concordance':
             show_concordance(args)
         elif objtype == 'wordlists':
@@ -559,6 +558,14 @@ def interpreter(debug=False,
             print('Decimal places set to %d.' % objs._decimal) 
             return
 
+        if tokens[0] in ['show']:
+            show = process_kwargs(['with'] + tokens).get('show', False)
+            if not show:
+                raise ValueError("Unreadable show value: %s" % ' '.join(tokens[2:]))
+            objs._token_show_format = show
+            print('Tokens will be displayed as: %s' % ', '.join(show))
+            return
+
         if tokens and tokens[0] in ['max_cols', 'max_rows']:
             dim = 'rows' if tokens[0].endswith('rows') else 'columns'
     
@@ -573,7 +580,6 @@ def interpreter(debug=False,
 
         # set subcorpora as attribute of corpus object ... is this ideal?
         if tokens and tokens[0].startswith('subcorp'):
-            from corpkit.corpus import Corpus
             if tokens[-1] in ['false', 'none', 'normal', 'off',
                               'folder', 'folders', 'False', 'None']:
                 tokens[-1] = False
@@ -645,11 +651,8 @@ def interpreter(debug=False,
             print('KWARGS', kwargs)
 
         if os.path.exists(path) or os.path.exists(os.path.join('data', path)):
-            from corpkit.corpus import Corpus, Corpora
-            if tokens[-1] == 'corpora':
-                objs.corpus = Corpora(path, load_saved=loadsaved, **kwargs)
-            else:
-                objs.corpus = Corpus(path, load_saved=loadsaved, **kwargs)
+            from corpkit.corpus import Corpus
+            objs.corpus = Corpus(path, load_saved=loadsaved, **kwargs)
         else:
             dirs = [x for x in os.listdir('data') if os.path.isdir(os.path.join('data', x))]
             corpname = dirs[int(tokens[0])-1]
@@ -895,8 +898,9 @@ def interpreter(debug=False,
             with_related = []
         withs = defaultdict(list)
         skips = []
+
         for i, token in enumerate(with_related):
-            if i in skips or token == 'and':
+            if i in skips or token in ['and']:
                 continue
             # this is used when making corpora with filters
             if fixjust:
@@ -920,7 +924,7 @@ def interpreter(debug=False,
                     val = with_related[i+n]
                     skips.append(i+1)
                     skips.append(i+2)
-                    if token.lower() in ['columns', 'm', 'middle']:
+                    if token.lower() in ['columns', 'm', 'middle', 'show']:
                         parsed = process_long_key(val.strip(','))
                     else:
                         parsed = parse_pattern(val.rstrip(','))
@@ -929,7 +933,7 @@ def interpreter(debug=False,
                         n += 1
                         skips.append(i+n)
                         val = with_related[i+n]
-                        if token.lower() in ['columns', 'm', 'middle']:
+                        if token.lower() in ['columns', 'm', 'middle', 'show']:
                             parsed = process_long_key(val.strip(','))
                         else:
                             parsed = parse_pattern(val.rstrip(','))
@@ -962,6 +966,7 @@ def interpreter(debug=False,
                     continue
                 token = process_long_key(token)
                 show.append(token)
+            objs._token_show_format = show
         else:
             show = ['w']
         return show
@@ -979,7 +984,7 @@ def interpreter(debug=False,
             show = search_helper(text='show')
             show = [process_long_key(i) for i in show]
             kwargs = {'search': search, 'show': show, 'exclude': exclude,
-                      'cql': isinstance(search, str), 'conc': objs._do_conc}
+                      'cql': isinstance(search, str)}
             return kwargs
 
         search_related = []
@@ -1016,7 +1021,7 @@ def interpreter(debug=False,
         withs = process_kwargs(tokens)
 
         kwargs = {'search': search, 'exclude': exclude,
-                  'show': show, 'cql': cqlmode, 'conc': objs._do_conc, 'searchmode': searchmode}
+                  'show': show, 'cql': cqlmode, 'searchmode': searchmode}
         kwargs.update(withs)
         return kwargs
 
@@ -1045,27 +1050,13 @@ def interpreter(debug=False,
             return
 
         kwargs = parse_search_args(tokens)
-        kwargs['quiet'] = quiet
         
-        if 'just_metadata' not in kwargs:
-            kwargs['just_metadata'] = objs.just if objs.just else False
-        if 'skip_metadata' not in kwargs:
-            kwargs['skip_metadata'] = objs.skip if objs.skip else False
-        if 'subcorpora' not in kwargs:
-            kwargs['subcorpora'] = objs.symbolic if objs.symbolic else False
+        kwargs['just'] = objs.just
+        kwargs['skip'] = objs.skip
 
         if debug:
             print(kwargs)
 
-        kwargs['show_conc_metadata'] = True
-        if corpp.level == 's' and not kwargs.get('subcorpora', False) \
-            and not corpp.symbolic:
-            kwargs['files_as_subcorpora'] = True
-
-        #objs.corpus.just = objs.just
-        #objs.corpus.skip = objs.skip
-        #objs.corpus.symbolic = objs.symbolic
-        
         sch = kwargs.get('search', False)
         if sch in ['features', 'postags', 'wordclasses']:
             objs.result = getattr(corpp, sch)
@@ -1080,21 +1071,42 @@ def interpreter(debug=False,
             objs.totals = objs.result.totals
         # this should be done for pos and wordclasses too
         print('')
-        return objs.result
 
+        import pandas as pd
+        from corpkit.interrogation import Interrogation, Concordance
+        if not isinstance(objs.result, (Interrogation, Concordance, pd.DataFrame, pd.Series)):
+            return
+        objs.previous = objs.result
+        objs.query = getattr(objs.result, 'query', None)
+        objs._old_searches.append(objs.result)
+        objs.edited = False
+        show_result(objs.result, [], **kwargs)
+        return
 
-    def show_result(to_show, tokens):
+    def show_result(to_show, tokens, **kwargs):
         kwargs = process_kwargs(tokens)
         subcorpora = kwargs.pop('subcorpora', 'default')
-        show = kwargs.pop('columns', ['mw'])
+        show = kwargs.pop('columns', False)
+        if not show:
+            show = objs._token_show_format
+        else:
+            objs._token_show_format = show
         data = to_show.table(subcorpora=subcorpora, show=show, **kwargs)
         show_table(data)
+        objs._last_shown = 'table'
         return
 
     def show_this(tokens):
         """
         Show any object in a human-readable form
         """
+        if tokens[0] == 'edited' or objs._get(tokens[0])[0] == 'edited':
+            gotten = objs._get(tokens[0])[1]
+            if tokens[1] == 'result':
+                show_result(gotten, tokens)
+            elif tokens[1] == 'concordance':
+                show_concordance(tokens, conc_obj=gotten)
+            return
         if tokens[0] == 'result' or objs._get(tokens[0])[0] == 'result':
             gotten = objs._get(tokens[0])[1]
             show_result(gotten, tokens[1:])
@@ -1154,28 +1166,7 @@ def interpreter(debug=False,
     def get_info(tokens):
         pass
 
-    def edit_conc(conc, kwargs, varname=False):
-        from corpkit.interrogation import Concordance
-        for k, v in kwargs.items():
-            if k == 'just_subcorpora':
-                objs.concordance = conc[conc['c'].str.contains(v)]
-            elif k == 'skip_subcorpora':
-                objs.concordance = conc[~conc['c'].str.contains(v)]
-            elif k == 'just_entries':
-                objs.concordance = conc[conc['m'].str.contains(v)]
-            elif k == 'skip_entries':
-                objs.concordance = conc[~conc['m'].str.contains(v)]
-        objs.concordance = Concordance(objs.concordance)
-        
-        # should this really happen?
-        if varname and varname in objs._protected.keys():
-            objs.named[varname] = objs.concordance
-        
-        return objs.concordance
-        #if objs._interactive:
-        #    show_this(['concordance'])
-
-    def edit_something(tokens):
+    def edit_interrogation(tokens):
         """
         Edit an interrogation or concordance
 
@@ -1195,7 +1186,7 @@ def interpreter(debug=False,
         recog = ['not', 'matching', 'result', 'entry', 'entries',
                  'results', 'subcorpus', 'subcorpora', 'edited']
 
-        # skip, keep, merge
+        ## skip, keep, merge
         by_related = []
         if 'by' in tokens:
             start = tokens.index('by')
@@ -1209,42 +1200,27 @@ def interpreter(debug=False,
         for i, token in enumerate(by_related):
             if i in skips:
                 continue
-            if token in trans.keys():
-                k = trans.get(token) + '_' + by_related[i+1]
-                v = next((x for x in by_related[i+1:] if x not in recog), False)
+            if token in trans:
+                funcname = trans.get(token)
+                k = by_related[i+1]
+                v = next((x for x in by_related[i+2:] if x not in recog), False)
                 if not v:
-                    print('v not found')
+                    print('value not found.')
                     return
                 v = parse_pattern(v)
+                # edit result by merging subcorpora matching chapter[123] as first
                 if token == 'merging':
                     newname = next(tokens[i+1] for i, t in enumerate(tokens) if t == 'as')
                     v = {newname: v}
-                kwargs[k] = v
-                #for x in range(i, ind+1):
-                #    skips.append(x)
+                print(thing_to_edit, funcname, k, v)
+                thing_to_edit = getattr(thing_to_edit, funcname)({k: v})
         
-        # add bools etc
-        morekwargs = process_kwargs(tokens)
-        for k, v in morekwargs.items():
-            if k not in kwargs.keys():
-                kwargs[k] = v
+        objs.edited = thing_to_edit
+        if objs._last_shown == 'conc':
+            show_concordance([], objs.edited)
 
-        if debug:
-            print(kwargs)
-
-        from corpkit.interrogation import Concordance
-        if isinstance(thing_to_edit, Concordance):
-            edt = edit_conc(thing_to_edit, kwargs, varnam=tokens[0])
-        else:
-            edt = thing_to_edit.edit(**kwargs)
-        if isinstance(edt, Concordance):
-            objs.concordance = edt
-        else:
-            objs.edited = edt
-            if hasattr(objs.edited, 'totals'):
-                objs.totals = objs.edited.totals
-        return edt
-
+        elif objs._last_shown == 'table':
+            show_this(['edited'])
 
     def run_command(tokens):
         """
@@ -1253,45 +1229,7 @@ def interpreter(debug=False,
 
         command = get_command.get(tokens[0], unrecognised)        
         out = command(tokens[1:])
-        import pydoc
-        import tabview
-        
-        # store the previous thing as previous
-        attr = objmap.get(command, False)
-        if attr:
-            objs.previous = getattr(objs, attr)
-            objs._previous_type = attr
 
-        if command == search_corpus:
-            # can be dataframe in the case of features
-            import pandas as pd
-            from corpkit.interrogation import Interrogation, Concordance
-            if not isinstance(objs.result, (Interrogation, Concordance, pd.DataFrame, pd.Series)):
-                return
-            objs.result = out
-            objs.previous = out
-            show_this(['result'])
-            objs.query = getattr(out, 'query', None)
-            #if objs._do_conc:
-                #objs.concordance = out.conc()
-            objs._old_searches.append(out)
-            #else:
-            #    objs.concordance = None
-            # find out what is going on here
-            objs.edited = False
-
-        # either all or no showing should be done here 
-        elif command in [edit_something, sort_something, calculate_result,
-                       keep_conc, del_conc]:
-            objs._old_searches[-1] = out
-            #if objs._interactive:
-            #    show_this(['concordance'] + tokens[1:])
-            if objs._interactive:
-                show_this(['edited'])
-        else:
-            if debug:
-                print('Done:', repr(out))
-        return out
 
     def add_colour_to_conc_df(conc):
         """
@@ -1386,7 +1324,19 @@ def interpreter(debug=False,
     def sort_something(tokens):
         """
         Sort a result or concordance line
+        """
+        #todo: ascending, l1, etc
+        thing_to_edit = get_thing_to_edit(tokens[0])
+        std = thing_to_edit.sort_values(by=tokens[-1])
+        setattr(objs, tokens[0], std)
+        if objs._last_shown == 'conc':
+            show_concordance([], conc_obj=std)
+        else:
+            show_table(std)
 
+    def old_sort_something(tokens):
+        """
+        Sort a result or concordance line
         """
 
         thing_to_edit = get_thing_to_edit(tokens[0])
@@ -2049,10 +1999,6 @@ def interpreter(debug=False,
         - toggle comma (shows thousands comma in results)
 
         """
-        if tokens[0].startswith('conc'):
-            objs._do_conc = not objs._do_conc
-            s = 'on' if objs._do_conc else 'off'
-            print('Concordancing turned %s.' % s)
         if tokens[0].startswith('interactive'):
             objs._interactive = not objs._interactive
             s = 'on' if objs._interactive else 'off'
@@ -2182,7 +2128,7 @@ def interpreter(debug=False,
                    'sort': sort_something,
                    'sample': sample_something,
                    'toggle': toggle_this,
-                   'edit': edit_something,
+                   'edit': edit_interrogation,
                    'tokenise': tokenise_corpus,
                    'tokenize': tokenise_corpus,
                    'ls': ls_dir,
@@ -2201,7 +2147,7 @@ def interpreter(debug=False,
                    'add': add_corpus}
 
     objmap = {search_corpus: 'result',
-              edit_something: 'edited',
+              edit_interrogation: 'edited',
               calculate_result: 'edited',
               sort_something: 'edited',
               plot_result: 'figure',
@@ -2292,8 +2238,6 @@ def interpreter(debug=False,
                 output = commands.pop()
             
             elif python_c_mode:
-                if 'concordance' not in python_c_mode:
-                    objs._do_conc = False
                 output = python_c_mode
 
             elif profile:
