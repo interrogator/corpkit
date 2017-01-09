@@ -1638,3 +1638,20 @@ def make_filelist(path):
             fp = os.path.join(root, f)
             all_files.append(fp)
     return all_files
+
+def format_text_from_df(df, s, middlestring):
+    pre = []
+    post = []
+    linenum = 0
+    grouped = df['w'].loc[:s-1].groupby(level=0)
+    for x, y in grouped:
+        sent = " ".join(y)
+        pre.append(sent)
+        linenum += 1
+    grouped = df['w'].loc[s+1:].groupby(level=0)
+    for x, y in grouped:
+        sent = " ".join(y)
+        post.append(sent)
+    pre = " ".join(pre)
+    post = " ".join(post)
+    return "\n\n".join([pre, middlestring, post]), linenum
