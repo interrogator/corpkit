@@ -1,7 +1,6 @@
 import pandas as pd
 from functools import total_ordering
 from corpkit.lazyprop import lazyprop
-<<<<<<< HEAD
 
 class Matches(list):
     """
