@@ -131,6 +131,133 @@ class Corpus(list):
         else:
             return Files(super(Corpus, self).__getitem__(key), root=self.path, sliced=True)
 
+    @lazyprop
+    def features(self):
+        """
+        Generate and show basic stats from the corpus, including number of 
+        sentences, clauses, process types, etc.
+        :Example:
+        >>> corpus.features
+            SB  Characters  Tokens  Words  Closed class words  Open class words  Clauses
+            01       26873    8513   7308                4809              3704     2212
+            02       25844    7933   6920                4313              3620     2270
+            03       18376    5683   4877                3067              2616     1640
+            04       20066    6354   5366                3587              2767     1775
+        """
+        from corpkit.dictionaries.word_transforms import mergetags
+        from corpkit.process import get_corpus_metadata, add_df_to_dotfile, make_df_json_name
+
+        kwa = {'just': self.just,
+               'skip': self.skip}
+
+        md = get_corpus_metadata(self.path, generate=True)
+        name = make_df_json_name('features')
+
+        if name in md:
+            import pandas as pd
+            try:
+                return pd.DataFrame(md[name])
+            except ValueError:
+                return pd.Series(md[name])
+        else:
+            feat = self.interrogate('features', **kwa)
+            add_df_to_dotfile(self.path, feat, typ='features') 
+            return feat
+
+    def _get_postags_and_wordclasses(self):
+        """
+        Called by corpus.postags and corpus.wordclasses internally
+        """
+        from corpkit.dictionaries.word_transforms import mergetags
+        from corpkit.process import get_corpus_metadata, add_df_to_dotfile, make_df_json_name
+
+        kwa = {'just': self.just,
+               'skip': self.skip}
+
+        md = get_corpus_metadata(self.path, generate=True)
+
+        pname = make_df_json_name('postags', self.symbolic)
+        wname = make_df_json_name('wordclasses', self.symbolic)
+        
+        if pname in md and wname in md:
+            import pandas as pd
+            try:
+                return pd.DataFrame(md[pname]), pd.DataFrame(md[wname])
+            except ValueError:
+                return pd.Series(md[pname]), pd.Series(md[wname])
+
+        else:
+            postags = self.interrogate('postags', **kwa)
+            from corpkit.interrogation import Interrodict
+            if isinstance(postags, Interrodict):
+                postags = postags.multiindex()
+            wordclasses = postags.edit(merge_entries=mergetags,
+                                       sort_by='total').results.astype(int)
+            postags = postags.results
+            add_df_to_dotfile(self.path, postags, typ='postags', subcorpora=self.symbolic)
+            add_df_to_dotfile(self.path, wordclasses, typ='wordclasses', subcorpora=self.symbolic)
+            return postags, wordclasses
+
+    @lazyprop
+    def wordclasses(self):
+        """
+        Generate and show basic stats from the corpus, including number of 
+        sentences, clauses, process types, etc.
+        :Example:
+        >>> corpus.wordclasses
+            SB   Verb  Noun  Preposition   Determiner ...
+            01  26873  8513         7308         5508 ...
+            02  25844  7933         6920         3323 ...
+            03  18376  5683         4877         3137 ...
+            04  20066  6354         5366         4336 ...
+        """
+        postags, wordclasses = self._get_postags_and_wordclasses()
+        return wordclasses
+
+    @lazyprop
+    def postags(self):
+        """
+        Generate and show basic stats from the corpus, including number of 
+        sentences, clauses, process types, etc.
+        :Example:
+        >>> corpus.postags
+            SB      NN     VB     JJ     IN     DT 
+            01   26873   8513   7308   4809   3704  ...
+            02   25844   7933   6920   4313   3620  ...
+            03   18376   5683   4877   3067   2616  ...
+            04   20066   6354   5366   3587   2767  ...
+        """
+        postags, wordclasses = self._get_postags_and_wordclasses()
+        return postags
+
+    @lazyprop
+    def lexicon(self, **kwargs):
+        """
+        Get a lexicon/frequency distribution from a corpus,
+        and save to disk for next time.
+        :returns: a `DataFrame` of tokens and counts
+        """
+        
+        from corpkit.process import get_corpus_metadata, add_df_to_dotfile, make_df_json_name
+
+        kwa = {'just': self.just,
+               'skip': self.skip}
+
+        md = get_corpus_metadata(self.path, generate=True)
+        name = make_df_json_name('lexicon', self.symbolic)
+        
+        if name in md:
+            import pandas as pd
+            return pd.DataFrame(md[name])
+        else:
+            lexi = self.interrogate('lexicon', **kwa)
+            from corpkit.interrogation import Interrodict
+            if isinstance(lexi, Interrodict):
+                lexi = lexi.multiindex()
+            lexi = lexi.results
+            add_df_to_dotfile(self.path, lexi, typ='lexicon', subcorpora=self.symbolic)
+            return lexi
+
     def sample(self, n, level='f'):
         """
         Get a sample of the corpus
