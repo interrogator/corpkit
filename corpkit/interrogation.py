@@ -43,21 +43,10 @@ class Interrogation(pd.DataFrame):
         self._edited = False 
     
     def __str__(self):
-        if self.query.get('corpus'):
-            prst = getattr(self.query['corpus'], 'name', self.query['corpus'])
-        else:
-            try:
-                prst = self.query['interrogation'].query['corpus'].name
-            except:
-                prst = 'edited'
-        st = 'Corpus interrogation: %s\n\n' % (prst)
-        return st
+        return "<%s instance: %s total>" % (classname(self), format(len(self), ','))
 
     def __repr__(self):
-        try:
-            return "<%s instance: %d total>" % (classname(self), len(self))
-        except AttributeError:
-            return "<%s instance: %d total>" % (classname(self), len(self))
+        return "<%s instance: %s total>" % (classname(self), format(len(self), ','))
 
     @lazyprop
     def results(self):
@@ -71,29 +60,16 @@ class Interrogation(pd.DataFrame):
             return self.conc()
         return self._concordance
 
-    def table(self, subcorpora='default', preserve_case=False, show=['w']):
+    def table(self, subcorpora='default', preserve_case=False, show=['w'], **kwargs):
         """
         Generate a result table view
         """
         import pandas as pd
-        from corpkit.corpus import Corpora, Datalist, Subcorpus
+        from corpkit.corpus import Corpus, Subcorpus
 
-        # wrong for datalists
+        # todo: fix this
         if subcorpora == 'default':
-
-            subcorpora = False
-            lev = getattr(self.corpus, 'level', False)
-            if isinstance(self.corpus, Corpora):
-                subcorpora = 'corpus'
-            elif lev == 'd' or isinstance(self.corpus, Datalist):
-                if isinstance(self.corpus[0], Subcorpus):
-                    subcorpora = 'folder'
-                else:
-                    subcorpora = 'file'
-            elif lev == 'c':
-                subcorpora = 'folder'
-            elif lev == 's':
-                subcorpora = 'file'
+            subcorpora = 'file'
     
         from corpkit.interrogator import fix_show
         show = fix_show(show, 1)
@@ -113,7 +89,7 @@ class Interrogation(pd.DataFrame):
         self._edited = False
         return ser
 
-    def conc(self, show=['w'], n=False, shuffle=False, **kwargs):
+    def conc(self, show=['w'], n=1000, shuffle=False, **kwargs):
         """
         Generate a concordance view
         """
@@ -140,60 +116,56 @@ class Interrogation(pd.DataFrame):
         self._edited = False
         return cs
 
-    def just(self, entries={}, metadata={}, mode='any'):
-        """
-        Filter results from the interrogation
-        """
+    def _just_or_skip(self, skip=False, entries={}, metadata={}, mode='any'):
+        """Meta function for just or skip"""
         from corpkit.interrogator import fix_show_bit
+        
+        # to skip, we invert the matches with numpy
+        if skip:
+            import numpy as np
+            func = np.invert
+        else:
+            # a dummy function
+            func = lambda x: x
+        
         rec = self.copy()
+        if isinstance(entries, STRINGTYPE):
+            entries = {'mw': entries}
         for k, v in entries.items():
             k = fix_show_bit(k)
             nk = '__' + k
             rec[nk] = rec.apply(make_ser, axis=1, k=[k])
             if isinstance(v, list):
-                rec = rec[rec[nk].isin(v)]
+                rec = rec[func(rec[nk].isin(v))]
             elif isinstance(v, STRINGTYPE):
-                rec = rec[rec[nk].str.contains(v)]
+                rec = rec[func(rec[nk].str.contains(v))]
             elif isinstance(v, int):
-                rec = rec[rec[nk] == v]
+                rec = rec[func(rec[nk] == v)]
             rec = rec.drop(nk, axis=1)
+        if isinstance(metadata, STRINGTYPE):
+            metadata = {'mw': metadata}
         for k, v in metadata.items():
             if isinstance(v, list):
-                rec = rec[rec[nk].isin(v)]
+                rec = rec[func(rec[nk].isin(v))]
             elif isinstance(v, STRINGTYPE):
-                rec = rec[rec[nk].str.contains(v)]
+                rec = rec[func(rec[nk].str.contains(v))]
             elif isinstance(v, int):
-                rec = rec[rec[nk] == v]
+                rec = rec[func(rec[nk] == v)]
             rec = rec.drop(nk, axis=1)
         self._edited = True
         return Interrogation(data=rec, corpus=self.corpus, query=self.query, norec=True)
+
+    def just(self, entries={}, metadata={}, mode='any'):
+        """
+        Filter results from the interrogation
+        """
+        return self._just_or_skip(skip=False, entries=entries, metadata=metadata, mode=mode)
 
     def skip(self, entries={}, metadata={}, mode='any'):
         """
         Delete results from interrogation
         """
-        from corpkit.interrogator import fix_show_bit
-        rec = self.copy()
-        for k, v in entries.items():
-            k = fix_show_bit(k)
-            print(k)
-            rec['__' + k] = rec.apply(make_ser, axis=1, k=[k])
-            nk = '__' + k
-            if isinstance(v, list):
-                rec = rec[~rec[nk].isin(v)]
-            elif isinstance(v, STRINGTYPE):
-                rec = rec[~rec[nk].str.contains(v)]
-            elif isinstance(v, int):
-                rec = rec[~rec[nk] == v]
-        for k, v in metadata.items():
-            if isinstance(v, list):
-                rec = rec[~rec[nk].isin(v)]
-            elif isinstance(v, STRINGTYPE):
-                rec = rec[~rec[nk].str.contains(v)]
-            elif isinstance(v, int):
-                rec = rec[~rec[nk] == v]
-        self._edited = True
-        return Interrogation(data=rec, corpus=self.corpus, query=self.query, norec=True)
+        return self._just_or_skip(skip=True, entries=entries, metadata=metadata, mode=mode)
 
     def edit(self, *args, **kwargs):
         """
@@ -579,9 +551,10 @@ class Interrogation(pd.DataFrame):
         from corpkit.other import quickview
         quickview(self, n=n)
 
-    def view(self, **kwargs):
+    def tabview(self, **kwargs):
         import tabview
-        tabview.view(self.results, **kwargs)
+        import pandas as pd
+        tabview.view(pd.DataFrame(self), **kwargs)
 
     def asciiplot(self,
                   row_or_col_name,
@@ -789,10 +762,9 @@ class Concordance(pd.core.frame.DataFrame):
         from corpkit.process import interrogation_from_conclines
         return interrogation_from_conclines(self)
 
-    def view(self, window=(55, 55), **kwargs):
+    def tabview(self, window=(55, 55), **kwargs):
         """Show concordance in interactive cli view"""
         from tabview import view
-        from corpkit.other import resize_by_window_size
         import pandas as pd
         if isinstance(self.index, pd.MultiIndex):
             lsts = list(zip(*self.index.to_series()))
