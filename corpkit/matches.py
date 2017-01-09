@@ -144,7 +144,7 @@ class Token(object):
             row = self.sent.ix[self.g].to_dict() if self.g else {}
         except KeyError:
             return
-        return Token(self.g, self.df, self.s, self.fobj, self.metadata, self.parent, **row)
+        return Token(self.g, self.df, self.s, self.fobj, self.metadata, getattr(self, 'parent', False), **row)
 
     @lazyprop
     def x(self):
@@ -161,7 +161,7 @@ class Token(object):
                 row = self.sent.ix[new_idx].to_dict()
             except KeyError:
                 continue
-            out.append(Token(new_idx, self.df, self.s, self.fobj, self.metadata, self.parent, **row))
+            out.append(Token(new_idx, self.df, self.s, self.fobj, self.metadata, getattr(self, 'parent', False), **row))
         return out
 
     @lazyprop
@@ -195,7 +195,7 @@ class Token(object):
             if matches:
                 m = matches.iloc[0]
                 # metadata here is actually wrong!
-                return Token(m.name[1], self.df, m.name[0], self.fobj, self.metadata, self.parent, **m.to_dict())
+                return Token(m.name[1], self.df, m.name[0], self.fobj, self.metadata, getattr(self, 'parent', False), **m.to_dict())
             else:
                 return
 
@@ -204,7 +204,7 @@ class Token(object):
         out = []
         just_same_coref = self.df.loc[self.df['c'] == self.c]
         for (s, i), dat in just_same_coref.iterrows():
-            out.append(Token(i, self.df, s, self.fobj, self.metadata, self.parent, **dat.to_dict()))
+            out.append(Token(i, self.df, s, self.fobj, self.metadata, getattr(self, 'parent', False), **dat.to_dict()))
         return out
 
     @lazyprop
@@ -214,7 +214,7 @@ class Token(object):
         if matches:
             m = matches.iloc[0]
             # metadata here is actually wrong!
-            return Token(m.name[1], self.df, m.name[0], self.fobj, self.metadata, self.parent, **m.to_dict())
+            return Token(m.name[1], self.df, m.name[0], self.fobj, self.metadata, getattr(self, 'parent', False), **m.to_dict())
         else:
             return
 
