@@ -1,13 +1,5 @@
 """
 A corpkit interpreter, with natural language commands.
-
-todo:
-
-* documentation
-* handling of kwargs tuples etc
-* checking for bugs, tests
-* merge entries with name
-
 """
 
 from __future__ import print_function
@@ -88,7 +80,7 @@ help_text = "\nThis is a dedicated interpreter for corpkit, a tool for creating,
             " +-----------------+--------------------------------------------------------------+--------------------------------------------------------------------------------------------+  \n"\
             "\nMore information:\n\nYou can access more specific help by entering corpkit, then by doing 'help <command>', or by visiting\n" \
             "http://corpkit.readthedocs.io/en/latest\n\n" \
-            "For help on viewing results, hit '?' when in the result viewing mode. For concordances, hit 'h'.\n\n(Hit 'q' to exit help).\n\n"
+            "For help on viewing results and concordances, hit '?' when in the viewing mode.\n\n"
 
 from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
 
@@ -523,7 +515,7 @@ def interpreter(debug=False,
         elif objtype == 'gui':
             switch_to_gui(args)
         
-        elif objtype in ['result', 'edited', 'totals', 'previous',
+        elif objtype in ['result', 'edited', 'totals',
                          'features', 'postags', 'wordclasses', 'series']:
             show_this(objtype)
         elif objtype == 'concordance':
@@ -2044,9 +2036,6 @@ def interpreter(debug=False,
         if tokens[0] in objs._protected:
             originally_was = tokens[0]
         
-        #elif tokens[0] in objs.named.keys():
-        #    pass
-        
         from corpkit.process import makesafe
         name = makesafe(tokens[-1])
         if name in objs._protected + list(get_command.keys()):
@@ -2059,7 +2048,10 @@ def interpreter(debug=False,
         """
         Make a sample from a corpus
         
-        :Example: sample 2 subcorpora of corpus
+        :Example:
+
+           sample 2 subcorpora of corpus
+           sample 100 files of corpus 
         """
         trans = {'s': 'subcorpora', 'f': 'files'}
         originally_was, thing = objs._get(tokens[-1])
@@ -2077,13 +2069,6 @@ def interpreter(debug=False,
             form += ' ...'
         print('Sample created: %d %s from %s --- %s' % (n, trans[level],
                                                         thing.name, form))
-        #single_command_print('sample')
-
-    def run_previous(tokens):
-        import shlex
-        output = list(reversed(objs.previous))[int(tokens[0]) - 1][0]
-        tokens = [i.rstrip(',') for i in shlex.split(output)]
-        return run_command(tokens)
 
     def ch_dir(tokens):
         """
@@ -2119,7 +2104,6 @@ def interpreter(debug=False,
                    'info': get_info,
                    'parse': parse_corpus,
                    'export': export_result,
-                   'redo': run_previous,
                    'mark': annotate_conc,
                    'annotate': annotate_corpus,
                    'unannotate': unannotate_corpus,
