@@ -681,7 +681,7 @@ class Concordance(pd.core.frame.DataFrame):
                 else:
                     widths.append(10)
         else:
-            iwid = self.index.astype(str)[:100].str.len().max()
+            iwid = self.index.astype(str)[:100].str.len().max() + 1
             if iwid > 10:
                 iwid = 10
             widths = [iwid]
@@ -701,7 +701,8 @@ class Concordance(pd.core.frame.DataFrame):
                 widths.append(window[0])
             elif c == 'r':
                 widths.append(window[1])
-                aligns[i+len(self.index.names)] = False            
+                aligns[i+len(self.index.names)] = False    
+
             else:
                 mx = self[c].astype(str)[:100].str.len().max()
                 if mx > 10:
