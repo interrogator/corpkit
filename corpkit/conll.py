@@ -2,7 +2,7 @@
 corpkit: process CONLL formatted data
 """
 
-from corpkit.matches import Token
+from corpkit.matches import Token, Count
 
 def parse_conll(f,
                 first_time=False,
@@ -870,8 +870,10 @@ def cut_df_by_meta(df, just, skip):
                 df = cut_df_by_metadata(df, df._metadata, v, feature=k, method='skip')
     return df
 
+def tgrep_searcher(**kwargs):
+    pass
 
-def tgrep_searcher(f=False,
+def old_tgrep_searcher(f=False,
                    metadata=False,
                    from_df=False,
                    search=False,
@@ -1083,9 +1085,9 @@ def get_stats(from_df=False, metadata=False, feature=False, root=False, **kwargs
         if not res:
             continue
 
-        concs = [False for i in res]
-        for (_, met, r), line in zip(res, concs):
+        for _, met, r in zip(res):
             result[name] = len(res)
+
         if name != 'Processes':
             continue
         non_mat = 0
@@ -1097,7 +1099,12 @@ def get_stats(from_df=False, metadata=False, feature=False, root=False, **kwargs
 
         if root:
             root.update()
-    return result, {}
+    
+    r = []
+    for k, v in result.items():
+        for i in range(v):
+            r.append(Count(1, name=k))
+    return r
 
 #todo: move to dd type
 def get_corefs(df, matches):
