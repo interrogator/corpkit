@@ -791,78 +791,6 @@ def format_middle(tree, show, df=False, sent_id=False, ixs=False):
     # now we have [a/a, nicer/nice, day/day]
     return ' '.join(output)
 
-def format_conc(tups, show, df=False, sent_id=False, root=False, ixs=False):
-    """
-    Prepare start or end of tgrepped conc lines
-    """
-    tree_vals = {}
-    if 't' in show or 'mt' in show:
-        tre = str(root).replace('/', '-slash')
-        # todo?
-    if 'mw' in show:
-        tree_vals['mw'] = [w.replace('/', '-slash-') for w, p, i in tups]
-    if 'ml' in show:
-        tree_vals['ml'] = [df.loc[sent_id, i]['l'] for i in ixs]
-    if 'mp' in show:
-        tree_vals['mp'] = [p.replace('/', '-slash-') for w, p, i in tups]
-    if 'mx' in show:
-        from corpkit.dictionaries import taglemma
-        tree_vals['mx'] = [taglemma.get(p.lower(), p) for w, p, i in tups]
-    if 'ms' in show:
-        tree_vals['ms'] = [str(sent_id) for i in tups]
-    if 'mi' in show:
-        tree_vals['mi'] = [str(i) for w, p, i in tups]
-
-    output = []
-    zipped = zip(*[tree_vals[i] for i in show])
-
-    for tup in zipped:
-        output.append('/'.join(tup))
-    # now we have [a/a, nicer/nice, day/day]
-    return ' '.join(output)
-
-def show_tree_as_per_option(show, tree, sent=False, df=False,
-                            sent_id=False, conc=False,
-                            only_format_match=True):
-    """
-    Turn a ParentedTree into shown output
-
-    :returns: tok_id, metcat, start, middle, end
-    """
-    # make a list of all indices
-    start = False
-    end = False
-    metcat = False
-    
-    # here, we need to get the indexes of the first and last
-    # token in the match, when the tree is flattened.
-    # i wonder if there is an easier way!
-    all_leaf_positions = tree.root().treepositions(order='leaves')
-    match_position = tree.treeposition()
-    ixs = [e for e, i in enumerate(all_leaf_positions, start=1) \
-           if i[:len(match_position)] == match_position]
-
-    # get the data from the left and right
-    if conc:
-        start = [(w, p, i) for i, (w, p) in enumerate(tree.root().pos(), start=1)
-                 if i < ixs[0]]
-        end = [(w, p, i) for i, (w, p) in enumerate(tree.root().pos(), start=1)
-                 if i > ixs[-1]]
-
-    middle = format_middle(tree, show, df=df, sent_id=sent_id, ixs=ixs)
-
-    if conc:
-        if not only_format_match:
-            start_ixes = list(range(1, len(start)+1))
-            end_ixes = list(range(ixs[-1]+1, len(end)+1))
-            start = format_conc(start, show, df=df, sent_id=sent_id, root=tree.root(), ixs=start_ixes)
-            end = format_conc(end, show, df=df, sent_id=sent_id, root=tree.root(), ixs=end_ixes)
-        else:
-            start = ' '.join([w for w, p, i in start])
-            end = ' '.join([w for w, p, i in end])
-
-    return ixs[0], start, middle, end
-
 def tgrep(parse_string, search):
     """
     Uses tgrep to search a parse tree string
@@ -1578,29 +1506,50 @@ def delete_files_and_subcorpora(corpus, skip, just):
 
     return corpus, skip, just
 
-
 def timestring(inputx, blankfirst=0):
-    """print with time prepended"""
+    """
+    Print with time prepended
+
+    Args:
+        intputx (str): a string to print
+        blankfirst (int): blank lines to prepend to the print string
+    """
     from time import localtime, strftime
     thetime = strftime("%H:%M:%S", localtime())
     blankfirst = '\n' * blankfirst
     print('%s%s: %s' % (blankfirst, thetime, inputx.lstrip()))
 
 def make_record(data, corpus, path=False):
+    """
+    Turn a list of search results into a pandas DataFrame in records format
+
+    Args:
+        data (list): a series of Token or Tokens objects
+        corpus (corpkit.Corpus): The corpus that produced this list of results
+        path (str): path to this corpus, used when there has been some slicing of the corpus
+
+    Returns:
+        pandas.DataFrame: record format of each result
+    """
     import pandas as pd
     from corpkit.build import get_all_metadata_fields
     from corpkit.corpus import Corpus
-    record_data = []
+    from corpkit.matches import Token, Tokens
     try:
         all_meta_fields = list(corpus.metadata['fields'].keys())
     except AttributeError:
-        all_meta_fields = list(Corpus(corpus, print_info=False, root=path).metadata['fields'].keys())
+        all_meta_fields = list(get_corpus_metadata(path, generate=True)['fields'].keys())
+
+    # because there has been a strange problem
+    #data = [i for i in data if type(i) in [Token, Tokens]]
 
     fields = list(sorted(['parse', 'folder', 'file'] + all_meta_fields))
-    for k in data:
-        line = [k.metadata.get(key, 'none') for key in fields]
-        line += [k.s, k.i, k]
-        record_data.append(line)
+    # the getattr is here because once k was shown to be a list, not Token or Tokens
+    # it's in this horrible list comprehension for speed
+    record_data = [[getattr(k, 'metadata', {}).get(key, 'none') for key in fields] + [k.s, k.i, k] for k in data if k]
+    #record_data = []
+    #for k in data:
+
     column_names = fields + ['s', 'i', 'entry']
 
     df = pd.DataFrame(record_data)
@@ -1614,6 +1563,9 @@ def make_record(data, corpus, path=False):
     return df
 
 def make_tree(path):
+    """
+    Represent a corpus path's directory structure visually in a terminal
+    """
     import os
     s = ""
     for root, dirs, files in os.walk(path):
@@ -1628,7 +1580,9 @@ def make_tree(path):
     return s
 
 def make_filelist(path):
-    """make a list of absolute paths to every file in the corpus"""
+    """
+    Make a list of absolute paths to every file in the corpus
+    """
     import os
     all_files = []
     for root, ds, fs in os.walk(path):
@@ -1640,6 +1594,13 @@ def make_filelist(path):
     return all_files
 
 def format_text_from_df(df, s, middlestring):
+    """
+    Create a string of text from a pandas.DataFrame and a concordance line string
+
+    Returns:
+        str: the entire new text
+        int: line number of the concordance in this string
+    """
     pre = []
     post = []
     linenum = 0
