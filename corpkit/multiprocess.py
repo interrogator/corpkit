@@ -100,7 +100,6 @@ def pmultiquery(corpus,
     #import sys
     #reload(sys)
     #stdout=sys.stdout
-    failed = False
     terminal = False
     used_joblib = False
     #todo: the number of blank lines to print can be way wrong
@@ -121,15 +120,7 @@ def pmultiquery(corpus,
                 pass
 
     if not root and multiprocess:
-        try:
-            res = Parallel(n_jobs=multiprocess)(delayed(interrogator)(**x) for x in ds)
-            used_joblib = True
-        except:
-            failed = True
-            print('Multiprocessing failed.')
-            raise
-        if not res:
-            failed = True
+        res = Parallel(n_jobs=multiprocess)(delayed(interrogator)(**x) for x in ds)
     else:
         res = []
         for index, d in enumerate(ds):
