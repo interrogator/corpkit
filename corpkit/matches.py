@@ -271,10 +271,12 @@ def _concer(record, show):
     """
     tok = record['m']
     tok._show_as = show
-    record['m'] = tok
+    #record['m'] = tok
     #record['m'] = tok.display(show)
-    record['r'] = ' '.join(tok.sent['w'].loc[tok.i+1:].values)
-    record['l'] = ' '.join(tok.sent['w'].loc[:tok.i-1].values)
+    first = tok.i if isinstance(tok.i, int) else int(tok.i.split(',')[0])
+    last = tok.i if isinstance(tok.i, int) else int(tok.i.split(',')[-1])
+    record['l'] = ' '.join(tok.sent['w'].loc[:first-1].values)
+    record['r'] = ' '.join(tok.sent['w'].loc[last+1:].values)
     return record
 
 # unused code below!
@@ -306,4 +308,38 @@ class Count(object):
 
     def __str__(self):
         return self.name
-        
+
+
+class Tokens(list):
+    """
+    Hold multiple tokens (i.e. an)
+    """
+
+    def __init__(self, lst, s, df):
+
+        super(Tokens, self).__init__(lst)
+        self.s = self[0].s
+        self.i = ','.join([str(x.i) for x in self])
+        self.df = df
+        self._show_as = ['mw']
+
+    @lazyprop
+    def sent(self):
+        return self.df.loc[self.s]
+
+    def display(self, show=['mw'], preserve_case=False):
+        """
+        Show token in a certain way
+        """
+        out = []
+        for t in self:
+            out.append(t.display(show=show, preserve_case=preserve_case))
+        return ' '.join(out)
+
+    def __str__(self):
+        return self.display(self._show_as)
+
+    @lazyprop
+    def metadata(self):
+            return self[0].metadata            
+

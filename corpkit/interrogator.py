@@ -214,47 +214,6 @@ def interrogator(corpus,
             else:
                 raise ValueError('%s: Query %s' % (thetime, error_message))
 
-    def determine_search_func():
-        """Figure out what search function we're using"""
-
-        simple_tregex_mode = False
-        statsmode = False
-        tree_to_text = False
-        search_trees = False
-        optiontext = "Querying CONLL data"
-            
-        simp_crit = all(not i for i in [kwargs.get('tgrep'),
-                                        subcorpora,
-                                        just,
-                                        skip])
-
-        if search.get('t') and simp_crit:
-            if have_java:
-                simple_tregex_mode = True
-            else:
-                search_trees = 'tgrep'
-            optiontext = 'Searching parse trees'
-
-        elif datatype == 'conll':
-        
-            if any(i.endswith('t') for i in search.keys()):
-                if have_java and not kwargs.get('tgrep'):
-                    search_trees = 'tregex'
-                else:
-                    search_trees = 'tgrep'
-                optiontext = 'Searching parse trees'
-            elif any(i.endswith('v') for i in search.keys()):
-                # either of these searchers now seems to work
-                #seacher = get_stats_conll
-                statsmode = True
-                optiontext = 'General statistics'
-            elif any(i.endswith('r') for i in search.keys()):
-                optiontext = 'Distance from root'
-            else:
-                optiontext = 'Querying CONLL data'
-
-        return optiontext, simple_tregex_mode, statsmode, tree_to_text, search_trees
-
     def get_tregex_values(show):
         """If using Tregex, set appropriate values
 
@@ -406,8 +365,7 @@ def interrogator(corpus,
     datatype = getattr(corpus, 'datatype', 'conll')
     singlefile = getattr(corpus, 'singlefile', False)
 
-    # Determine the search function to be used #
-    optiontext, simple_tregex_mode, statsmode, tree_to_text, search_trees = determine_search_func()
+    optiontext = "Searching parsed data"
 
     locs['search'] = search
     locs['exclude'] = exclude
@@ -443,12 +401,6 @@ def interrogator(corpus,
     denom = kwargs.get('denominator', 1)
     startnum = kwargs.get('startnum', 0)
     
-    # no conc for statsmode
-    if statsmode:
-        no_conc = True
-        only_conc = False
-        conc = False
-
     # Set some Tregex-related values
     translated_option = False
     if search.get('t'):
@@ -459,12 +411,12 @@ def interrogator(corpus,
             else:
                 return
     # more tregex options
-    if tree_to_text:
-        treg_q = r'ROOT << __'
-        op = ['-o', '-t', '-w', '-f']
-    elif simple_tregex_mode:
-        treg_q = search['t']
-        op = ['-%s' % i for i in translated_option] + ['-o', '-f']
+    #if tree_to_text:
+    #    treg_q = r'ROOT << __'
+    #    op = ['-o', '-t', '-w', '-f']
+    #elif simple_tregex_mode:
+    #    treg_q = search['t']
+    #    op = ['-%s' % i for i in translated_option] + ['-o', '-f']
 
     try:
         nam = get_ipython().__class__.__name__
@@ -498,43 +450,40 @@ def interrogator(corpus,
     # create a progress bar
     p, outn, total_files, par_args = make_progress_bar(corpus_iter)
 
+    # if tgrep, make compiled query
+    compiled_tgrep = False
+    if search.get('t'):
+        qstring = search.get('t')
+        from nltk.tgrep import tgrep_compile
+        compiled_tgrep = tgrep_compile(qstring)
+
     for f in corpus_iter:
 
-        filepath, corefs = f.path, coref
-
-        res = pipeline(filepath, search=search, show=show,
-                                 exclude=exclude,
-                                 excludemode=excludemode,
-                                 searchmode=searchmode,
-                                 case_sensitive=case_sensitive,
-                                 #conc=False,
-                                 #only_format_match=only_format_match,
-                                 #gramsize=gramsize,
-                                 no_punct=no_punct,
-                                 no_closed=no_closed,
-                                 #window=window,
-                                 filename=f.path,
-                                 coref=corefs,
-                                 countmode=countmode,
-                                 is_a_word=is_a_word,
-                                 subcorpora=subcorpora,
-                                 #show_conc_metadata=show_conc_metadata,
-                                 just=just,
-                                 skip=skip,
-                                 #fsi_index=fsi_index,
-                                 translated_option=translated_option,
-                                 statsmode=statsmode,
-                                 #preserve_case=preserve_case,
-                                 usecols=usecols,
-                                 search_trees=search_trees,
-                                 lem_instance=lem_instance,
-                                 lemtag=lemtag,
-                                 fobj=f,
-                                 corpus_name=getattr(corpus, 'corpus_name', False),
-                                 corpus=corpus,
-                                 matches=results,
-                                 multiprocess=kwargs.get('mp'),
-                                 **kwargs)
+        res = pipeline(fobj=f,
+                       search=search,
+                       show=show,
+                       exclude=exclude,
+                       excludemode=excludemode,
+                       searchmode=searchmode,
+                       case_sensitive=case_sensitive,
+                       no_punct=no_punct,
+                       no_closed=no_closed,
+                       coref=coref,
+                       countmode=countmode,
+                       is_a_word=is_a_word,
+                       subcorpora=subcorpora,
+                       just=just,
+                       skip=skip,
+                       translated_option=translated_option,
+                       usecols=usecols,
+                       lem_instance=lem_instance,
+                       lemtag=lemtag,
+                       corpus_name=getattr(corpus, 'corpus_name', False),
+                       corpus=corpus,
+                       matches=results,
+                       multiprocess=kwargs.get('mp'),
+                       compiled_tgrep=compiled_tgrep,
+                       **kwargs)
             
         if res == 'Bad query':
             return 'Bad query'

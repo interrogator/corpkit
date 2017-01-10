@@ -62,8 +62,11 @@ def parse_conll(f,
                 line = line.lstrip('# ')
                 if '=' in line:
                     field, val = line.split('=', 1)
-                    for x in val.split(','):
-                        metadata[count][field].add(x)
+                    if field == 'parse':
+                        metadata[count][field].add(val)
+                    else:
+                        for x in val.split(','):
+                            metadata[count][field].add(x)
         metadata[count] = {k: ','.join(v) for k, v in metadata[count].items()}
     if just_meta:
         return metadata
@@ -485,51 +488,6 @@ def turn_pos_to_wc(ser, showval):
     news.name = ser.name[:-1] + 'x'
     return news
 
-def concline_generator(matches, idxs, df, metadata,
-                       add_meta, category, fname, preserve_case=False):
-    """
-    Get all conclines
-
-    :param matches: a list of formatted matches
-    :param idxs: their (sent, word) idx
-    """
-    conc_res = []
-    # potential speedup: turn idxs into dict
-    from collections import defaultdict
-    mdict = defaultdict(list)
-    # if remaking idxs here, don't need to do it earlier
-    idxs = list(matches.index)
-    for mid, (s, i) in zip(matches, idxs):
-    #for s, i in matches:
-        mdict[s].append((i, mid))
-    # shorten df to just relevant sents to save lookup time
-    df = df.loc[list(mdict.keys())]
-    # don't look up the same sentence multiple times
-    for s, tup in sorted(mdict.items()):
-        sent = df.loc[s]
-        if not preserve_case:
-            sent = sent.str.lower()
-        meta = metadata[s]
-        sname = meta.get('speaker', 'none')
-        for i, mid in tup:
-            if not preserve_case:
-                mid = mid.lower()
-            ix = '%d,%d' % (s, i)
-            start = ' '.join(sent.loc[:i-1].values)
-            end = ' '.join(sent.loc[i+1:].values)
-            lin = [ix, category, fname, sname, start, mid, end]
-            if add_meta:
-                for k, v in sorted(meta.items()):
-                    if k in ['speaker', 'parse', 'sent_id']:
-                        continue
-                    if isinstance(add_meta, list):
-                        if k in add_meta:
-                            lin.append(v)
-                    elif add_meta is True:
-                        lin.append(v)
-            conc_res.append(lin)
-    return conc_res
-
 def p_series_to_x_series(val):
     return taglemma.get(val.lower(), val.lower())
 
@@ -704,91 +662,6 @@ def make_collocate_show(show, current):
         out.append(newn)
     return out
 
-def show_this(df, matches, show, metadata, conc=False,
-              coref=False, category=False, show_conc_metadata=False, **kwargs):
-
-    only_format_match = kwargs.pop('only_format_match', True)
-    ngram_mode = kwargs.get('ngram_mode', True)
-    preserve_case = kwargs.get('preserve_case', False)
-    gramsize = kwargs.get('gramsize', 1)
-    window = kwargs.get('window', None)
-
-    #matches = sorted(list(matches))
-
-    # add index as column if need be
-    if any(i.endswith('s') for i in show):
-        df['ms'] = [str(i) for i in df.index.labels[0]]
-    if any(i.endswith('i') for i in show):
-        df['mi'] = [str(i) for i in df.index.labels[1]]
-    
-    # attempt to leave really fast
-    if kwargs.get('countmode'):
-        return matches, {}
-    if len(show) == 1 and not conc and gramsize == 1 and not window:
-        if show[0] in ['ms', 'mi', 'mw', 'ml', 'mp', 'mf']:
-            get_fast = df.loc[matches][show[0][-1]]
-            if not preserve_case:
-                get_fast = get_fast.str.lower()
-            return list(get_fast), {}
-
-    # todo: make work for ngram, collocate and coref
-    if all(i[0] in ['m', 'g', '+', '-', 'd', 'h', 'r'] for i in show):
-        if gramsize == 1 and not window:
-            return fast_simple_conc(df,
-                                matches,
-                                show,
-                                metadata,
-                                show_conc_metadata,
-                                kwargs.get('filename', ''),
-                                category,
-                                only_format_match,
-                                conc=conc,
-                                preserve_case=preserve_case,
-                                gramsize=gramsize,
-                                window=window)
-        else:
-            resbit = []
-            concbit = []
-            iterab = range(1, gramsize + 1) if gramsize > 1 else range(-window, window+1)
-            for i in iterab:
-                if i == 0:
-                    continue
-                if window:
-                    nnshow = make_collocate_show(show, i)
-                else:
-                    nnshow = show
-                r, c = fast_simple_conc(df,
-                                matches,
-                                nnshow,
-                                metadata,
-                                show_conc_metadata,
-                                kwargs.get('filename', ''),
-                                category,
-                                only_format_match,
-                                conc=conc,
-                                preserve_case=preserve_case,
-                                gramsize=gramsize,
-                                window=window)
-
-                resbit.append(r)
-                concbit.append(c)
-                if not window:
-                    df = df.shift(1)
-                    df = df.fillna('none')
-            resbit = list(zip(*resbit))
-            concbit = list(zip(*concbit))
-            out = []
-            conc_out = []
-            # this is slow but keeps the order
-            # remove it esp for resbit where it doesn't matter
-            for r in resbit:
-                for b in r:
-                    out.append(b)
-            for c in concbit:
-                for b in c:
-                    conc_out.append(b)
-            return out, conc_out
-
 def remove_by_mode(matches, mode, criteria):
     """
     If mode is all, remove any entry that occurs < len(criteria)
@@ -870,8 +743,67 @@ def cut_df_by_meta(df, just, skip):
                 df = cut_df_by_metadata(df, df._metadata, v, feature=k, method='skip')
     return df
 
-def tgrep_searcher(**kwargs):
-    pass
+def custom_tgrep_nodes(pattern, metadata, search_leaves=True):
+    """
+    Return the tree nodes in the trees which match the given pattern.
+    :param pattern: a tgrep search pattern
+    :type pattern: str or output of tgrep_compile()
+    :param trees: a sequence of NLTK trees (usually ParentedTrees)
+    :type trees: iter(ParentedTree) or iter(Tree)
+    :param search_leaves: whether ot return matching leaf nodes
+    :type search_leaves: bool
+    :rtype: iter(tree nodes)
+    """
+    from nltk.tree import ParentedTree
+    from corpkit.constants import STRINGTYPE
+
+    if isinstance(pattern, (STRINGTYPE, bool)):
+        from nltk.tgrep import tgrep_compile
+        pattern = tgrep_compile(pattern)
+
+    for k, v in metadata.items():
+        tree = v.get('parse', None)
+        if not tree:
+            yield []
+        tree = ParentedTree.fromstring(tree)
+        root_position = tree.root().treepositions(order='leaves')
+        try:
+            if search_leaves:
+                positions = tree.treepositions()
+            else:
+                positions = treepositions_no_leaves(tree)
+            yield [(root_position, position, k, v) for position in positions if pattern(tree[position])]
+        except AttributeError:
+            yield []
+
+def tgrep_searcher(df, metadata, compiled_tgrep=False, parent=False, fobj=False, **kwargs):
+    
+    #from nltk.tgrep import tgrep_nodes
+    #trees = [ParentedTree.fromstring(i.get('parse', '')) for i in metadata.values()]
+    from corpkit.matches import Token, Tokens
+    out = []
+    all_matches = custom_tgrep_nodes(compiled_tgrep, metadata)
+    for sent_matches in all_matches:
+        if not sent_matches:
+            continue
+        for all_leaf_positions, match_position, s, meta in sent_matches:
+            #if i == 1:
+            #    all_leaf_positions = match.root().treepositions(order='leaves')
+            #match_position = match.treeposition()
+            ixs = [e for e, x in enumerate(all_leaf_positions, start=1) \
+                   if x[:len(match_position)] == match_position]
+            span = []
+            for ix in ixs:
+                try:
+                    rowd = df.loc[s, ix].to_dict()
+                except TypeError:
+                    continue
+                t = Token(ix, df, s, fobj, metadata=metadata[s], parent=parent, **rowd)
+                span.append(t)
+                tkspn = Tokens(span, s, df)
+                if tkspn not in out:
+                    out.append(tkspn)
+    return out
 
 def old_tgrep_searcher(f=False,
                    metadata=False,
@@ -1027,7 +959,7 @@ def slow_tregex(metadata=False,
     else:
         return res, concs
 
-def get_stats(from_df=False, metadata=False, feature=False, root=False, **kwargs):
+def get_stats(from_df=False, metadata=False, root=False, **kwargs):
     """
     Get general statistics for a DataFrame
     """
@@ -1135,7 +1067,7 @@ def row_tok_apply(row, df=False, fobj=False, metadata=False, matches=False, conc
     t = Token(row.name[1], df, row.name[0], fobj, metadata[row.name[0]], matches, conc=conc, **row.to_dict())
     return t
 
-def pipeline(f=False,
+def pipeline(fobj=False,
              search=False,
              show=False,
              exclude=False,
@@ -1147,59 +1079,43 @@ def pipeline(f=False,
              just=False,
              skip=False,
              show_conc_metadata=False,
-             statsmode=False,
-             search_trees=False,
              lem_instance=False,
              subcorpora=False,
-             fobj=False,
              corpus_name=False,
              corpus=False,
              matches=False,
              multiprocess=False,
+             compiled_tgrep=False,
              **kwargs):
     """
     A basic pipeline for conll querying---some options still to do
     """
-    if isinstance(show, str):
-        show = [show]
+    from collections import Counter
+    from corpkit.matches import Token
 
     all_matches = []
     all_exclude = []
     all_res = []
-
-    from collections import Counter
-    from corpkit.matches import Token
 
     # todo: this could become obsolete
     corp_folder = False
     if getattr(fobj, 'parent', False):
         corp_folder = fobj.parent
 
-    if from_df is False or from_df is None:
-        df = parse_conll(f, usecols=kwargs.get('usecols'), corpus_name=corpus_name, corp_folder=corp_folder)
-        # can fail here if df is none
-        if df is None:
-            print('Problem reading data from %s.' % f)
-            return [], []
-        metadata = df._metadata
-    else:
-        df = from_df
-        metadata = kwargs.pop('metadata')
-
-    # determine which subsearcher to use
-    searcher = pipeline
-    if statsmode:
-        searcher = get_stats
-    if search_trees == 'tregex':
-        searcher = slow_tregex
-    elif search_trees == 'tgrep':
-        searcher = tgrep_searcher
-
+    df = parse_conll(fobj.path, usecols=kwargs.get('usecols'), corpus_name=corpus_name, corp_folder=corp_folder)
+    
+    # can fail here if df is none
     if df is None:
         print('Problem reading data from %s.' % f)
         return [], []
+    metadata = df._metadata
 
-    kwargs['ngram_mode'] = any(x.startswith('n') for x in show)
+    # determine which subsearcher to use
+    searcher = pipeline
+    if 'v' in search:
+        searcher = get_stats
+    if 't' in search:
+        searcher = tgrep_searcher
 
     # first column should always be strings!
     try:
@@ -1222,24 +1138,9 @@ def pipeline(f=False,
         df = df[~df['w'].str.contains(crit)]
 
     # todo: get these two to use same call sig
-    if statsmode:
-        return searcher(df, metadata, False, root=kwargs.pop('root', False), subcorpora=subcorpora, **kwargs)
+    if searcher in [get_stats, tgrep_searcher]:
+        return searcher(df, metadata, root=kwargs.pop('root', False), compiled_tgrep=compiled_tgrep, parent=matches, fobj=fobj, **kwargs)
     
-    elif search_trees:
-        return searcher(from_df=df,
-                        search=search,
-                        searchmode=searchmode,
-                        exclude=exclude,
-                        excludemode=excludemode,
-                        conc=conc,
-                        by_metadata=False,
-                        metadata=metadata,
-                        root=kwargs.pop('root', False),
-                        fname=f,
-                        show=show,
-                        subcorpora=subcorpora,
-                        **kwargs)
-
     # do no searching if 'any' is requested
     # doesn't work?
     if len(search) == 1 and list(search.keys())[0] == 'mw' \
