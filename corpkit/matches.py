@@ -271,10 +271,8 @@ def _concer(record, show):
     """
     tok = record['m']
     tok._show_as = show
-    #record['m'] = tok
-    #record['m'] = tok.display(show)
-    first = tok.i if isinstance(tok.i, int) else int(tok.i.split(',')[0])
-    last = tok.i if isinstance(tok.i, int) else int(tok.i.split(',')[-1])
+    first = tok.i if isinstance(tok.i, int) else int(tok.i.split('-')[0])
+    last = tok.i if isinstance(tok.i, int) else int(tok.i.split('-')[-1])
     record['l'] = ' '.join(tok.sent['w'].loc[:first-1].values)
     record['r'] = ' '.join(tok.sent['w'].loc[last+1:].values)
     return record
@@ -312,16 +310,22 @@ class Count(object):
 
 class Tokens(list):
     """
-    Hold multiple tokens (i.e. an)
+    Hold multiple tokens (i.e. an n-gram or tree result)
     """
 
-    def __init__(self, lst, s, df):
+    def __init__(self, lst, s, df, treeposition, metadata):
 
         super(Tokens, self).__init__(lst)
         self.s = self[0].s
-        self.i = ','.join([str(x.i) for x in self])
+        # a range-esque index
+        if len(self) > 1:
+            self.i = '%d-%d' % (self[0].i, self[-1].i)
+        else:
+            self.i = str(self[0].i)
         self.df = df
         self._show_as = ['mw']
+        self.treeposition = treeposition
+        self.metadata = metadata
 
     @lazyprop
     def sent(self):
@@ -340,6 +344,11 @@ class Tokens(list):
         return self.display(self._show_as)
 
     @lazyprop
-    def metadata(self):
-            return self[0].metadata            
+    def tree(self):
+        from nltk.tree import ParentedTree
+        return ParentedTree.fromstring(self.metadata['parse'])
+
+    @lazyprop
+    def node(self):
+        return self.tree[self.treeposition]
 

@@ -800,7 +800,7 @@ def tgrep_searcher(df, metadata, compiled_tgrep=False, parent=False, fobj=False,
                     continue
                 t = Token(ix, df, s, fobj, metadata=metadata[s], parent=parent, **rowd)
                 span.append(t)
-                tkspn = Tokens(span, s, df)
+                tkspn = Tokens(span, s, df, match_position, metadata=metadata[s])
                 if tkspn not in out:
                     out.append(tkspn)
     return out
