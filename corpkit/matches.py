@@ -16,34 +16,6 @@ class Matches(list):
 
         super(Matches, self).__init__(data)
 
-    @lazyprop
-    def record(self):
-        import pandas as pd
-        from corpkit.build import get_all_metadata_fields
-        from corpkit.corpus import Corpora, Corpus, Datalist
-        record_data = []
-        try:
-            all_meta_fields = list(self.corpus.metadata['fields'].keys())
-        except:
-            all_meta_fields = list(Corpus(self.corpus, print_info=False).metadata['fields'].keys())
-        fields = list(sorted(['parse', 'folder', 'file'] + all_meta_fields))
-        
-        for k in self.data:
-            line = [k.metadata.get(key, 'none') for key in fields]
-            line += [k.s, k.i, k]
-            record_data.append(line)
-        column_names = fields + ['s', 'i', 'entry']
-
-        df = pd.DataFrame(record_data)
-        df.columns = column_names
-
-        sorts = ['corpus'] if isinstance(self.corpus, Corpora) else []
-        if getattr(self.corpus, 'level', 's'):
-            sorts.append('folder')
-        sorts += ['file', 's', 'i']
-        df = df.sort_values(sorts).reset_index(drop=True)
-        return df
-
     def table(self, subcorpora='default', preserve_case=False, show=['w']):
 
         import pandas as pd
