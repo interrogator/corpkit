@@ -255,7 +255,7 @@ def cut_df_by_meta(df, just, skip):
                 df = cut_df_by_metadata(df, df._metadata, v, feature=k, method='skip')
     return df
 
-def custom_tgrep_nodes(pattern, metadata, search_leaves=True):
+def custom_tgrep(pattern, metadata, search_leaves=True):
     """
     Return the tree nodes in the trees which match the given pattern.
     :param pattern: a tgrep search pattern
@@ -288,13 +288,57 @@ def custom_tgrep_nodes(pattern, metadata, search_leaves=True):
         except AttributeError:
             yield []
 
+def tgrep_counter(pattern, search_leaves=True, root=False):
+    from nltk.tree import ParentedTree
+    from corpkit.constants import STRINGTYPE
+    from collections import Counter
+
+    res = {}
+
+    single = False
+    if not isinstance(pattern, dict):
+        pattern = {'noname': pattern}
+        single = True
+
+    if isinstance(pattern, (STRINGTYPE, bool)):
+        from nltk.tgrep import tgrep_compile
+        pattern = tgrep_compile(pattern)
+
+    for k, v in metadata.items():
+        #if root:
+        #    root.update()
+        tree = v.get('parse', None)
+        if not tree:
+            yield []
+        tree = ParentedTree.fromstring(tree)
+        root_position = tree.root().treepositions(order='leaves')
+
+        try:
+            if search_leaves:
+                positions = tree.treepositions()
+            else:
+                positions = treepositions_no_leaves(tree)
+        except AttributeError:
+            yield []
+        
+        for name, pat in pattern.items():
+            try:
+                s = sum([1 for position in positions if pattern(tree[position])])
+            except AttributeError:
+                s = 0
+            res[name] = pat
+
+    if single:
+        res = res.pop('noname')
+    return res
+
 def tgrep_searcher(df, metadata, compiled_tgrep=False, parent=False, fobj=False, **kwargs):
     
     #from nltk.tgrep import tgrep_nodes
     #trees = [ParentedTree.fromstring(i.get('parse', '')) for i in metadata.values()]
     from corpkit.matches import Token, Tokens
     out = []
-    all_matches = custom_tgrep_nodes(compiled_tgrep, metadata)
+    all_matches = custom_tgrep(compiled_tgrep, metadata)
     for sent_matches in all_matches:
         if not sent_matches:
             continue
@@ -312,8 +356,9 @@ def tgrep_searcher(df, metadata, compiled_tgrep=False, parent=False, fobj=False,
                     continue
                 t = Token(ix, df, s, fobj, metadata=metadata[s], parent=parent, **rowd)
                 span.append(t)
-            tkspn = Tokens(span, s, df, match_position, metadata=metadata[s])
-            out.append(tkspn)
+            if span:
+                tkspn = Tokens(span, s, df, match_position, metadata=metadata[s])
+                out.append(tkspn)
     return out
 
 def get_stats(from_df=False, metadata=False, root=False, **kwargs):
@@ -323,28 +368,24 @@ def get_stats(from_df=False, metadata=False, root=False, **kwargs):
     import re
     from corpkit.dictionaries.process_types import processes
     from collections import Counter, defaultdict
-    from corpkit.process import tregex_engine
 
     def ispunct(s):
         import string
         return all(c in string.punctuation for c in s)
 
     tree = [x['parse'] for x in metadata.values()]
-    
-    tregex_qs = {'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S '\
-                 '!$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
-                 'Open interrogative': r'ROOT < SBARQ <<- (/\?/ !< __)', 
-                 'Closed interrogative': r'ROOT ( < (SQ < (NP $+ VP)) << (/\?/ !< __) | < (/(S|SBAR)/ < (VP $+ NP)) <<- (/\?/ !< __))',
-                 'Unmodalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
-                 'Modalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
-                 'Clauses': r'/^S/ < __',
-                 'Interrogative': r'ROOT << (/\?/ !< __)',
-                 'Processes': r'/VB.?/ >># (VP !< VP >+(VP) /^(S|ROOT)/)'}
 
-    result = Counter()
+    tregex_qs = make_compiled_statsqueries()
+    procq = tregex_qs.pop('Processes', None)
 
-    for name in tregex_qs.keys():
-        result[name] = 0
+    result = tgrep_counter(tregex_qs)
+    procr = tgrep_searcher(procq)
+
+    for ptype in ['mental', 'relational', 'verbal']:
+        reg = getattr(processes, ptype).lemmata.as_regex(boundaries='l')
+        count = len([i for i in procr if re.search(reg, i[0].l)])
+        nname = ptype.title() + ' processes'
+        result[nname] = count
 
     result['Sentences'] = len(set(from_df.index.labels[0]))
     result['Passives'] = len(from_df[from_df['f'] == 'nsubjpass'])
@@ -355,39 +396,6 @@ def get_stats(from_df=False, metadata=False, root=False, **kwargs):
     result['Open class'] = sum([1 for x in list(from_df['p']) if x and x[0] in ['N', 'J', 'V', 'R']])
     result['Punctuation'] = result['Tokens'] - result['Words']
     result['Closed class'] = result['Words'] - result['Open class']
-
-    to_open = '\n'.join(tree)
-
-    if not to_open.strip('\n'):
-        return {}, {}
-
-    for name, q in sorted(tregex_qs.items()):
-        options = ['-o', '-t'] if name == 'Processes' else ['-o']
-        # c option removed, could cause memory problems
-        #ops = ['-%s' % i for i in translated_option] + ['-o', '-n']
-        res = tregex_engine(query=q, 
-                            options=options,
-                            corpus=to_open,  
-                            root=root)
-
-        #res = format_tregex(res)
-        if not res:
-            continue
-
-        for _, met, r in zip(res):
-            result[name] = len(res)
-
-        if name != 'Processes':
-            continue
-        non_mat = 0
-        for ptype in ['mental', 'relational', 'verbal']:
-            reg = getattr(processes, ptype).words.as_regex(boundaries='l')
-            count = len([i for i in res if re.search(reg, i[-1])])
-            nname = ptype.title() + ' processes'
-            result[nname] = count
-
-        if root:
-            root.update()
     
     r = []
     for k, v in result.items():
@@ -749,3 +757,18 @@ def convert_json_to_conll(path,
             main_out = main_out.replace(u"\u2018", "'").replace(u"\u2019", "'")
             fo.write(main_out)
 
+def make_compiled_statsqueries():
+    from nltk.tgrep import tgrep_compile
+    tregex_qs = {'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S '\
+                 '!$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
+                 'Open interrogative': r'ROOT < SBARQ <<- (/\?/ !< __)', 
+                 'Closed interrogative': r'ROOT ( < (SQ < (NP $+ VP)) << (/\?/ !< __) | < (/(S|SBAR)/ < (VP $+ NP)) <<- (/\?/ !< __))',
+                 'Unmodalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
+                 'Modalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
+                 'Clauses': r'/^S/ < __',
+                 'Interrogative': r'ROOT << (/\?/ !< __)',
+                 'Processes': r'/VB.?/ >># (VP !< VP >+(VP) /^(S|ROOT)/)'}
+    out = {}
+    for k, v in tregex_qs.items():
+        out[k] = tgrep_compile(v)
+    return out
