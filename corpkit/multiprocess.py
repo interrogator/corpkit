@@ -16,6 +16,7 @@ def pmultiquery(corpus,
                 show=['mw'],
                 subcorpora=False,
                 mainpath=False,
+                countmode=False,
                 **kwargs
                ):
     """
@@ -82,9 +83,8 @@ def pmultiquery(corpus,
                         #'just_metadata' = just_metadata,
                         'printstatus': False,
                         'multiprocess': False,
-                        'df1_always_df': False,
-                        'files_as_subcorpora': False,
-                        'mp': True}
+                        'mp': True,
+                        'countmode': countmode}
 
     # make a new dict for every iteration
     ds = [dict(**basic_multi_dict) for i in range(multiprocess)]
@@ -139,7 +139,7 @@ def pmultiquery(corpus,
                   'show': show,
                   'subcorpora': subcorpora}
 
-    interro = Interrogation(data=merged_res, corpus=corpus, query=querybits, path=mainpath)
+    interro = Interrogation(data=merged_res, corpus=corpus, query=querybits, path=mainpath, count=countmode)
 
     if print_info:
         if terminal:

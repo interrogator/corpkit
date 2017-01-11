@@ -267,9 +267,9 @@ def add_gov_to_f(df):
     nrow = df.apply(add_gov, df=df, axis=1)
     return nrow
 
-class Count(int):
+class Count(object):
 
-    def __new__(self, s, i, name, metadata, num=1, **kwargs):
+    def __init__(self, s, i, name, metadata, num=1, **kwargs):
         self.num = num
         self.s = s
         self.i = i
@@ -277,6 +277,7 @@ class Count(int):
         self.metadata = metadata
         self.num = num
         self.kwargs = kwargs
+        super(Count, self).__init__()
 
 class Tokens(list):
     """

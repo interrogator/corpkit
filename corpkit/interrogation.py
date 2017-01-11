@@ -21,7 +21,7 @@ class Interrogation(pd.DataFrame):
     Pandas object, which can be edited or plotted.
     """
 
-    def __init__(self, data=None, corpus=None, query=None, norec=False, path=False):
+    def __init__(self, data=None, corpus=None, query=None, norec=False, path=False, count=False):
         """Initialise the class"""
         if norec:
             super(Interrogation, self).__init__(data)
@@ -41,6 +41,7 @@ class Interrogation(pd.DataFrame):
         # a switch to show when data has been edited and views
         # not yet updated
         self._edited = False 
+        self._count = count
     
     def __str__(self):
         return "<%s instance: %s total>" % (classname(self), format(len(self), ','))
@@ -57,6 +58,8 @@ class Interrogation(pd.DataFrame):
     @lazyprop
     def concordance(self):
         if self._concordance is None or self._edited:
+            if self._count:
+                raise ValueError("Counted result has no data to concordance.")
             return self.conc()
         return self._concordance
 
@@ -80,8 +83,12 @@ class Interrogation(pd.DataFrame):
         else:
             df = self.copy()
             # should be apply
-            df['entry'] = [x.display(show, preserve_case=preserve_case) for x in df['entry']]
-            df['count'] = [1 for x in df.index]
+            if self._count:
+                df['count'] = [i.num for i in df['entry']]
+                df['entry'] = [i.name for i in df['entry']]
+            else:
+                df['entry'] = [x.display(show, preserve_case=preserve_case) for x in df['entry']]
+                df['count'] = [1 for x in df.index]
             df = df.pivot_table(index=subcorpora, columns='entry', values='count', aggfunc=sum)
             df = df.fillna(0.0).astype(int)
             ser = df[df.sum().sort_values(ascending=False).index]

@@ -36,6 +36,9 @@ def parse_conll(f,
     # go to corpkit.constants to modify the order of columns if yours are different
     from corpkit.constants import CONLL_COLUMNS as head
 
+    # the current way to read in files is to read the file twice, which
+    # may be expensive. first, we go through it for metadata, and then 
+    # we use read_csv() on the whole document, and then generate a new index
     with open(f, 'r') as fo:
         data = fo.read().strip('\n')
 
@@ -43,6 +46,7 @@ def parse_conll(f,
     metadata = {}
     sents = data.split('\n\n')  
     basedict = defaultdict(set)
+    # replace file ext and numbers indicating file was split
     fname = os.path.basename(f)
     fname = re.sub(r'(-[0-9][0-9][0-9]|).txt.conll$', '', fname)
 
@@ -76,26 +80,33 @@ def parse_conll(f,
         return
 
     try:
-        df = pd.read_csv(f, sep='\t', header=None, na_filter=False, memory_map=True, comment="#",
-                     names=head, usecols=None, index_col=index_col, engine='c')
+        df = pd.read_csv(f, sep='\t', header=None, na_filter=False,
+                         memory_map=True, comment="#", names=head, usecols=None,
+                         index_col=index_col, engine='c')
+    # error has been caused by poorly formatted data. the outer function will
+    # give the user a warning about this 
     except KeyError:
         return
-    c = 0
+    # make a new multiindex with s. this should be pretty fast, but still
+    # doesn't seem like a very good way to go. should use the data from the 
+    # first read through
+    s = 0
     newlev = []
     for i in df.index:
         try:
             if int(i) == 1:
-                c += 1
+                s += 1
         except:
             pass
-        newlev.append((c, i))
+        newlev.append((s, i))
     ix = pd.MultiIndex.from_tuples(newlev)
     df.index = ix
     df._metadata = metadata
     return df
 
-def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, corpus=False, matches=False,
-                subcorpora=False, metadata=False, fobj=False, corpus_name=False, conc=True):
+def search_this(df, obj, attrib, pattern, adjacent=False, coref=False,
+                corpus=False, matches=False, subcorpora=False, metadata=False,
+                fobj=False, corpus_name=False, conc=True):
     """
     Search the dataframe for a single criterion
 
@@ -124,13 +135,13 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, corpus=Fa
     else:
         xmatches = df[df[attrib].fillna('').str.contains(pattern)]
 
-    tokks = xmatches.apply(row_tok_apply, axis=1, df=df, fobj=fobj, metadata=metadata, matches=matches, conc=conc)
+    tokks = xmatches.apply(row_tok_apply, axis=1, df=df, fobj=fobj, conc=conc,
+                           metadata=metadata, matches=matches, )
     tokks = tokks.values
 
+    # coref can leave us with more results, of course 
     if coref:
         tokks = tokks.corefs()
-    #else:
-    #    the_tokens = tokks
 
     for tok in tokks:
 
@@ -160,20 +171,6 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False, corpus=Fa
 
     return out
     
-def turn_pos_to_wc(ser, showval):
-    if not showval:
-        return ser
-    import pandas as pd
-    from corpkit.dictionaries.word_transforms import taglemma   
-    vals = [taglemma.get(piece.lower(), piece.lower())
-                  for piece in ser.values]
-    news = pd.Series(vals, index=ser.index)
-    news.name = ser.name[:-1] + 'x'
-    return news
-
-def p_series_to_x_series(val):
-    return taglemma.get(val.lower(), val.lower())
-
 def remove_by_mode(matches, mode, criteria):
     """
     If mode is all, remove any entry that occurs < len(criteria)
@@ -288,10 +285,10 @@ def custom_tgrep(pattern, metadata, search_leaves=True):
         except AttributeError:
             yield []
 
-def tgrep_counter(df, pattern, search_leaves=True, parent=False, metadata=False, fobj=False, root=False):
+def tgrep_counter(df, pattern, search_leaves=True, parent=False, metadata=False,
+                  fobj=False, root=False):
     from nltk.tree import ParentedTree
     from corpkit.constants import STRINGTYPE
-    from collections import Counter
     from corpkit.matches import Token, Count, Tokens
     from corpkit.dictionaries.process_types import processes
     import re
@@ -313,12 +310,9 @@ def tgrep_counter(df, pattern, search_leaves=True, parent=False, metadata=False,
 
     for k, v in metadata.items():
         
-        #if root:
-        #    root.update()
-        
         tree = v.get('parse', None)
         if not tree:
-            yield []
+            continue
         tree = ParentedTree.fromstring(tree)
         root_position = tree.root().treepositions(order='leaves')
 
@@ -328,36 +322,30 @@ def tgrep_counter(df, pattern, search_leaves=True, parent=False, metadata=False,
             else:
                 positions = treepositions_no_leaves(tree)
         except AttributeError:
-            yield []
+            pass
         
         for name, pat in pattern.items():
-            try:
-                s = sum([1 for position in positions if pat(tree[position])])
-            except AttributeError:
-                s = 0
+            s = sum([1 for position in positions if pat(tree[position])])
             i = 'x'
-            res.append(Count(k, i, name, metadata[k], s))
+            res.append(Count(k, i, name, metadata=v, num=s))
 
         for ptype in ['mental', 'relational', 'verbal']:
             nname = ptype.title() + ' processes'
             reg = getattr(processes, ptype).lemmata.as_regex(boundaries='l')
             count = len([i for i in procr if re.search(reg, i[0].l)])
-            res.append(Count(k, 'x', nname, num=count, metadata=metadata))
+            res.append(Count(k, 'x', nname, num=count, metadata=v))
 
-        #res.append(Count(s, 'x', 'Sentences', metadata=metadata, parent=parent, num=len(set(df.index.labels[0]))))
+        #res.append(Count(s, 'x', 'Sentences', metadata=v, parent=parent, num=len(set(df.index.labels[0]))))
         sent = df.loc[k]
-        res.append(Count(s, 'x', 'Passives', metadata=metadata, parent=parent, num=len(sent[sent['f'] == 'nsubjpass'])))
-        res.append(Count(s, 'x', 'Tokens', metadata=metadata, parent=parent, num=len(sent)))
+        res.append(Count(s, 'x', 'Passives', metadata=v, parent=parent, num=len(sent[sent['f'] == 'nsubjpass'])))
+        res.append(Count(s, 'x', 'Tokens', metadata=v, parent=parent, num=len(sent)))
         w = len([w for w in list(sent['w']) if w and not ispunct(str(w))])
-        res.append(Count(s, 'x', 'Words', metadata=metadata, parent=parent, num=w))
-        res.append(Count(s, 'x', 'Characters', metadata=metadata, parent=parent, num=sum([len(str(w)) for w in list(sent['w']) if w])))
+        res.append(Count(s, 'x', 'Words', metadata=v, parent=parent, num=w))
+        res.append(Count(s, 'x', 'Characters', metadata=v, parent=parent, num=sum([len(str(w)) for w in list(sent['w']) if w])))
         oc = sum([1 for x in list(sent['p']) if x and x[0] in ['N', 'J', 'V', 'R']])
-        res.append(Count(s, 'x', 'Open class', metadata=metadata, parent=parent, num=oc))
-        res.append(Count(s, 'x', 'Punctuation', metadata=metadata, parent=parent, num=len(sent) - w))
-        res.append(Count(s, 'x', 'Closed class', metadata=metadata, parent=parent, num=w - oc))
-
-    if single:
-        res = res.pop('noname')
+        res.append(Count(s, 'x', 'Open class', metadata=v, parent=parent, num=oc))
+        res.append(Count(s, 'x', 'Punctuation', metadata=v, parent=parent, num=len(sent) - w))
+        res.append(Count(s, 'x', 'Closed class', metadata=v, parent=parent, num=w - oc))
 
     return res
 
@@ -400,12 +388,13 @@ def get_stats(df=False, metadata=False, root=False, parent=False, fobj=False, co
     """
     import re
     from corpkit.dictionaries.process_types import processes
-    from collections import Counter, defaultdict
+    from corpkit.matches import Count
 
     # check calls on this
     tregex_qs = make_compiled_statsqueries()
-    return list(tgrep_counter(df, pattern=tregex_qs, search_leaves=True, fobj=fobj,
-                                parent=parent, metadata=metadata, root=root))
+    counts = tgrep_counter(df, pattern=tregex_qs, search_leaves=True, fobj=fobj,
+                                parent=parent, metadata=metadata, root=root)
+    return counts
 
 def row_tok_apply(row, df=False, fobj=False, metadata=False, matches=False, conc=True):
     from corpkit.matches import Token
@@ -485,28 +474,39 @@ def pipeline(fobj=False,
 
     # todo: get these two to use same call sig
     if searcher in [get_stats, tgrep_searcher]:
-        return searcher(df, metadata, root=kwargs.pop('root', False), compiled_tgrep=compiled_tgrep, parent=matches, fobj=fobj, **kwargs)
+        all_res = searcher(df, metadata, root=kwargs.pop('root', False),
+                        compiled_tgrep=compiled_tgrep, parent=matches,
+                        fobj=fobj, **kwargs)
+        if searcher == get_stats:
+            return all_res
     
     # do no searching if 'any' is requested
     # doesn't work?
     if len(search) == 1 and list(search.keys())[0] == 'mw' \
                         and hasattr(list(search.values())[0], 'pattern') \
                         and list(search.values())[0].pattern == r'.*':
-        tokks = df.apply(row_tok_apply, axis=1, df=df, fobj=fobj, metadata=metadata, matches=matches, conc=conc)
+        tokks = df.apply(row_tok_apply, axis=1, df=df, fobj=fobj, conc=conc,
+                         metadata=metadata, matches=matches, )
         all_res = list(tokks.values)
     else:
         for k, v in search.items():
             adj, k = determine_adjacent(k)
-            all_res += search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, metadata=metadata,
-                                   fobj=fobj, corpus_name=corpus_name, corpus=corpus, matches=matches, conc=conc)
+            all_res += search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref,
+                                   subcorpora=subcorpora, metadata=metadata,
+                                   fobj=fobj, corpus_name=corpus_name,
+                                   corpus=corpus, matches=matches, conc=conc)
         if searchmode == 'all' and len(search) > 1:
-            all_res = sorted([k for k, v in Counter(all_res).items() if v == len(search)])
+            l = [k for k, v in Counter(all_res).items() if v == len(search)]
+            all_res = sorted(l)
 
     if exclude:
         for k, v in exclude.items():
             adj, k = determine_adjacent(k)
-            all_exclude += search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref, subcorpora=subcorpora, metadata=metadata,
-                                   fobj=fobj, corpus_name=corpus_name, corpus=corpus, matches=matches, conc=conc)
+            all_exclude += search_this(df, k[0], k[-1], v, adjacent=adj,
+                                        coref=coref, subcorpora=subcorpora,
+                                        metadata=metadata, fobj=fobj,
+                                        corpus_name=corpus_name, corpus=corpus,
+                                        matches=matches, conc=conc)
         #all_exclude = remove_by_mode(all_exclude, excludemode, exclude)
         if excludemode == 'all':
             all_exclude = set(k for k, v in Counter(all_exclude).items() if v == len(search))
@@ -515,18 +515,12 @@ def pipeline(fobj=False,
         
         all_res = sorted(list(set(all_res).difference(all_exclude)))
 
+    # todo: remove?
     if multiprocess:
         for i in all_res:
             del i.parent
 
     return all_res
-
-    out, conc_out = show_this(df, all_res, show, metadata, conc, 
-                              coref=coref, category=category, 
-                              show_conc_metadata=show_conc_metadata,
-                              **kwargs)
-
-    return out, conc_out
 
 def load_raw_data(f):
     """

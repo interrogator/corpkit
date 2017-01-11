@@ -5,7 +5,6 @@ corpkit: Interrogate a parsed corpus
 from __future__ import print_function
 from corpkit.constants import STRINGTYPE, PYTHON_VERSION, INPUTFUNC
 
-
 def welcome_printer(search, cname, optiontext, return_it=False, printstatus=True):
     """Print welcome message"""
     from time import localtime, strftime
@@ -79,6 +78,7 @@ def interrogator(corpus,
     regex_nonword_filter=r'[A-Za-z0-9]',
     no_closed=False,
     no_punct=True,
+    countmode=False,
     **kwargs):
     """
     Interrogate corpus, corpora, subcorpus and file objects.
@@ -127,6 +127,7 @@ def interrogator(corpus,
     if search == 'features':
         search = 'v'
         query = 'any'
+        countmode = True
     if search in ['postags', 'wordclasses']:
         query = 'any'
         show = 'p' if search == 'postags' else 'x'
@@ -377,6 +378,7 @@ def interrogator(corpus,
     #locs['cname'] = cname
     locs['optiontext'] = optiontext
     locs['mainpath'] = getattr(corpus, 'path', False)
+    locs['countmode'] = countmode
 
     if multiprocess and not kwargs.get('mp'):
         signal.signal(signal.SIGINT, original_sigint)
@@ -390,9 +392,6 @@ def interrogator(corpus,
     
     count_results = defaultdict(list)
     conc_results = defaultdict(list)
-
-    # check if just counting, turn off conc if so
-    countmode = kwargs.get('count')
 
     # where we are at in interrogation
     current_iter = 0
@@ -502,7 +501,7 @@ def interrogator(corpus,
     signal.signal(signal.SIGINT, original_sigint)
 
     if kwargs.get('paralleling', None) is None:
-        interro = Interrogation(data=results, corpus=corpus, query=querybits)
+        interro = Interrogation(data=results, corpus=corpus, query=querybits, count=countmode)
         return interro
     else:
         return results
