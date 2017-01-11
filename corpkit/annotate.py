@@ -171,7 +171,6 @@ def delete_lines(corpus, annotation, dry_run=True, colour={}):
                     data = data.encode('utf-8', errors='ignore')
                 fo.write(data)
                 
-
 def annotator(df_or_corpus, annotation, dry_run=True, deletemode=False):
     """
     Run the annotator pipeline over multiple files
@@ -193,11 +192,10 @@ def annotator(df_or_corpus, annotation, dry_run=True, deletemode=False):
         delete_lines(df_or_corpus.path, annotation, dry_run=dry_run, colour=colour)
         return
 
-    file_sent_words = df_or_corpus.reset_index()[['index', 'f', 'i']].values.tolist()
+    file_sent_words = df_or_corpus.reset_index()[['s', 'i', 'file']].values.tolist()
     from collections import defaultdict
     outt = defaultdict(list)
-    for index, fn, ix in file_sent_words:
-        s, i = ix.split(',', 1)
+    for index, fn, (s, i) in file_sent_words:
         outt[fn].append((int(s), int(i), index))
     
     for i, (fname, entries) in enumerate(sorted(outt.items()), start=1):    
