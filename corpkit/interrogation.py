@@ -101,6 +101,10 @@ class Interrogation(pd.DataFrame):
         Generate a concordance view
         """
         # n is num to show, because of slow loading!
+
+        if self._count:
+            raise ValueError("Counted result has no data to concordance.")
+            
         import pandas as pd
         from corpkit.interrogator import fix_show
         from corpkit.matches import _concer
@@ -118,6 +122,8 @@ class Interrogation(pd.DataFrame):
         rec = rec.drop(['parse'], axis=1)
         rec.rename(columns={'entry':'m'}, inplace=True)
         clines = rec.apply(_concer, show=show, axis=1)
+        clines.index = clines.index + 1
+
         cs = Concordance(clines)
         self._concordance = cs
         self._edited = False

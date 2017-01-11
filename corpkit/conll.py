@@ -105,12 +105,10 @@ def parse_conll(f,
     return df
 
 def search_this(df, obj, attrib, pattern, adjacent=False, coref=False,
-                corpus=False, matches=False, subcorpora=False, metadata=False,
-                fobj=False, corpus_name=False, conc=True):
+                corpus=False, matches=False, metadata=False,
+                fobj=False, corpus_name=False, conc=True, countmode=False):
     """
     Search the dataframe for a single criterion
-
-    :return: a defaultdict with subcorpora as keys and results as values
     """
     import re
    
@@ -136,7 +134,7 @@ def search_this(df, obj, attrib, pattern, adjacent=False, coref=False,
         xmatches = df[df[attrib].fillna('').str.contains(pattern)]
 
     tokks = xmatches.apply(row_tok_apply, axis=1, df=df, fobj=fobj, conc=conc,
-                           metadata=metadata, matches=matches, )
+                           metadata=metadata, matches=matches, countmode=countmode)
     tokks = tokks.values
 
     # coref can leave us with more results, of course 
@@ -322,7 +320,7 @@ def tgrep_counter(df, pattern, search_leaves=True, parent=False, metadata=False,
             else:
                 positions = treepositions_no_leaves(tree)
         except AttributeError:
-            pass
+            continue
         
         for name, pat in pattern.items():
             s = sum([1 for position in positions if pat(tree[position])])
@@ -349,31 +347,34 @@ def tgrep_counter(df, pattern, search_leaves=True, parent=False, metadata=False,
 
     return res
 
-def tgrep_searcher(df, metadata, compiled_tgrep=False, parent=False, fobj=False, **kwargs):
+def tgrep_searcher(df, metadata, compiled_tgrep=False, parent=False, fobj=False,
+                   countmode=False, **kwargs):
     
     #from nltk.tgrep import tgrep_nodes
     #trees = [ParentedTree.fromstring(i.get('parse', '')) for i in metadata.values()]
-    from corpkit.matches import Token, Tokens
+    from corpkit.matches import Token, Tokens, Count
     out = []
     all_matches = custom_tgrep(compiled_tgrep, metadata)
     for sent_matches in all_matches:
         if not sent_matches:
             continue
         for all_leaf_positions, match_position, s, meta in sent_matches:
-            #if i == 1:
-            #    all_leaf_positions = match.root().treepositions(order='leaves')
-            #match_position = match.treeposition()
             ixs = [e for e, x in enumerate(all_leaf_positions, start=1) \
                    if x[:len(match_position)] == match_position]
             span = []
+            if countmode:
+                t = Count(s, "x", "Total", metadata=metadata[s], parent=parent, num=1)
+                out.append(t)
+                continue
             for ix in ixs:
                 try:
                     rowd = df.loc[s, ix].to_dict()
                 except TypeError:
                     continue
-                t = Token(ix, df, s, fobj, metadata=metadata[s], parent=parent, **rowd)
-                span.append(t)
-            if span:
+                else:
+                    t = Token(ix, df, s, fobj, metadata=metadata[s], parent=parent, **rowd)
+                    span.append(t)
+            if span and not countmode:
                 tkspn = Tokens(span, s, df, match_position, metadata=metadata[s])
                 out.append(tkspn)
     return out
@@ -382,7 +383,8 @@ def ispunct(s):
     import string
     return all(c in string.punctuation for c in s)
 
-def get_stats(df=False, metadata=False, root=False, parent=False, fobj=False, compiled_tgrep=False, **kwargs):
+def get_stats(df=False, metadata=False, root=False, parent=False, fobj=False,
+              compiled_tgrep=False, countmode=False, **kwargs):
     """
     Get general statistics for a DataFrame
     """
@@ -396,10 +398,13 @@ def get_stats(df=False, metadata=False, root=False, parent=False, fobj=False, co
                                 parent=parent, metadata=metadata, root=root)
     return counts
 
-def row_tok_apply(row, df=False, fobj=False, metadata=False, matches=False, conc=True):
-    from corpkit.matches import Token
-
-    t = Token(row.name[1], df, row.name[0], fobj, metadata[row.name[0]], matches, conc=conc, **row.to_dict())
+def row_tok_apply(row, df=False, fobj=False, metadata=False, matches=False, 
+                  conc=True, countmode=False):
+    from corpkit.matches import Token, Count
+    if countmode:
+        t = Count(row.name[0], row.name[1], "Total", metadata[row.name[0]], num=1)
+    else:
+        t = Token(row.name[1], df, row.name[0], fobj, metadata[row.name[0]], matches, conc=conc, **row.to_dict())
     return t
 
 def pipeline(fobj=False,
@@ -415,12 +420,12 @@ def pipeline(fobj=False,
              skip=False,
              show_conc_metadata=False,
              lem_instance=False,
-             subcorpora=False,
              corpus_name=False,
              corpus=False,
              matches=False,
              multiprocess=False,
              compiled_tgrep=False,
+             countmode=False,
              **kwargs):
     """
     A basic pipeline for conll querying---some options still to do
@@ -476,7 +481,7 @@ def pipeline(fobj=False,
     if searcher in [get_stats, tgrep_searcher]:
         all_res = searcher(df, metadata, root=kwargs.pop('root', False),
                         compiled_tgrep=compiled_tgrep, parent=matches,
-                        fobj=fobj, **kwargs)
+                        fobj=fobj, countmode=countmode, **kwargs)
         if searcher == get_stats:
             return all_res
     
@@ -484,29 +489,35 @@ def pipeline(fobj=False,
     # doesn't work?
     if len(search) == 1 and list(search.keys())[0] == 'mw' \
                         and hasattr(list(search.values())[0], 'pattern') \
-                        and list(search.values())[0].pattern == r'.*':
+                        and list(search.values())[0].pattern == r'.*' \
+                        and not all_res:
         tokks = df.apply(row_tok_apply, axis=1, df=df, fobj=fobj, conc=conc,
-                         metadata=metadata, matches=matches, )
+                         metadata=metadata, matches=matches)
         all_res = list(tokks.values)
     else:
-        for k, v in search.items():
-            adj, k = determine_adjacent(k)
-            all_res += search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref,
-                                   subcorpora=subcorpora, metadata=metadata,
+        if searcher != tgrep_searcher:
+            for k, v in search.items():
+                adj, k = determine_adjacent(k)
+                all_res += search_this(df, k[0], k[-1], v, adjacent=adj, coref=coref,
+                                   metadata=metadata,
                                    fobj=fobj, corpus_name=corpus_name,
-                                   corpus=corpus, matches=matches, conc=conc)
+                                   corpus=corpus, matches=matches, conc=conc,
+                                   countmode=countmode)
+
         if searchmode == 'all' and len(search) > 1:
             l = [k for k, v in Counter(all_res).items() if v == len(search)]
             all_res = sorted(l)
 
+    # should have a tree exclude?
     if exclude:
         for k, v in exclude.items():
             adj, k = determine_adjacent(k)
             all_exclude += search_this(df, k[0], k[-1], v, adjacent=adj,
-                                        coref=coref, subcorpora=subcorpora,
+                                        coref=coref, 
                                         metadata=metadata, fobj=fobj,
                                         corpus_name=corpus_name, corpus=corpus,
-                                        matches=matches, conc=conc)
+                                        matches=matches, conc=conc,
+                                        countmode=countmode)
         #all_exclude = remove_by_mode(all_exclude, excludemode, exclude)
         if excludemode == 'all':
             all_exclude = set(k for k, v in Counter(all_exclude).items() if v == len(search))
