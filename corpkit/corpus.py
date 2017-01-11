@@ -460,10 +460,9 @@ class Corpus(list):
         :returns: ``None``
         """
         from corpkit.interrogation import Interrogation
-        if isinstance(conclines, Interrogation):
-            conclines = getattr(conclines, 'concordance', conclines)
+        conc = self.conc()
         from corpkit.annotate import annotator
-        annotator(conclines, annotation, dry_run=dry_run)
+        annotator(conc, annotation, dry_run=dry_run)
         # regenerate metadata afterward---could be a bit slow?
         if not dry_run:
             self.delete_metadata()
