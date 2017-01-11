@@ -288,25 +288,34 @@ def custom_tgrep(pattern, metadata, search_leaves=True):
         except AttributeError:
             yield []
 
-def tgrep_counter(pattern, search_leaves=True, root=False):
+def tgrep_counter(df, pattern, search_leaves=True, parent=False, metadata=False, fobj=False, root=False):
     from nltk.tree import ParentedTree
     from corpkit.constants import STRINGTYPE
     from collections import Counter
+    from corpkit.matches import Token, Count, Tokens
+    from corpkit.dictionaries.process_types import processes
+    import re
 
-    res = {}
+    res = []
+    procr = []
 
     single = False
     if not isinstance(pattern, dict):
         pattern = {'noname': pattern}
         single = True
+    else:
+        procq = pattern.pop('Processes', None)
+        procr = tgrep_searcher(df, metadata, compiled_tgrep=procq, parent=parent, fobj=fobj)
 
     if isinstance(pattern, (STRINGTYPE, bool)):
         from nltk.tgrep import tgrep_compile
         pattern = tgrep_compile(pattern)
 
     for k, v in metadata.items():
+        
         #if root:
         #    root.update()
+        
         tree = v.get('parse', None)
         if not tree:
             yield []
@@ -323,13 +332,33 @@ def tgrep_counter(pattern, search_leaves=True, root=False):
         
         for name, pat in pattern.items():
             try:
-                s = sum([1 for position in positions if pattern(tree[position])])
+                s = sum([1 for position in positions if pat(tree[position])])
             except AttributeError:
                 s = 0
-            res[name] = pat
+            i = 'x'
+            res.append(Count(k, i, name, metadata[k], s))
+
+        for ptype in ['mental', 'relational', 'verbal']:
+            nname = ptype.title() + ' processes'
+            reg = getattr(processes, ptype).lemmata.as_regex(boundaries='l')
+            count = len([i for i in procr if re.search(reg, i[0].l)])
+            res.append(Count(k, 'x', nname, num=count, metadata=metadata))
+
+        #res.append(Count(s, 'x', 'Sentences', metadata=metadata, parent=parent, num=len(set(df.index.labels[0]))))
+        sent = df.loc[k]
+        res.append(Count(s, 'x', 'Passives', metadata=metadata, parent=parent, num=len(sent[sent['f'] == 'nsubjpass'])))
+        res.append(Count(s, 'x', 'Tokens', metadata=metadata, parent=parent, num=len(sent)))
+        w = len([w for w in list(sent['w']) if w and not ispunct(str(w))])
+        res.append(Count(s, 'x', 'Words', metadata=metadata, parent=parent, num=w))
+        res.append(Count(s, 'x', 'Characters', metadata=metadata, parent=parent, num=sum([len(str(w)) for w in list(sent['w']) if w])))
+        oc = sum([1 for x in list(sent['p']) if x and x[0] in ['N', 'J', 'V', 'R']])
+        res.append(Count(s, 'x', 'Open class', metadata=metadata, parent=parent, num=oc))
+        res.append(Count(s, 'x', 'Punctuation', metadata=metadata, parent=parent, num=len(sent) - w))
+        res.append(Count(s, 'x', 'Closed class', metadata=metadata, parent=parent, num=w - oc))
 
     if single:
         res = res.pop('noname')
+
     return res
 
 def tgrep_searcher(df, metadata, compiled_tgrep=False, parent=False, fobj=False, **kwargs):
@@ -361,7 +390,11 @@ def tgrep_searcher(df, metadata, compiled_tgrep=False, parent=False, fobj=False,
                 out.append(tkspn)
     return out
 
-def get_stats(from_df=False, metadata=False, root=False, **kwargs):
+def ispunct(s):
+    import string
+    return all(c in string.punctuation for c in s)
+
+def get_stats(df=False, metadata=False, root=False, parent=False, fobj=False, compiled_tgrep=False, **kwargs):
     """
     Get general statistics for a DataFrame
     """
@@ -369,39 +402,10 @@ def get_stats(from_df=False, metadata=False, root=False, **kwargs):
     from corpkit.dictionaries.process_types import processes
     from collections import Counter, defaultdict
 
-    def ispunct(s):
-        import string
-        return all(c in string.punctuation for c in s)
-
-    tree = [x['parse'] for x in metadata.values()]
-
+    # check calls on this
     tregex_qs = make_compiled_statsqueries()
-    procq = tregex_qs.pop('Processes', None)
-
-    result = tgrep_counter(tregex_qs)
-    procr = tgrep_searcher(procq)
-
-    for ptype in ['mental', 'relational', 'verbal']:
-        reg = getattr(processes, ptype).lemmata.as_regex(boundaries='l')
-        count = len([i for i in procr if re.search(reg, i[0].l)])
-        nname = ptype.title() + ' processes'
-        result[nname] = count
-
-    result['Sentences'] = len(set(from_df.index.labels[0]))
-    result['Passives'] = len(from_df[from_df['f'] == 'nsubjpass'])
-    result['Tokens'] = len(from_df)
-    # the below has returned a float before. i assume actually a nan?
-    result['Words'] = len([w for w in list(from_df['w']) if w and not ispunct(str(w))])
-    result['Characters'] = sum([len(str(w)) for w in list(from_df['w']) if w])
-    result['Open class'] = sum([1 for x in list(from_df['p']) if x and x[0] in ['N', 'J', 'V', 'R']])
-    result['Punctuation'] = result['Tokens'] - result['Words']
-    result['Closed class'] = result['Words'] - result['Open class']
-    
-    r = []
-    for k, v in result.items():
-        for i in range(v):
-            r.append(Count(1, name=k))
-    return r
+    return list(tgrep_counter(df, pattern=tregex_qs, search_leaves=True, fobj=fobj,
+                                parent=parent, metadata=metadata, root=root))
 
 def row_tok_apply(row, df=False, fobj=False, metadata=False, matches=False, conc=True):
     from corpkit.matches import Token
@@ -759,16 +763,16 @@ def convert_json_to_conll(path,
 
 def make_compiled_statsqueries():
     from nltk.tgrep import tgrep_compile
-    tregex_qs = {'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S '\
-                 '!$-- VP !$ VP)) !<< (/\?/ !< __) !<<- /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
-                 'Open interrogative': r'ROOT < SBARQ <<- (/\?/ !< __)', 
-                 'Closed interrogative': r'ROOT ( < (SQ < (NP $+ VP)) << (/\?/ !< __) | < (/(S|SBAR)/ < (VP $+ NP)) <<- (/\?/ !< __))',
-                 'Unmodalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP !< MD)))',
-                 'Modalised declarative': r'ROOT < (S < (/(NP|SBAR|VP)/ $+ (VP < MD)))',
-                 'Clauses': r'/^S/ < __',
-                 'Interrogative': r'ROOT << (/\?/ !< __)',
-                 'Processes': r'/VB.?/ >># (VP !< VP >+(VP) /^(S|ROOT)/)'}
+    tregex_qs = {#'Imperative': r'ROOT < (/(S|SBAR)/ < (VP !< VBD !< VBG !$ NP !$ SBAR < NP !$-- S '\
+                 #'!$-- VP !$ VP)) !<< (/\?/ !< __) !<<\' /-R.B-/ !<<, /(?i)^(-l.b-|hi|hey|hello|oh|wow|thank|thankyou|thanks|welcome)$/',
+                 'Open interrogative': r"ROOT < SBARQ <<' (/\?/ !< __)", 
+                 #'Closed interrogative': r"ROOT < ((SQ < (NP $, VP)) << (/\?/ !< __)) | < ((/S|SBAR/ < (VP $, NP)) <<' (/\?/ !< __)))",
+                 'Unmodalised declarative': r"ROOT < (S < (/NP|SBAR|VP/ $, (VP !< MD)))",
+                 'Modalised declarative': r"ROOT < (S < (/NP|SBAR|VP/ $, (VP < MD)))",
+                 'Clauses': r"/^S/ < __",
+                 'Interrogative': r"ROOT << (/\?/ !< __)",
+                 'Processes': r"/VB.*/ >-1 VP"}
     out = {}
-    for k, v in tregex_qs.items():
+    for k, v in sorted(tregex_qs.items()):
         out[k] = tgrep_compile(v)
     return out
