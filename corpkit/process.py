@@ -1532,9 +1532,6 @@ def make_record(data, corpus, path=False):
         pandas.DataFrame: record format of each result
     """
     import pandas as pd
-    from corpkit.build import get_all_metadata_fields
-    from corpkit.corpus import Corpus
-    from corpkit.matches import Token, Tokens
     try:
         all_meta_fields = list(corpus.metadata['fields'].keys())
     except AttributeError:
