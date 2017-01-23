@@ -2,6 +2,8 @@
 
 [![Join the chat at https://gitter.im/interrogator/corpkit](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/interrogator/corpkit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![DOI](https://zenodo.org/badge/14568/interrogator/corpkit.svg)](https://zenodo.org/badge/latestdoi/14568/interrogator/corpkit) [![Travis](https://img.shields.io/travis/interrogator/corpkit.svg)](https://travis-ci.org/interrogator/corpkit) [![PyPI](https://img.shields.io/pypi/v/corpkit.svg)](https://pypi.python.org/pypi/corpkit) [![ReadTheDocs](https://readthedocs.org/projects/corpkit/badge/?version=latest)](http://corpkit.readthedocs.org/en/latest/) [![Docker Automated build](https://img.shields.io/docker/automated/interrogator/corpkit.svg)](https://hub.docker.com/r/interrogator/corpkit/) [![Anaconda-Server Badge](https://anaconda.org/asmeurer/conda/badges/installer/conda.svg)](https://anaconda.org/interro_gator/corpkit)
 
+## Important update
+
 **corpkit will receive no further updates from me. Don't worry, the project hasn't been totally abandoned. Instead, I'm developing [tücan](https://github.com/interrogator/tucan), a Flask web-app with a backend based on corpkit. My work on the API and interpreter have been improved over there. The updates include**:
 
 - A new query language (depgrep), based on Tgrep2 syntax
