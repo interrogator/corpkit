@@ -1,5 +1,17 @@
 # corpkit: sophisticated corpus linguistics
 
+### Important
+
+**corpkit will receive no further updates from me. Don't worry, the project hasn't been totally abandoned. Instead, I'm developing [tücan](https://github.com/interrogator/tucan), a Flask web-app with a backend based on corpkit. My work on the API and interpreter have been improved over there. The updates include**:
+
+- A new query language (depgrep), based on Tgrep2 syntax
+- A corpus-in-memory that can be searched at 1m words per second
+- An Interrogation class that is abstract and can be pivoted. Rather than specifying what to show before searching, you search generally, and select these at viewing time
+- General code cleanup
+
+**The sad news is that I'm not going to be developing the Tkinter GUI anymore. If you're using it, sit tight, the far superior web-app will be working in a few weeks.**
+
+
 [![Join the chat at https://gitter.im/interrogator/corpkit](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/interrogator/corpkit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![DOI](https://zenodo.org/badge/14568/interrogator/corpkit.svg)](https://zenodo.org/badge/latestdoi/14568/interrogator/corpkit) [![Travis](https://img.shields.io/travis/interrogator/corpkit.svg)](https://travis-ci.org/interrogator/corpkit) [![PyPI](https://img.shields.io/pypi/v/corpkit.svg)](https://pypi.python.org/pypi/corpkit) [![ReadTheDocs](https://readthedocs.org/projects/corpkit/badge/?version=latest)](http://corpkit.readthedocs.org/en/latest/) [![Docker Automated build](https://img.shields.io/docker/automated/interrogator/corpkit.svg)](https://hub.docker.com/r/interrogator/corpkit/) [![Anaconda-Server Badge](https://anaconda.org/asmeurer/conda/badges/installer/conda.svg)](https://anaconda.org/interro_gator/corpkit)
 
 > **corpkit** is a module for doing more sophisticated corpus linguistics. It links state-of-the-art natural language processing technologies to functional linguistic research aims, allowing you to easily build, search and visualise grammatically annotated corpora in novel ways.
