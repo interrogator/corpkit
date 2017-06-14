@@ -4,7 +4,7 @@
 
 ## Important update
 
-**corpkit will receive no further updates from me. Don't worry, the project hasn't been totally abandoned. Instead, I'm developing [pollux](https://github.com/interrogator/pollux), a Flask web-app with a backend based on corpkit. My work on the API and interpreter have been improved over there. The updates include**:
+**corpkit will receive no further updates from me. Don't worry, the project hasn't been totally abandoned. Instead, I'm developing a Flask web-app with a backend based on corpkit. My work on the API and interpreter have been improved over there. The updates include**:
 
 - A new query language (depgrep), based on Tgrep2 syntax
 - A corpus-in-memory that can be searched at 1m words per second
