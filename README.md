@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/interrogator/corpkit](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/interrogator/corpkit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![DOI](https://zenodo.org/badge/14568/interrogator/corpkit.svg)](https://zenodo.org/badge/latestdoi/14568/interrogator/corpkit) [![Travis](https://img.shields.io/travis/interrogator/corpkit.svg)](https://travis-ci.org/interrogator/corpkit) [![PyPI](https://img.shields.io/pypi/v/corpkit.svg)](https://pypi.python.org/pypi/corpkit) [![ReadTheDocs](https://readthedocs.org/projects/corpkit/badge/?version=latest)](http://corpkit.readthedocs.org/en/latest/) [![Docker Automated build](https://img.shields.io/docker/automated/interrogator/corpkit.svg)](https://hub.docker.com/r/interrogator/corpkit/) [![Anaconda-Server Badge](https://anaconda.org/asmeurer/conda/badges/installer/conda.svg)](https://anaconda.org/interro_gator/corpkit)
 
-## **corpkit is deprecated and unmaintained. It is superceded by [`buzz`](https://github.com/interrogator/buzz), which is better in every way.**
+## **NOTICE: corpkit is now deprecated and unmaintained. It is superceded by [`buzz`](https://github.com/interrogator/buzz), which is better in every way.**
 
 > **corpkit** is a module for doing more sophisticated corpus linguistics. It links state-of-the-art natural language processing technologies to functional linguistic research aims, allowing you to easily build, search and visualise grammatically annotated corpora in novel ways.
 
